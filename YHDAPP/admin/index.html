@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ダッシュボード - 管理画面</title>
+
+    <!-- ★ 修正点: キャッシュ対策のmetaタグを追加 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        :root {
+            --tiffany-blue: #0ABAB5;
+            --azure-bg: #F0FFFF;
+            --light-tiffany: #E6FFFA;
+            --text-dark: #333;
+        }
+        body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--azure-bg); color: var(--text-dark); }
+        .bg-tiffany { background-color: var(--tiffany-blue); }
+        .text-tiffany { color: var(--tiffany-blue); }
+        .border-tiffany { border-color: var(--tiffany-blue); }
+        .btn-primary { background-color: var(--tiffany-blue); color: white; transition: all 0.3s; }
+        .booking-block { position: absolute; background-color: rgba(10, 171, 181, 0.7); color: white; border-radius: 4px; padding: 2px 4px; font-size: 0.75rem; cursor: pointer; overflow: hidden; border-left: 4px solid #089a94; z-index: 10; }
+        .blocked-block { position: absolute; background-color: #e5e7eb; border-left: 4px solid #9ca3af; z-index: 10; cursor: pointer; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }
+        .rotate-180 { transform: rotate(180deg); }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-tiffany"></i>
+            <p id="loading-message" class="mt-4 text-gray-600 font-bold">読み込み中...</p>
+        </div>
+    </div>
+
+    <div id="app" class="max-w-lg mx-auto bg-white min-h-screen shadow-2xl" style="display: none;">
+        <header class="bg-tiffany text-white p-4 flex items-center justify-between sticky top-0 z-20 shadow-md">
+            <div class="w-1/4"></div>
+            <h1 id="header-title" class="w-1/2 text-xl font-bold tracking-wider text-center">ダッシュボード</h1>
+            <div class="w-1/4"></div>
+        </header>
+
+        <main class="p-4 md:p-6">
+            <div class="mb-6">
+                 <h3 id="dashboard-date" class="font-bold mb-2 text-center"></h3>
+                <div id="dashboard-timetable-wrapper" class="relative bg-gray-50 rounded-lg p-4 h-32"></div>
+            </div>
+            <div class="mb-6">
+                <label for="dashboard-daily-notes" class="font-bold text-sm text-gray-600">本日の連絡事項</label>
+                <textarea id="dashboard-daily-notes" rows="3" class="w-full mt-2 rounded-md border-gray-300 shadow-sm focus:border-tiffany focus:ring-tiffany" placeholder="本日のメモを入力..."></textarea>
+            </div>
+
+            <h2 class="text-lg font-semibold mb-4 border-l-4 border-tiffany pl-2">管理者メニュー</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <a href="./booking.html" class="bg-gray-100 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-200"><i class="fas fa-calendar-alt text-3xl text-tiffany mb-2"></i><p>予約管理</p></a>
+                <a href="./pos.html" class="bg-gray-100 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-200"><i class="fas fa-cash-register text-3xl text-tiffany mb-2"></i><p>会計</p></a>
+                <a href="./customers.html" class="bg-gray-100 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-200"><i class="fas fa-users text-3xl text-tiffany mb-2"></i><p>顧客管理</p></a>
+                <a href="./sales.html" class="bg-gray-100 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-200"><i class="fas fa-chart-pie text-3xl text-tiffany mb-2"></i><p>売上分析</p></a>
+                <a href="./menu.html" class="bg-gray-100 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-200"><i class="fas fa-cut text-3xl text-tiffany mb-2"></i><p>メニュー設定</p></a>
+                <a href="./settings.html" class="bg-gray-100 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-200"><i class="fas fa-cog text-3xl text-tiffany mb-2"></i><p>サロン設定</p></a>
+            </div>
+             <button id="logout-btn" class="w-full text-red-500 py-2 rounded-lg mt-8 border border-red-500 hover:bg-red-50 hidden">ログアウト</button>
+        </main>
+    </div>
+    
+    <!-- Modals -->
+    <div id="booking-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-md">
+            <h3 class="font-bold text-lg mb-4">予約詳細</h3>
+            <div id="modal-content" class="space-y-3"></div>
+            <div class="mt-6 flex justify-end gap-3 flex-wrap">
+                 <button id="modal-checkout-btn" class="btn-primary px-4 py-2 rounded-lg font-bold"><i class="fas fa-yen-sign mr-2"></i>会計</button>
+                 <a id="modal-counseling-btn" href="#" class="bg-green-500 text-white px-4 py-2 rounded-lg font-bold" title="カウンセリング"><i class="fas fa-clipboard"></i></a>
+                 <button id="modal-camera-btn" class="bg-gray-500 text-white px-4 py-2 rounded-lg font-bold" title="カメラ起動"><i class="fas fa-camera"></i></button>
+                 <a id="modal-customer-info-btn" href="#" class="btn-primary px-4 py-2 rounded-lg font-bold">顧客情報</a>
+                 <button id="modal-close-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">閉じる</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="edit-booking-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-md">
+            <h3 id="edit-modal-title" class="font-bold text-lg mb-4"></h3>
+            <div class="space-y-4">
+                <div class="relative">
+                    <label class="block text-sm font-medium">お客様</label>
+                    <input type="text" id="edit-booking-customer-input" class="w-full mt-1 rounded-md border-gray-300" autocomplete="off">
+                    <input type="hidden" id="selected-customer-id">
+                    <div id="customer-suggestions" class="absolute w-full bg-white border border-gray-300 rounded-md mt-1 z-10 max-h-32 overflow-y-auto hidden"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">メニュー</label>
+                    <div id="edit-booking-menus" class="mt-2 max-h-32 overflow-y-auto space-y-2 border p-2 rounded-md"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium">開始時間</label>
+                        <select id="edit-booking-start-time" class="w-full mt-1 rounded-md border-gray-300"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">終了時間</label>
+                        <select id="edit-booking-end-time" class="w-full mt-1 rounded-md border-gray-300"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="edit-modal-close-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">閉じる</button>
+                <button id="edit-modal-save-btn" class="btn-primary px-4 py-2 rounded-lg font-bold">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="action-choice-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-xs text-center">
+            <h3 id="action-choice-title" class="font-bold text-lg mb-4"></h3>
+            <div class="flex flex-col gap-3">
+                <button id="action-add-booking" class="btn-primary px-4 py-3 rounded-lg font-bold w-full"><i class="fas fa-plus mr-2"></i>予約を追加</button>
+                <button id="action-block-slot" class="bg-gray-500 text-white px-4 py-3 rounded-lg font-bold w-full"><i class="fas fa-ban mr-2"></i>予約不可に設定</button>
+            </div>
+            <div class="mt-6">
+                <button id="action-choice-close-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, OAuthProvider, signInWithCredential } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, deleteDoc, getDocs, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCD5M3LIs8YPPeQlBecnLi9iaxy2Sco-pI",
+                authDomain: "yhddatebase.firebaseapp.com",
+                projectId: "yhddatebase",
+                storageBucket: "yhddatebase.appspot.com",
+                messagingSenderId: "908640006259",
+                appId: "1:908640006259:web:f1af7804cf7316ef057a06"
+            };
+            const ADMIN_LIFF_ID = "2008029428-ANbgw3b6";
+
+            const fbApp = initializeApp(firebaseConfig);
+            const auth = getAuth(fbApp);
+            const db = getFirestore(fbApp);
+            const storage = getStorage(fbApp);
+            const appId = fbApp.options.projectId;
+
+            const loadingMessage = document.getElementById('loading-message');
+            let isAppInitialized = false;
+
+            onAuthStateChanged(auth, (user) => {
+                if(user) {
+                    if(!isAppInitialized) {
+                        initializeAppUI(user);
+                    }
+                } else {
+                    adminLiffLogin();
+                }
+            });
+
+            async function adminLiffLogin() {
+                if (!ADMIN_LIFF_ID || ADMIN_LIFF_ID === "YOUR_ADMIN_LIFF_ID") {
+                    loadingMessage.textContent = '管理者用LIFF IDが設定されていません。';
+                    return;
+                }
+                try {
+                    await liff.init({ liffId: ADMIN_LIFF_ID });
+                    if (!liff.isLoggedIn()) {
+                        liff.login({ redirectUri: window.location.href });
+                        return;
+                    }
+                    const idToken = liff.getIDToken();
+                    const provider = new OAuthProvider('oidc.line'); 
+                    const credential = provider.credential({ idToken });
+                    await signInWithCredential(auth, credential);
+                } catch (error) {
+                    loadingMessage.textContent = `エラー: ${error.message}`;
+                }
+            }
+
+            async function initializeAppUI(firebaseUser) {
+                const adminRef = doc(db, `admins/${firebaseUser.uid}`);
+                const adminDoc = await getDoc(adminRef);
+                if (!adminDoc.exists()) {
+                    loadingMessage.textContent = "エラー: 管理者権限がありません。";
+                    return;
+                }
+                
+                isAppInitialized = true;
+                await init();
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+            }
+            
+            let customerData = [];
+            let menuData = [];
+            let menuCategories = [];
+            let adminBookingData = {};
+            let dailyNotes = {};
+            let selectedSlotTime = null;
+
+            const elements = {
+                timetableWrapper: document.getElementById('dashboard-timetable-wrapper'),
+                dateDisplay: document.getElementById('dashboard-date'),
+                dailyNotesTextarea: document.getElementById('dashboard-daily-notes'),
+                bookingDetailModal: document.getElementById('booking-detail-modal'),
+                modalContent: document.getElementById('modal-content'),
+                modalCustomerInfoBtn: document.getElementById('modal-customer-info-btn'),
+                modalCheckoutBtn: document.getElementById('modal-checkout-btn'),
+                modalCounselingBtn: document.getElementById('modal-counseling-btn'),
+                modalCameraBtn: document.getElementById('modal-camera-btn'),
+                editBookingModal: document.getElementById('edit-booking-modal'),
+                editModalTitle: document.getElementById('edit-modal-title'),
+                editBookingCustomerInput: document.getElementById('edit-booking-customer-input'),
+                selectedCustomerId: document.getElementById('selected-customer-id'),
+                customerSuggestions: document.getElementById('customer-suggestions'),
+                editBookingMenusContainer: document.getElementById('edit-booking-menus'),
+                editBookingStartTimeSelect: document.getElementById('edit-booking-start-time'),
+                editBookingEndTimeSelect: document.getElementById('edit-booking-end-time'),
+                actionChoiceModal: document.getElementById('action-choice-modal'),
+                actionChoiceTitle: document.getElementById('action-choice-title'),
+            };
+
+            async function init() {
+                await loadStaticData();
+                setupRealtimeListeners();
+                setupEventListeners();
+            }
+
+            async function loadStaticData() {
+                try {
+                    const customersCol = collection(db, `artifacts/${appId}/public/data/customers`);
+                    const menuRef = doc(db, `artifacts/${appId}/public/data/menuData`, "menus");
+                    const categoriesRef = doc(db, `artifacts/${appId}/public/data/menuData`, "categories");
+                    const [customerSnapshot, menuDoc, categoryDoc] = await Promise.all([
+                        getDocs(customersCol), getDoc(menuRef), getDoc(categoriesRef)
+                    ]);
+                    customerData = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    menuData = menuDoc.exists() ? menuDoc.data().items : [];
+                    menuCategories = categoryDoc.exists() ? categoryDoc.data().items : [];
+                } catch (error) {
+                    console.error("Error loading static data:", error);
+                }
+            }
+
+            function setupRealtimeListeners() {
+                const bookingsCol = collection(db, `artifacts/${appId}/public/data/bookings`);
+                onSnapshot(bookingsCol, (snapshot) => {
+                    adminBookingData = {};
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const dateStr = data.date || doc.id.substring(0, 10);
+                        if (!adminBookingData[dateStr]) adminBookingData[dateStr] = [];
+                        adminBookingData[dateStr].push({ ...data, bookingDocId: doc.id });
+                    });
+                    renderDashboard();
+                });
+
+                const notesRef = doc(db, `artifacts/${appId}/public/data/dailyNotes`, "notes");
+                onSnapshot(notesRef, (doc) => {
+                    dailyNotes = doc.exists() ? doc.data() : {};
+                    renderDashboardDailyNotes();
+                });
+            }
+            
+            function renderDashboard(){
+                renderDashboardDate();
+                renderDashboardTimetable();
+                renderDashboardDailyNotes();
+            }
+
+            function renderDashboardDate() {
+                const date = new Date();
+                const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+                elements.dateDisplay.textContent = `本日の予約 (${date.getMonth() + 1}月${date.getDate()}日 ${dayOfWeek})`;
+            }
+
+            function renderDashboardTimetable() {
+                const wrapper = elements.timetableWrapper;
+                wrapper.innerHTML = ''; 
+                const labelsContainer = document.createElement('div');
+                labelsContainer.className = 'relative h-6 z-10';
+                const gridContainer = document.createElement('div');
+                gridContainer.className = 'relative h-full';
+
+                for (let hour = 10; hour <= 20; hour++) {
+                    const percent = ((hour - 10) / 10) * 100;
+                    const label = document.createElement('div');
+                    label.className = 'absolute text-xs text-gray-500 cursor-pointer hover:font-bold px-1';
+                    label.textContent = hour;
+                    label.style.top = '0';
+                    label.style.left = `${percent}%`;
+                    label.style.transform = 'translateX(-50%)';
+                    if (hour < 20) label.dataset.time = `${String(hour).padStart(2, '0')}:00`;
+                    labelsContainer.appendChild(label);
+                    
+                    if (hour < 20) {
+                        const line = document.createElement('div');
+                        line.className = 'absolute top-0 bottom-0 w-px bg-gray-200';
+                        line.style.left = `${percent}%`;
+                        gridContainer.appendChild(line);
+                        const halfHourPercent = ((hour - 10 + 0.5) / 10) * 100;
+                        const halfHourMarker = document.createElement('div');
+                        halfHourMarker.className = 'absolute text-lg leading-none text-gray-400 cursor-pointer hover:font-bold';
+                        halfHourMarker.innerHTML = '&middot;';
+                        halfHourMarker.style.top = '-1px';
+                        halfHourMarker.style.left = `${halfHourPercent}%`;
+                        halfHourMarker.style.transform = 'translateX(-50%)';
+                        halfHourMarker.dataset.time = `${String(hour).padStart(2, '0')}:30`;
+                        labelsContainer.appendChild(halfHourMarker);
+                    }
+                }
+                wrapper.appendChild(labelsContainer);
+                wrapper.appendChild(gridContainer);
+                
+                const dateStr = getFormattedDate(new Date());
+                const bookings = adminBookingData[dateStr] || [];
+                const totalMinutes = (20 - 10) * 60;
+
+                bookings.forEach(booking => {
+                    if (!booking.startTime || !booking.endTime) return;
+                    const start = new Date(`${dateStr}T${booking.startTime}`);
+                    const end = new Date(`${dateStr}T${booking.endTime}`);
+                    const startMinutes = (start.getHours() - 10) * 60 + start.getMinutes();
+                    const duration = (end - start) / 60000;
+                    
+                    const left = (startMinutes / totalMinutes) * 100;
+                    const width = (duration / totalMinutes) * 100;
+
+                    const block = document.createElement('div');
+                    block.style.position = 'absolute';
+                    block.style.top = '0';
+                    block.style.bottom = '0';
+                    block.style.left = `${left}%`;
+                    block.style.width = `${width}%`;
+                    block.dataset.id = booking.id;
+                    block.dataset.docId = booking.bookingDocId;
+
+                    if (booking.type === 'booking') {
+                        block.className = 'booking-block text-xs';
+                        const customer = findCustomer(booking);
+                        block.innerHTML = `<p class="font-bold truncate">${customer ? customer.name : (booking.customerName || '不明')}</p>`;
+                    } else {
+                        block.className = 'blocked-block';
+                    }
+                    gridContainer.appendChild(block);
+                });
+            }
+            
+            function renderDashboardDailyNotes() {
+                const dateStr = getFormattedDate(new Date());
+                elements.dailyNotesTextarea.value = dailyNotes[dateStr] || '';
+            }
+
+            function setupEventListeners() {
+                elements.timetableWrapper.addEventListener('click', (e) => {
+                    const block = e.target.closest('.booking-block, .blocked-block');
+                    const label = e.target.closest('[data-time]');
+                    if (block) {
+                        const bookingId = block.dataset.id;
+                        const dateStr = getFormattedDate(new Date());
+                        const booking = adminBookingData[dateStr]?.find(b => b.id.toString() === bookingId);
+                        if (booking) {
+                            if (booking.type === 'blocked') deleteBlock(booking.bookingDocId);
+                            else openBookingDetailModal(booking);
+                        }
+                    } else if(label) {
+                        handleSlotClick(label.dataset.time);
+                    }
+                });
+
+                document.getElementById('modal-close-btn').addEventListener('click', () => elements.bookingDetailModal.classList.add('hidden'));
+                elements.dailyNotesTextarea.addEventListener('input', async (e) => {
+                    const dateStr = getFormattedDate(new Date());
+                    const notesRef = doc(db, `artifacts/${appId}/public/data/dailyNotes`, "notes");
+                    await setDoc(notesRef, { [dateStr]: e.target.value }, { merge: true });
+                });
+
+                document.getElementById('action-choice-close-btn').addEventListener('click', () => elements.actionChoiceModal.classList.add('hidden'));
+                document.getElementById('action-add-booking').addEventListener('click', () => {
+                    elements.actionChoiceModal.classList.add('hidden');
+                    openEditBookingModal(null, null, selectedSlotTime);
+                });
+                document.getElementById('action-block-slot').addEventListener('click', () => {
+                    elements.actionChoiceModal.classList.add('hidden');
+                    blockSelectedSlot();
+                });
+                 document.getElementById('edit-modal-save-btn').addEventListener('click', saveBooking);
+                document.getElementById('edit-modal-close-btn').addEventListener('click', () => elements.editBookingModal.classList.add('hidden'));
+                elements.editBookingCustomerInput.addEventListener('input', showCustomerSuggestions);
+                elements.customerSuggestions.addEventListener('click', (e) => {
+                    const target = e.target.closest('div');
+                    if (target && target.dataset.id) selectCustomerSuggestion(target);
+                });
+            }
+            
+            function handleSlotClick(time) {
+                selectedSlotTime = time;
+                const date = new Date();
+                elements.actionChoiceTitle.textContent = `${getFormattedDate(date)} ${time}`;
+                elements.actionChoiceModal.classList.remove('hidden');
+            }
+            
+            async function createBlock(startTime) {
+                const dateStr = getFormattedDate(new Date());
+                const start = new Date(`${dateStr}T${startTime}`);
+                const end = new Date(start.getTime() + 30 * 60000);
+                const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+                
+                const newBlock = { 
+                    id: Date.now(), 
+                    date: dateStr, 
+                    type: 'blocked', 
+                    startTime, 
+                    endTime 
+                };
+                
+                const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/bookings`), newBlock);
+                await updateDoc(docRef, { bookingDocId: docRef.id });
+            }
+
+            async function deleteBlock(docId) {
+                if (!docId) return;
+                await deleteDoc(doc(db, `artifacts/${appId}/public/data/bookings`, docId));
+            }
+
+            async function blockSelectedSlot() {
+                if (!selectedSlotTime) return;
+                const time = selectedSlotTime;
+                const dateStr = getFormattedDate(new Date());
+                const start = new Date(`${dateStr}T${time}`);
+                const end = new Date(start.getTime() + 30 * 60000);
+                
+                const newBlock = {
+                    id: Date.now(),
+                    date: dateStr,
+                    type: 'blocked',
+                    startTime: time,
+                    endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`
+                };
+
+                const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/bookings`), newBlock);
+                await updateDoc(docRef, { bookingDocId: docRef.id });
+                selectedSlotTime = null;
+            }
+
+            function openEditBookingModal(bookingId = null, docId = null, startTime = null) {
+                const dateStr = getFormattedDate(new Date());
+                const isEditing = bookingId !== null;
+                elements.editModalTitle.textContent = isEditing ? '予約編集' : '新規予約追加';
+                elements.editBookingCustomerInput.value = '';
+                elements.selectedCustomerId.value = '';
+                elements.customerSuggestions.innerHTML = '';
+                elements.editBookingMenusContainer.innerHTML = '';
+
+                menuCategories.forEach(cat => {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'border rounded-lg';
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-center p-2 cursor-pointer bg-gray-50';
+                    header.innerHTML = `<h4 class="font-semibold text-sm">${cat.name}</h4><i class="fas fa-chevron-down transition-transform text-xs"></i>`;
+                    const content = document.createElement('div');
+                    content.className = 'accordion-content p-2 space-y-1';
+                    menuData.filter(m => m.category === cat.name).forEach(item => {
+                        content.innerHTML += `<label class="flex items-center text-sm"><input type="checkbox" value="${item.id}" class="mr-2 rounded text-tiffany focus:ring-tiffany">${item.name}</label>`;
+                    });
+                    categoryDiv.appendChild(header);
+                    categoryDiv.appendChild(content);
+                    elements.editBookingMenusContainer.appendChild(categoryDiv);
+                    header.addEventListener('click', () => {
+                        const icon = header.querySelector('i');
+                        content.style.maxHeight = content.style.maxHeight ? null : content.scrollHeight + "px";
+                        icon.classList.toggle('rotate-180');
+                    });
+                });
+
+                let timeOptions = '';
+                for (let h = 10; h < 20; h++) {
+                    for (let m = 0; m < 60; m += 30) {
+                        const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        timeOptions += `<option value="${time}">${time}</option>`;
+                    }
+                }
+                elements.editBookingStartTimeSelect.innerHTML = timeOptions;
+                elements.editBookingEndTimeSelect.innerHTML = timeOptions;
+                
+                if (isEditing) {
+                    const booking = adminBookingData[dateStr].find(b => b.id.toString() === bookingId.toString());
+                    const customer = findCustomer(booking);
+                    elements.editBookingCustomerInput.value = customer.name;
+                    elements.selectedCustomerId.value = customer.id;
+                    elements.editBookingMenusContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                        if (booking.menuIds.includes(parseInt(checkbox.value))) checkbox.checked = true;
+                    });
+                    elements.editBookingStartTimeSelect.value = booking.startTime;
+                    elements.editBookingEndTimeSelect.value = booking.endTime;
+                } else if (startTime) {
+                    elements.editBookingStartTimeSelect.value = startTime;
+                    const start = new Date(`${dateStr}T${startTime}`);
+                    const end = new Date(start.getTime() + 30 * 60000);
+                    const endTimeStr = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+                    if ([...elements.editBookingEndTimeSelect.options].some(o => o.value === endTimeStr)) {
+                        elements.editBookingEndTimeSelect.value = endTimeStr;
+                    }
+                }
+
+                elements.editBookingModal.classList.remove('hidden');
+            }
+
+            function showCustomerSuggestions(e) {
+                const input = e.target.value.toLowerCase();
+                elements.customerSuggestions.innerHTML = '';
+                if (input.length === 0) {
+                    elements.customerSuggestions.classList.add('hidden'); return;
+                }
+                const matches = customerData.filter(c => c.name.toLowerCase().includes(input) || (c.furigana && c.furigana.includes(input)));
+                if(matches.length > 0) {
+                    matches.forEach(c => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                        div.textContent = c.name;
+                        div.dataset.id = c.id;
+                        div.dataset.name = c.name;
+                        elements.customerSuggestions.appendChild(div);
+                    });
+                    elements.customerSuggestions.classList.remove('hidden');
+                } else {
+                    elements.customerSuggestions.classList.add('hidden');
+                }
+            }
+
+            function selectCustomerSuggestion(target) {
+                if (target && target.dataset.id) {
+                    elements.editBookingCustomerInput.value = target.dataset.name;
+                    elements.selectedCustomerId.value = target.dataset.id;
+                    elements.customerSuggestions.classList.add('hidden');
+                }
+            }
+            
+            async function saveBooking() {
+                const saveButton = document.getElementById('edit-modal-save-btn');
+                saveButton.disabled = true;
+                saveButton.textContent = "保存中...";
+                try {
+                    const dateStr = getFormattedDate(new Date());
+                    const isEditing = !!document.getElementById('editing-booking-id').value;
+                    const bookingId = isEditing ? document.getElementById('editing-booking-id').value : Date.now();
+                    const docId = isEditing ? document.getElementById('editing-booking-doc-id').value : null;
+                    
+                    let customerId = elements.selectedCustomerId.value;
+                    const customerName = elements.editBookingCustomerInput.value.trim();
+                    
+                    if (!customerId && customerName) {
+                        const existingCustomer = customerData.find(c => c.name === customerName);
+                        if (existingCustomer) { customerId = existingCustomer.id; }
+                    }
+                    if (!customerId) throw new Error("お客様を選択してください。");
+
+                    const menuIds = [...elements.editBookingMenusContainer.querySelectorAll('input:checked')].map(el => parseInt(el.value));
+                    if (menuIds.length === 0) throw new Error("メニューを選択してください。");
+                    
+                    const startTime = elements.editBookingStartTimeSelect.value;
+                    const endTime = elements.editBookingEndTimeSelect.value;
+                    if (startTime >= endTime) throw new Error("終了時間は開始時間より後に設定してください。");
+
+                    const bookingData = { id: bookingId, date: dateStr, type: 'booking', customerId, customerName, menuIds, startTime, endTime };
+                    
+                    if (docId) {
+                        await setDoc(doc(db, `artifacts/${appId}/public/data/bookings`, docId), bookingData, { merge: true });
+                    } else {
+                        const newDocRef = await addDoc(collection(db, `artifacts/${appId}/public/data/bookings`), bookingData);
+                        await updateDoc(newDocRef, { bookingDocId: newDocRef.id });
+                    }
+                    elements.editBookingModal.classList.add('hidden');
+                } catch (error) {
+                    alert(`保存に失敗しました: ${error.message}`);
+                } finally {
+                     saveButton.disabled = false;
+                     saveButton.textContent = "保存";
+                }
+            }
+            
+            function findCustomer(booking) {
+                if (!booking || !booking.customerId) return null;
+                return customerData.find(c => c.id === booking.customerId);
+            }
+
+            function openBookingDetailModal(booking) {
+                const customer = findCustomer(booking);
+                const customerName = customer ? customer.name : (booking.customerName || '不明');
+                const menuNames = booking.menuIds.map(id => menuData.find(m => m.id === id)?.name || '不明').join(', ');
+                elements.modalContent.innerHTML = `
+                    <p><strong>お客様:</strong> ${customerName}</p>
+                    <p><strong>時間:</strong> ${booking.startTime} - ${booking.endTime}</p>
+                    <p><strong>メニュー:</strong> ${menuNames}</p> 
+                `;
+
+                if (customer) {
+                    elements.modalCustomerInfoBtn.href = `./customers.html?customerId=${customer.id}`;
+                    elements.modalCounselingBtn.href = `../counseling/index.html?customerId=${customer.id}`;
+                    elements.modalCameraBtn.onclick = () => launchCamera(customer.id, elements.modalCameraBtn);
+                    [elements.modalCustomerInfoBtn, elements.modalCounselingBtn, elements.modalCameraBtn].forEach(el => el.classList.remove('hidden'));
+                } else {
+                    [elements.modalCustomerInfoBtn, elements.modalCounselingBtn, elements.modalCameraBtn].forEach(el => el.classList.add('hidden'));
+                }
+                elements.modalCheckoutBtn.onclick = () => {
+                    localStorage.setItem('checkoutBooking', JSON.stringify(booking));
+                    window.location.href = './pos.html';
+                };
+                elements.bookingDetailModal.classList.remove('hidden');
+            }
+
+            async function addImageToGallery(customerId, imageUrl) {
+                const customerRef = doc(db, `artifacts/${appId}/public/data/customers`, customerId);
+                const customerDoc = await getDoc(customerRef);
+                if (!customerDoc.exists()) return;
+                const customer = customerDoc.data();
+                
+                const gallery = customer.gallery || [];
+                gallery.unshift(imageUrl); // 新しい写真を先頭に追加
+                await updateDoc(customerRef, { gallery: gallery });
+                alert('ギャラリーに写真を追加しました。');
+            }
+
+            function launchCamera(customerId, buttonElement) {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.capture = 'environment';
+                input.onchange = async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const icon = buttonElement.querySelector('i');
+                    icon.classList.replace('fa-camera', 'fa-spinner');
+                    icon.classList.add('fa-spin');
+                    try {
+                        const storageRef = ref(storage, `customer_photos/${customerId}/gallery/${Date.now()}_${file.name}`);
+                        await uploadBytes(storageRef, file);
+                        const downloadURL = await getDownloadURL(storageRef);
+                        await addImageToGallery(customerId, downloadURL);
+                    } catch (error) {
+                        console.error("写真のアップロードエラー:", error);
+                        alert("写真のアップロードに失敗しました。");
+                    } finally {
+                       icon.classList.replace('fa-spinner', 'fa-camera');
+                       icon.classList.remove('fa-spin');
+                    }
+                };
+                input.click();
+            }
+            
+            function getFormattedDate(date) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+        });
+    </script>
+</body>
+</html>
+

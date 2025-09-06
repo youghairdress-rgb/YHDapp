@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予約管理 - 管理画面</title>
+    
+    <!-- ★ 修正点: キャッシュ対策のmetaタグを追加 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        :root {
+            --tiffany-blue: #0ABAB5;
+            --azure-bg: #F0FFFF;
+            --light-tiffany: #E6FFFA;
+            --text-dark: #333;
+        }
+        body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: var(--azure-bg); color: var(--text-dark); }
+        .bg-tiffany { background-color: var(--tiffany-blue); }
+        .text-tiffany { color: var(--tiffany-blue); }
+        .border-tiffany { border-color: var(--tiffany-blue); }
+        .btn-primary { background-color: var(--tiffany-blue); color: white; transition: all 0.3s; box-shadow: 0 4px 14px 0 rgba(0, 171, 181, 0.39); }
+        .btn-primary:hover { background-color: #089a94; box-shadow: 0 6px 20px 0 rgba(0, 171, 181, 0.23); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }
+        .calendar-day { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: all 0.2s; }
+        .calendar-day:hover { background-color: var(--light-tiffany); }
+        .calendar-day.today { font-weight: bold; border: 2px solid var(--tiffany-blue); }
+        .calendar-day.selected { background-color: var(--tiffany-blue); color: white; }
+        .admin-timetable-slot { position: relative; border-top: 1px dashed #e5e7eb; box-sizing: border-box; cursor: pointer; }
+        .admin-timetable-slot::after { content: ''; position: absolute; top: 30px; left: 0; right: 0; border-top: 1px dotted #e5e7eb; }
+        .admin-timetable-hour-label { position: absolute; top: -8px; left: -3.5em; font-size: 0.8rem; color: #9ca3af; }
+        .booking-block { position: absolute; left: 3px; right: 5px; background-color: rgba(10, 171, 181, 0.7); color: white; border-radius: 4px; padding: 2px 4px; font-size: 0.75rem; cursor: pointer; overflow: hidden; border: 1px solid rgba(8, 154, 148, 0.8); border-left: 4px solid #089a94; z-index: 10; }
+        .blocked-block { position: absolute; left: 3px; right: 5px; background-color: #e5e7eb; color: #6b7280; border-radius: 4px; padding: 2px 4px; font-size: 0.75rem; cursor: pointer; overflow: hidden; border-left: 4px solid #9ca3af; z-index: 10; display: flex; align-items: center; justify-content: center; }
+        .rotate-180 { transform: rotate(180deg); }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-tiffany"></i>
+            <p id="loading-message" class="mt-4 text-gray-600 font-bold">読み込み中...</p>
+        </div>
+    </div>
+
+    <div id="app" class="max-w-lg mx-auto bg-white min-h-screen shadow-2xl" style="display: none;">
+        <header class="bg-tiffany text-white p-4 flex items-center justify-between sticky top-0 z-20 shadow-md">
+            <div class="w-1/4">
+                <a href="./index.html" id="back-to-admin-menu" class="text-white"><i class="fas fa-chevron-left"></i> Menu</a>
+            </div>
+            <h1 id="header-title" class="w-1/2 text-xl font-bold tracking-wider text-center">予約管理</h1>
+            <div class="w-1/4"></div>
+        </header>
+
+        <main class="p-4 md:p-6">
+            <div id="admin-booking-screen">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">予約カレンダー</h2>
+                </div>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="w-full md:w-1/2 bg-gray-50 p-3 rounded-lg flex flex-col">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <button id="admin-prev-month" class="p-2"><i class="fas fa-chevron-left"></i></button>
+                                <h3 id="admin-month-display" class="font-bold"></h3>
+                                <button id="admin-next-month" class="p-2"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div id="admin-calendar" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <label for="daily-notes" class="font-bold text-sm text-gray-600">当日の連絡事項</label>
+                            <textarea id="daily-notes" rows="4" class="w-full mt-2 rounded-md border-gray-300 shadow-sm focus:border-tiffany focus:ring-tiffany" placeholder="この日のメモを入力..."></textarea>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2">
+                        <h3 id="admin-timetable-date" class="font-bold mb-2 text-center"></h3>
+                        <div id="admin-timetable" class="relative bg-gray-50 rounded-lg pl-12" style="height: 600px;"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="booking-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-md">
+            <h3 class="font-bold text-lg mb-4">予約詳細</h3>
+            <div id="modal-content" class="space-y-3"></div>
+            <div class="mt-6 flex justify-end gap-3 flex-wrap">
+                <button id="modal-checkout-btn" class="btn-primary px-4 py-2 rounded-lg font-bold"><i class="fas fa-yen-sign mr-2"></i>会計へ進む</button>
+                <button id="modal-edit-btn" class="btn-primary px-4 py-2 rounded-lg font-bold">編集</button>
+                <a id="modal-customer-info-btn" href="#" class="btn-primary px-4 py-2 rounded-lg font-bold">顧客情報</a>
+                <button id="modal-delete-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg font-bold">キャンセル</button>
+                <button id="modal-close-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">閉じる</button>
+            </div>
+        </div>
+    </div>
+    <div id="edit-booking-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-md">
+            <h3 id="edit-modal-title" class="font-bold text-lg mb-4"></h3>
+            <input type="hidden" id="editing-booking-id">
+             <input type="hidden" id="editing-booking-doc-id">
+            <div id="edit-modal-content" class="space-y-4">
+                <div class="relative">
+                    <label class="block text-sm font-medium">お客様</label>
+                    <input type="text" id="edit-booking-customer-input" class="w-full mt-1 rounded-md border-gray-300" autocomplete="off">
+                    <input type="hidden" id="selected-customer-id">
+                    <div id="customer-suggestions" class="absolute w-full bg-white border border-gray-300 rounded-md mt-1 z-10 max-h-32 overflow-y-auto hidden"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium">メニュー</label>
+                    <div id="edit-booking-menus" class="mt-2 max-h-32 overflow-y-auto space-y-2 border p-2 rounded-md"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium">開始時間</label>
+                        <select id="edit-booking-start-time" class="w-full mt-1 rounded-md border-gray-300"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">終了時間</label>
+                        <select id="edit-booking-end-time" class="w-full mt-1 rounded-md border-gray-300"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <button id="edit-modal-close-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">閉じる</button>
+                <button id="edit-modal-save-btn" class="btn-primary px-4 py-2 rounded-lg font-bold">保存</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="action-choice-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-30">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-11/12 max-w-xs text-center">
+            <h3 id="action-choice-title" class="font-bold text-lg mb-4"></h3>
+            <div class="flex flex-col gap-3">
+                <button id="action-add-booking" class="btn-primary px-4 py-3 rounded-lg font-bold w-full"><i class="fas fa-plus mr-2"></i>予約を追加</button>
+                <button id="action-block-slot" class="bg-gray-500 text-white px-4 py-3 rounded-lg font-bold w-full"><i class="fas fa-ban mr-2"></i>予約不可に設定</button>
+            </div>
+            <div class="mt-6">
+                <button id="action-choice-close-btn" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, OAuthProvider, signInWithCredential } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, deleteDoc, getDocs, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCD5M3LIs8YPPeQlBecnLi9iaxy2Sco-pI", 
+                authDomain: "yhddatebase.firebaseapp.com",
+                projectId: "yhddatebase",
+                storageBucket: "yhddatebase.appspot.com",
+                messagingSenderId: "908640006259",
+                appId: "1:908640006259:web:f1af7804cf7316ef057a06"
+            };
+            const ADMIN_LIFF_ID = "2008029428-ANbgw3b6";
+
+            const fbApp = initializeApp(firebaseConfig);
+            const auth = getAuth(fbApp);
+            const db = getFirestore(fbApp);
+            const appId = fbApp.options.projectId;
+            
+            const loadingMessage = document.getElementById('loading-message');
+            let isAppInitialized = false;
+
+            onAuthStateChanged(auth, (user) => {
+                if(user) {
+                    if(!isAppInitialized) {
+                        initializeAppUI(user);
+                    }
+                } else {
+                    adminLiffLogin();
+                }
+            });
+
+            async function adminLiffLogin() {
+                if (!ADMIN_LIFF_ID || ADMIN_LIFF_ID === "YOUR_ADMIN_LIFF_ID") {
+                    loadingMessage.textContent = '管理者用LIFF IDが設定されていません。';
+                    return;
+                }
+                try {
+                    await liff.init({ liffId: ADMIN_LIFF_ID });
+                    if (!liff.isLoggedIn()) {
+                        liff.login({ redirectUri: window.location.href });
+                        return;
+                    }
+                    const idToken = liff.getIDToken();
+                    const provider = new OAuthProvider('oidc.line');
+                    const credential = provider.credential({ idToken });
+                    await signInWithCredential(auth, credential);
+                } catch (error) {
+                    loadingMessage.textContent = `エラー: ${error.message}`;
+                }
+            }
+
+            async function initializeAppUI(firebaseUser) {
+                const adminRef = doc(db, `admins/${firebaseUser.uid}`);
+                const adminDoc = await getDoc(adminRef);
+                if (!adminDoc.exists()) {
+                    loadingMessage.textContent = "エラー: 管理者権限がありません。";
+                    return;
+                }
+                
+                isAppInitialized = true;
+                await init();
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+            }
+
+            let customerData = [];
+            let menuData = [];
+            let menuCategories = [];
+            let adminBookingData = {};
+            let dailyNotes = {};
+            let adminSelectedDate = new Date();
+            let selectedSlotTime = null;
+
+            const elements = {
+                monthDisplay: document.getElementById('admin-month-display'),
+                calendar: document.getElementById('admin-calendar'),
+                timetableDate: document.getElementById('admin-timetable-date'),
+                timetable: document.getElementById('admin-timetable'),
+                dailyNotesTextarea: document.getElementById('daily-notes'),
+                bookingModal: document.getElementById('booking-modal'),
+                modalContent: document.getElementById('modal-content'),
+                modalCustomerInfoBtn: document.getElementById('modal-customer-info-btn'),
+                editBookingModal: document.getElementById('edit-booking-modal'),
+                editModalTitle: document.getElementById('edit-modal-title'),
+                editingBookingId: document.getElementById('editing-booking-id'),
+                editingBookingDocId: document.getElementById('editing-booking-doc-id'),
+                editBookingCustomerInput: document.getElementById('edit-booking-customer-input'),
+                selectedCustomerId: document.getElementById('selected-customer-id'),
+                customerSuggestions: document.getElementById('customer-suggestions'),
+                editBookingMenusContainer: document.getElementById('edit-booking-menus'),
+                editBookingStartTimeSelect: document.getElementById('edit-booking-start-time'),
+                editBookingEndTimeSelect: document.getElementById('edit-booking-end-time'),
+                actionChoiceModal: document.getElementById('action-choice-modal'),
+                actionChoiceTitle: document.getElementById('action-choice-title'),
+            };
+
+            async function init() {
+                await loadStaticData();
+                setupRealtimeListeners();
+                renderAll();
+                setupEventListeners();
+            }
+
+            async function loadStaticData() {
+                const customersCol = collection(db, `artifacts/${appId}/public/data/customers`);
+                const menuRef = doc(db, `artifacts/${appId}/public/data/menuData`, "menus");
+                const categoriesRef = doc(db, `artifacts/${appId}/public/data/menuData`, "categories");
+                try {
+                    const [customerSnapshot, menuDoc, categoryDoc] = await Promise.all([
+                        getDocs(customersCol), getDoc(menuRef), getDoc(categoriesRef)
+                    ]);
+                    customerData = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    menuData = menuDoc.exists() ? menuDoc.data().items : [];
+                    menuCategories = categoryDoc.exists() ? categoryDoc.data().items : [];
+                } catch (error) {
+                    console.error("Error loading static data from Firebase:", error);
+                }
+            }
+
+            function setupRealtimeListeners() {
+                const bookingsCol = collection(db, `artifacts/${appId}/public/data/bookings`);
+                onSnapshot(bookingsCol, (snapshot) => {
+                    adminBookingData = {};
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const dateStr = data.date || doc.id.substring(0, 10);
+                        if (!adminBookingData[dateStr]) {
+                            adminBookingData[dateStr] = [];
+                        }
+                        adminBookingData[dateStr].push({ ...data, bookingDocId: doc.id });
+                    });
+                    renderAdminTimetable();
+                }, (error) => {
+                    console.error("Error listening to booking updates:", error);
+                });
+
+                const notesRef = doc(db, `artifacts/${appId}/public/data/dailyNotes`, "notes");
+                onSnapshot(notesRef, (doc) => {
+                    dailyNotes = doc.exists() ? doc.data() : {};
+                    renderDailyNotes();
+                }, (error) => {
+                     console.error("Error listening to notes updates:", error);
+                });
+            }
+            
+            async function saveDailyNotes() {
+                const notesRef = doc(db, `artifacts/${appId}/public/data/dailyNotes`, "notes");
+                try {
+                    await setDoc(notesRef, { [getFormattedDate(adminSelectedDate)]: elements.dailyNotesTextarea.value }, { merge: true });
+                } catch (error) {
+                    console.error("メモの保存に失敗しました", error);
+                }
+            }
+
+            function renderAll() {
+                renderAdminCalendar();
+                renderAdminTimetable();
+                renderDailyNotes();
+            }
+
+            function renderAdminCalendar() {
+                const date = adminSelectedDate;
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                elements.monthDisplay.textContent = `${year}年 ${month + 1}月`;
+                
+                const calendarFragment = document.createDocumentFragment();
+                const firstDay = new Date(year, month, 1).getDay();
+                const lastDate = new Date(year, month + 1, 0).getDate();
+                const days = ['日', '月', '火', '水', '木', '金', '土'];
+                
+                days.forEach(day => {
+                    const dayEl = document.createElement('div');
+                    dayEl.className = 'font-bold text-gray-500';
+                    dayEl.textContent = day;
+                    calendarFragment.appendChild(dayEl);
+                });
+
+                for (let i = 0; i < firstDay; i++) {
+                    calendarFragment.appendChild(document.createElement('div'));
+                }
+
+                for (let i = 1; i <= lastDate; i++) {
+                    const d = new Date(year, month, i);
+                    const dateStr = getFormattedDate(d);
+                    const dayEl = document.createElement('div');
+                    let classes = 'calendar-day';
+                    if (getFormattedDate(new Date()) === dateStr) classes += ' today';
+                    if (getFormattedDate(date) === dateStr) classes += ' selected';
+                    dayEl.className = classes;
+                    dayEl.dataset.date = dateStr;
+                    dayEl.textContent = i;
+                    calendarFragment.appendChild(dayEl);
+                }
+                elements.calendar.replaceChildren(calendarFragment);
+            }
+
+            function renderAdminTimetable() {
+                const date = adminSelectedDate;
+                const dateStr = getFormattedDate(date);
+                const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+                elements.timetableDate.textContent = `${date.getMonth() + 1}月${date.getDate()}日 (${dayOfWeek})`;
+                
+                const timetableContent = document.createElement('div');
+                timetableContent.className = 'relative h-full';
+
+                for (let hour = 10; hour < 20; hour++) {
+                    for (let minute = 0; minute < 60; minute += 30) {
+                        const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                        const slot = document.createElement('div');
+                        slot.className = 'admin-timetable-slot';
+                        slot.style.height = '30px';
+                        slot.dataset.time = time;
+                        if (minute === 0) {
+                            const hourLabel = document.createElement('div');
+                            hourLabel.className = 'admin-timetable-hour-label';
+                            hourLabel.textContent = `${hour}:00`;
+                            slot.appendChild(hourLabel);
+                        }
+                        timetableContent.appendChild(slot);
+                    }
+                }
+                const finalHourLabel = document.createElement('div');
+                finalHourLabel.className = 'admin-timetable-hour-label';
+                finalHourLabel.textContent = `20:00`;
+                finalHourLabel.style.top = `${(20-10)*60}px`;
+                timetableContent.appendChild(finalHourLabel);
+
+                const bookings = adminBookingData[dateStr] || [];
+                bookings.sort((a,b) => (a.startTime || '').localeCompare(b.startTime || '')).forEach(booking => {
+                    if(!booking.startTime || !booking.endTime) return;
+                    const start = new Date(`${dateStr}T${booking.startTime}`);
+                    const end = new Date(`${dateStr}T${booking.endTime}`);
+                    const top = (start.getHours() - 10) * 60 + start.getMinutes();
+                    const height = (end - start) / 60000;
+
+                    const block = document.createElement('div');
+                    block.style.top = `${top}px`;
+                    block.style.height = `${height}px`;
+                    block.dataset.id = booking.id;
+                    block.dataset.docId = booking.bookingDocId;
+
+                    if (booking.type === 'booking') {
+                        block.className = 'booking-block';
+                        const customer = findCustomer(booking);
+                        block.innerHTML = `<p class="font-bold truncate">${customer ? customer.name : (booking.customerName || '不明')}</p><p>${booking.startTime} - ${booking.endTime}</p>`;
+                    } else {
+                        block.className = 'blocked-block';
+                        block.innerHTML = `<span>予約不可</span>`;
+                    }
+                    timetableContent.appendChild(block);
+                });
+                elements.timetable.replaceChildren(timetableContent);
+            }
+
+            function renderDailyNotes() {
+                const dateStr = getFormattedDate(adminSelectedDate);
+                elements.dailyNotesTextarea.value = dailyNotes[dateStr] || '';
+            }
+
+            function setupEventListeners() {
+                document.getElementById('admin-prev-month').addEventListener('click', () => changeAdminMonth(-1));
+                document.getElementById('admin-next-month').addEventListener('click', () => changeAdminMonth(1));
+                elements.calendar.addEventListener('click', (e) => {
+                    const target = e.target.closest('.calendar-day');
+                    if (target) {
+                        adminSelectedDate = new Date(target.dataset.date + "T00:00:00");
+                        renderAll();
+                    }
+                });
+                elements.timetable.addEventListener('click', (e) => {
+                    const slot = e.target.closest('.admin-timetable-slot');
+                    const block = e.target.closest('.booking-block, .blocked-block');
+                    if (block) {
+                        handleBlockClick(block.dataset.id, block.dataset.docId);
+                    } else if (slot) {
+                        handleSlotClick(slot.dataset.time);
+                    }
+                });
+                elements.dailyNotesTextarea.addEventListener('input', saveDailyNotes);
+                
+                // ★ 修正点: 顧客候補表示のイベントリスナーを追加
+                elements.editBookingCustomerInput.addEventListener('input', showCustomerSuggestions);
+                elements.customerSuggestions.addEventListener('click', (e) => {
+                    const target = e.target.closest('div');
+                    if (target && target.dataset.id) {
+                        selectCustomerSuggestion(target);
+                    }
+                });
+
+                document.getElementById('edit-modal-save-btn').addEventListener('click', saveBooking);
+                document.getElementById('edit-modal-close-btn').addEventListener('click', () => elements.editBookingModal.classList.add('hidden'));
+                document.getElementById('modal-close-btn').addEventListener('click', () => elements.bookingModal.classList.add('hidden'));
+                document.getElementById('action-choice-close-btn').addEventListener('click', () => elements.actionChoiceModal.classList.add('hidden'));
+                document.getElementById('action-add-booking').addEventListener('click', () => {
+                    elements.actionChoiceModal.classList.add('hidden');
+                    openEditBookingModal(null, null, selectedSlotTime);
+                });
+                document.getElementById('action-block-slot').addEventListener('click', () => {
+                    elements.actionChoiceModal.classList.add('hidden');
+                    blockSelectedSlot();
+                });
+            }
+
+            function changeAdminMonth(direction) {
+                adminSelectedDate.setMonth(adminSelectedDate.getMonth() + direction);
+                renderAll();
+            }
+
+            function handleBlockClick(id, docId) {
+                const dateStr = getFormattedDate(adminSelectedDate);
+                const booking = adminBookingData[dateStr]?.find(b => b.id.toString() === id.toString());
+                if(!booking) return;
+
+                if(booking.type === 'booking') {
+                    openBookingModal(booking);
+                } else { 
+                    deleteDoc(doc(db, `artifacts/${appId}/public/data/bookings`, docId));
+                }
+            }
+
+            function handleSlotClick(time) {
+                selectedSlotTime = time;
+                elements.actionChoiceTitle.textContent = `${getFormattedDate(adminSelectedDate)} ${time}`;
+                elements.actionChoiceModal.classList.remove('hidden');
+            }
+
+            async function blockSelectedSlot() {
+                if (!selectedSlotTime) return;
+                const time = selectedSlotTime;
+                const dateStr = getFormattedDate(adminSelectedDate);
+                const start = new Date(`${dateStr}T${time}`);
+                const end = new Date(start.getTime() + 30 * 60000);
+                
+                const newBlock = {
+                    id: Date.now(),
+                    date: dateStr,
+                    type: 'blocked',
+                    startTime: time,
+                    endTime: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`
+                };
+
+                const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/bookings`), newBlock);
+                await updateDoc(docRef, { bookingDocId: docRef.id });
+                selectedSlotTime = null;
+            }
+
+            function openBookingModal(booking) {
+                const customer = findCustomer(booking);
+                const menus = booking.menuIds.map(id => menuData.find(m => m.id === id)?.name || '不明なメニュー').join(', ');
+                
+                elements.modalContent.innerHTML = `
+                    <p><strong>お客様:</strong> ${customer ? customer.name : (booking.customerName || '不明')}</p>
+                    <p><strong>日時:</strong> ${booking.date} ${booking.startTime} - ${booking.endTime}</p>
+                    <p><strong>メニュー:</strong> ${menus}</p>
+                `;
+                
+                document.getElementById('modal-edit-btn').onclick = () => {
+                    elements.bookingModal.classList.add('hidden');
+                    openEditBookingModal(booking.id, booking.bookingDocId);
+                };
+                document.getElementById('modal-delete-btn').onclick = () => {
+                    deleteDoc(doc(db, `artifacts/${appId}/public/data/bookings`, booking.bookingDocId));
+                    elements.bookingModal.classList.add('hidden');
+                };
+                document.getElementById('modal-checkout-btn').onclick = () => {
+                    localStorage.setItem('checkoutBooking', JSON.stringify(booking));
+                    window.location.href = './pos.html';
+                };
+                
+                if (customer) {
+                    elements.modalCustomerInfoBtn.href = `./customers.html?customerId=${customer.id}`;
+                    elements.modalCustomerInfoBtn.classList.remove('hidden');
+                } else {
+                    elements.modalCustomerInfoBtn.classList.add('hidden');
+                }
+
+                elements.bookingModal.classList.remove('hidden');
+            }
+
+            function openEditBookingModal(bookingId = null, docId = null, startTime = null) {
+                const dateStr = getFormattedDate(adminSelectedDate);
+                const isEditing = bookingId !== null;
+                elements.editModalTitle.textContent = isEditing ? '予約編集' : '新規予約追加';
+                elements.editingBookingId.value = bookingId || '';
+                elements.editingBookingDocId.value = docId || '';
+                
+                elements.editBookingCustomerInput.value = '';
+                elements.selectedCustomerId.value = '';
+                elements.customerSuggestions.innerHTML = '';
+                elements.editBookingMenusContainer.innerHTML = '';
+
+                menuCategories.forEach(cat => {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'border rounded-lg';
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-center p-2 cursor-pointer bg-gray-50';
+                    header.innerHTML = `<h4 class="font-semibold text-sm">${cat.name}</h4><i class="fas fa-chevron-down transition-transform text-xs"></i>`;
+                    const content = document.createElement('div');
+                    content.className = 'accordion-content p-2 space-y-1';
+                    menuData.filter(m => m.category === cat.name).forEach(item => {
+                        content.innerHTML += `<label class="flex items-center text-sm"><input type="checkbox" value="${item.id}" class="mr-2 rounded text-tiffany focus:ring-tiffany">${item.name}</label>`;
+                    });
+                    categoryDiv.appendChild(header);
+                    categoryDiv.appendChild(content);
+                    elements.editBookingMenusContainer.appendChild(categoryDiv);
+                    header.addEventListener('click', () => {
+                        const icon = header.querySelector('i');
+                        content.style.maxHeight = content.style.maxHeight ? null : content.scrollHeight + "px";
+                        icon.classList.toggle('rotate-180');
+                    });
+                });
+
+                let timeOptions = '';
+                for (let h = 10; h < 20; h++) {
+                    for (let m = 0; m < 60; m += 30) {
+                        const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        timeOptions += `<option value="${time}">${time}</option>`;
+                    }
+                }
+                elements.editBookingStartTimeSelect.innerHTML = timeOptions;
+                elements.editBookingEndTimeSelect.innerHTML = timeOptions;
+                
+                if (isEditing) {
+                    const booking = adminBookingData[dateStr].find(b => b.id.toString() === bookingId.toString());
+                    const customer = findCustomer(booking);
+                    elements.editBookingCustomerInput.value = customer.name;
+                    elements.selectedCustomerId.value = customer.id;
+                    elements.editBookingMenusContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                        if (booking.menuIds.includes(parseInt(checkbox.value))) checkbox.checked = true;
+                    });
+                    elements.editBookingStartTimeSelect.value = booking.startTime;
+                    elements.editBookingEndTimeSelect.value = booking.endTime;
+                } else if (startTime) {
+                    elements.editBookingStartTimeSelect.value = startTime;
+                    const start = new Date(`${dateStr}T${startTime}`);
+                    const end = new Date(start.getTime() + 30 * 60000);
+                    const endTimeStr = `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+                    if ([...elements.editBookingEndTimeSelect.options].some(o => o.value === endTimeStr)) {
+                        elements.editBookingEndTimeSelect.value = endTimeStr;
+                    }
+                }
+
+                elements.editBookingModal.classList.remove('hidden');
+            }
+
+            // ★ 新機能: 顧客候補を表示する関数
+            function showCustomerSuggestions(e) {
+                const input = e.target.value.toLowerCase();
+                elements.customerSuggestions.innerHTML = '';
+                if (input.length === 0) {
+                    elements.customerSuggestions.classList.add('hidden');
+                    return;
+                }
+                const matches = customerData.filter(c => 
+                    (c.name && c.name.toLowerCase().includes(input)) || 
+                    (c.furigana && c.furigana.includes(input))
+                );
+                if(matches.length > 0) {
+                    matches.forEach(c => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                        div.textContent = c.name;
+                        div.dataset.id = c.id;
+                        div.dataset.name = c.name;
+                        elements.customerSuggestions.appendChild(div);
+                    });
+                    elements.customerSuggestions.classList.remove('hidden');
+                } else {
+                    elements.customerSuggestions.classList.add('hidden');
+                }
+            }
+
+            // ★ 新機能: 候補から顧客を選択する関数
+            function selectCustomerSuggestion(target) {
+                if (target && target.dataset.id) {
+                    elements.editBookingCustomerInput.value = target.dataset.name;
+                    elements.selectedCustomerId.value = target.dataset.id;
+                    elements.customerSuggestions.classList.add('hidden');
+                }
+            }
+            
+            async function saveBooking() {
+                const saveButton = document.getElementById('edit-modal-save-btn');
+                saveButton.disabled = true;
+                saveButton.textContent = "保存中...";
+                try {
+                    const dateStr = getFormattedDate(adminSelectedDate);
+                    const isEditing = !!elements.editingBookingId.value;
+                    const bookingId = isEditing ? parseInt(elements.editingBookingId.value) : Date.now();
+                    const docId = isEditing ? elements.editingBookingDocId.value : null;
+                    
+                    let customerId = elements.selectedCustomerId.value;
+                    const customerName = elements.editBookingCustomerInput.value.trim();
+                    
+                    if (!customerId && customerName) {
+                        const existingCustomer = customerData.find(c => c.name === customerName);
+                        if (existingCustomer) {
+                            customerId = existingCustomer.id;
+                        } else {
+                           // 新規顧客の場合は、customers.htmlから追加するように促すか、ここで簡易追加するか
+                           alert('新規顧客は顧客管理ページから追加してください。');
+                           throw new Error("新規顧客はここでは追加できません。");
+                        }
+                    }
+                    if (!customerId) throw new Error("お客様を選択または入力してください。");
+
+                    const menuIds = [...elements.editBookingMenusContainer.querySelectorAll('input:checked')].map(el => parseInt(el.value));
+                    if (menuIds.length === 0) throw new Error("メニューを選択してください。");
+                    
+                    const startTime = elements.editBookingStartTimeSelect.value;
+                    const endTime = elements.editBookingEndTimeSelect.value;
+                    if (startTime >= endTime) throw new Error("終了時間は開始時間より後に設定してください。");
+
+                    const bookingData = {
+                        id: bookingId,
+                        date: dateStr,
+                        type: 'booking',
+                        customerId,
+                        customerName: customerData.find(c => c.id === customerId).name, // 正しい名前をセット
+                        menuIds,
+                        startTime,
+                        endTime,
+                    };
+                    
+                    const docRef = docId ? doc(db, `artifacts/${appId}/public/data/bookings`, docId) : await addDoc(collection(db, `artifacts/${appId}/public/data/bookings`), bookingData);
+
+                    if (docId) {
+                        await setDoc(docRef, bookingData, { merge: true });
+                    } else {
+                        await updateDoc(docRef, { bookingDocId: docRef.id });
+                    }
+                    
+                    elements.editBookingModal.classList.add('hidden');
+                } catch (error) {
+                    alert(`保存に失敗しました: ${error.message}`);
+                } finally {
+                     saveButton.disabled = false;
+                     saveButton.textContent = "保存";
+                }
+            }
+
+            function findCustomer(booking) {
+                if (!booking || !booking.customerId) return null;
+                return customerData.find(c => c.id === booking.customerId);
+            }
+            
+            function getFormattedDate(date) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+        });
+    </script>
+</body>
+</html>
+

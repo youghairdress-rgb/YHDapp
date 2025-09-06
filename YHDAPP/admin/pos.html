@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会計 - 管理画面</title>
+
+    <!-- ★ 修正点: キャッシュ対策のmetaタグを追加 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        :root {
+            --tiffany-blue: #0ABAB5;
+            --azure-bg: #F0FFFF;
+            --text-dark: #333;
+        }
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: var(--azure-bg);
+            color: var(--text-dark);
+        }
+        .bg-tiffany { background-color: var(--tiffany-blue); }
+        .text-tiffany { color: var(--tiffany-blue); }
+        .border-tiffany { border-color: var(--tiffany-blue); }
+        .btn-primary {
+            background-color: var(--tiffany-blue);
+            color: white;
+            transition: all 0.3s;
+            box-shadow: 0 4px 14px 0 rgba(0, 171, 181, 0.39);
+        }
+        .btn-primary:hover {
+            background-color: #089a94;
+            box-shadow: 0 6px 20px 0 rgba(0, 171, 181, 0.23);
+        }
+        .payment-method.selected, .discount-type.selected {
+            background-color: var(--tiffany-blue);
+            color: white;
+            border-color: var(--tiffany-blue);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-tiffany"></i>
+            <p id="loading-message" class="mt-4 text-gray-600 font-bold">読み込み中...</p>
+        </div>
+    </div>
+
+    <div id="app" class="max-w-lg mx-auto bg-white min-h-screen shadow-2xl" style="display: none;">
+        <header class="bg-tiffany text-white p-4 flex items-center justify-between sticky top-0 z-20 shadow-md">
+            <div class="w-1/4">
+                <a href="./index.html" id="back-to-admin-menu" class="text-white"><i class="fas fa-chevron-left"></i> Menu</a>
+            </div>
+            <h1 id="header-title" class="w-1/2 text-xl font-bold tracking-wider text-center">会計</h1>
+            <div class="w-1/4"></div>
+        </header>
+
+        <main class="p-4 md:p-6">
+            <div id="admin-pos-screen">
+                <div class="bg-white p-4 rounded-lg shadow-md mb-6 relative">
+                    <label for="pos-customer-input" class="block text-sm font-medium text-gray-500">お客様</label>
+                    <input type="text" id="pos-customer-input" class="w-full text-lg font-bold border-0 border-b-2 border-gray-200 focus:ring-0 focus:border-tiffany" placeholder="お客様名を入力または選択">
+                    <div id="pos-customer-suggestions" class="absolute w-full bg-white border border-gray-300 rounded-md mt-1 z-10 max-h-40 overflow-y-auto hidden"></div>
+                </div>
+
+                <div id="pos-items-container" class="bg-white p-4 rounded-lg shadow-md mb-6 space-y-3">
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+                    <button id="pos-add-item-btn" class="w-full text-center p-2 text-tiffany font-bold"><i class="fas fa-plus-circle mr-2"></i>メニュー/商品を追加</button>
+                    <div id="pos-menu-selection" class="hidden mt-4 space-y-2">
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-lg shadow-md mb-6 text-right">
+                    <div class="flex justify-end items-center mb-2">
+                        <span class="font-bold mr-4">小計</span>
+                        <span id="pos-subtotal" class="w-32 font-bold">¥0</span>
+                    </div>
+                    <div class="flex justify-end items-center mb-2">
+                        <span class="font-bold mr-4">割引</span>
+                        <div class="flex items-center">
+                            <input type="number" id="pos-discount" class="w-24 text-right border-gray-300 rounded-l-md" value="0">
+                            <div class="flex">
+                                <button class="discount-type selected px-2 py-1 border border-gray-300 text-xs" data-type="yen">円</button>
+                                <button class="discount-type px-2 py-1 border border-gray-300 border-l-0 rounded-r-md text-xs" data-type="percent">％</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end items-center mb-2">
+                        <span class="font-bold mr-4">レングス調整額</span>
+                        <select id="pos-adjustment" class="w-32 text-right border-gray-300 rounded-md">
+                            <option value="0">¥0</option>
+                            <option value="500">¥500</option>
+                            <option value="1000">¥1,000</option>
+                            <option value="1500">¥1,500</option>
+                            <option value="2000">¥2,000</option>
+                            <option value="2500">¥2,500</option>
+                            <option value="3000">¥3,000</option>
+                            <option value="3500">¥3,500</option>
+                            <option value="4000">¥4,000</option>
+                            <option value="4500">¥4,500</option>
+                            <option value="5000">¥5,000</option>
+                        </select>
+                    </div>
+                    <hr class="my-3">
+                    <div class="flex justify-end items-center mb-2">
+                        <span class="font-bold mr-4">税抜合計</span>
+                        <span id="pos-pre-tax-total" class="w-32 font-bold">¥0</span>
+                    </div>
+                    <div class="flex justify-end items-center mb-2">
+                        <span class="font-bold mr-4">消費税 (10%)</span>
+                        <span id="pos-tax" class="w-32">¥0</span>
+                    </div>
+                    <hr class="my-3">
+                    <div class="flex justify-end items-center font-bold text-2xl">
+                        <span class="mr-4">合計 (税込)</span>
+                        <span id="pos-total" class="text-tiffany">¥0</span>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+                    <h3 class="font-bold mb-3">支払い方法</h3>
+                    <div id="pos-payment-methods" class="flex justify-around">
+                        <button class="payment-method p-2 border rounded-lg w-24" data-method="cash">現金</button>
+                        <button class="payment-method p-2 border rounded-lg w-24" data-method="card">カード</button>
+                        <button class="payment-method p-2 border rounded-lg w-24" data-method="qr">QR決済</button>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <button id="pos-cancel-btn" class="w-full bg-red-500 text-white py-3 rounded-lg font-bold hidden">会計を取消</button>
+                    <button id="pos-complete-btn" class="w-full btn-primary py-3 rounded-lg font-bold text-lg">会計完了</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, OAuthProvider, signInWithCredential } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyCD5M3LIs8YPPeQlBecnLi9iaxy2Sco-pI",
+                authDomain: "yhddatebase.firebaseapp.com",
+                projectId: "yhddatebase",
+                storageBucket: "yhddatebase.appspot.com",
+                messagingSenderId: "908640006259",
+                appId: "1:908640006259:web:f1af7804cf7316ef057a06"
+            };
+            const ADMIN_LIFF_ID = "2008029428-ANbgw3b6";
+
+            const fbApp = initializeApp(firebaseConfig);
+            const auth = getAuth(fbApp);
+            const db = getFirestore(fbApp);
+            const appId = fbApp.options.projectId;
+
+            const loadingMessage = document.getElementById('loading-message');
+            let isAppInitialized = false;
+
+            onAuthStateChanged(auth, (user) => {
+                if(user) {
+                    if(!isAppInitialized) {
+                        initializeAppUI(user);
+                    }
+                } else {
+                    adminLiffLogin();
+                }
+            });
+
+            async function adminLiffLogin() {
+                if (!ADMIN_LIFF_ID || ADMIN_LIFF_ID === "YOUR_ADMIN_LIFF_ID") {
+                    loadingMessage.textContent = '管理者用LIFF IDが設定されていません。';
+                    return;
+                }
+                try {
+                    await liff.init({ liffId: ADMIN_LIFF_ID });
+                    if (!liff.isLoggedIn()) {
+                        liff.login({ redirectUri: window.location.href });
+                        return;
+                    }
+                    const idToken = liff.getIDToken();
+                    const provider = new OAuthProvider('oidc.line');
+                    const credential = provider.credential({ idToken });
+                    await signInWithCredential(auth, credential);
+                } catch (error) {
+                    loadingMessage.textContent = `エラー: ${error.message}`;
+                }
+            }
+            
+            async function initializeAppUI(firebaseUser) {
+                const adminRef = doc(db, `admins/${firebaseUser.uid}`);
+                const adminDoc = await getDoc(adminRef);
+                if (!adminDoc.exists()) {
+                    loadingMessage.textContent = "エラー: 管理者権限がありません。";
+                    return;
+                }
+                
+                isAppInitialized = true;
+                await init();
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+            }
+
+            let customerData = [];
+            let menuData = [];
+            let menuCategories = [];
+            let originalBooking = null;
+
+            let currentTransaction = {
+                customerId: null,
+                customerName: '',
+                lineId: null,
+                items: [],
+                discountValue: 0,
+                discountType: 'yen',
+                adjustment: 0,
+                paymentMethod: null,
+                subtotal: 0,
+                tax: 0,
+                total: 0,
+                transactionId: null,
+            };
+
+            const elements = {
+                customerInput: document.getElementById('pos-customer-input'),
+                customerSuggestions: document.getElementById('pos-customer-suggestions'),
+                itemsContainer: document.getElementById('pos-items-container'),
+                addItemBtn: document.getElementById('pos-add-item-btn'),
+                menuSelectionContainer: document.getElementById('pos-menu-selection'),
+                subtotalDisplay: document.getElementById('pos-subtotal'),
+                discountInput: document.getElementById('pos-discount'),
+                discountTypeButtons: document.querySelectorAll('.discount-type'),
+                adjustmentSelect: document.getElementById('pos-adjustment'),
+                preTaxTotalDisplay: document.getElementById('pos-pre-tax-total'),
+                taxDisplay: document.getElementById('pos-tax'),
+                totalDisplay: document.getElementById('pos-total'),
+                paymentMethods: document.getElementById('pos-payment-methods'),
+                completeBtn: document.getElementById('pos-complete-btn'),
+                cancelBtn: document.getElementById('pos-cancel-btn'),
+            };
+
+            async function init() {
+                await loadMasterData();
+                await handleUrlParameters(); // ★ 修正: awaitを追加して完了を待つ
+                renderPosMenuSelection();
+                renderPosItems();
+                setupEventListeners();
+            }
+            
+            async function loadMasterData() {
+                const customersCol = collection(db, `artifacts/${appId}/public/data/customers`);
+                const menuRef = doc(db, `artifacts/${appId}/public/data/menuData`, "menus");
+                const categoriesRef = doc(db, `artifacts/${appId}/public/data/menuData`, "categories");
+                try {
+                    const [customerSnapshot, menuDoc, categoryDoc] = await Promise.all([getDocs(customersCol), getDoc(menuRef), getDoc(categoriesRef)]);
+                    customerData = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    menuData = menuDoc.exists() ? menuDoc.data().items : [];
+                    menuCategories = categoryDoc.exists() ? categoryDoc.data().items : [];
+                } catch (error) {
+                    console.error("Firebaseからのマスターデータ読み込みエラー:", error);
+                }
+            }
+            
+            function loadBookingDataFromStorage() {
+                const bookingJson = localStorage.getItem('checkoutBooking');
+                if (bookingJson) {
+                    originalBooking = JSON.parse(bookingJson);
+                    const customer = customerData.find(c => c.id === originalBooking.customerId);
+                    if (customer) {
+                        currentTransaction.customerId = customer.id;
+                        currentTransaction.customerName = customer.name;
+                        currentTransaction.lineId = customer.lineId;
+                        elements.customerInput.value = customer.name;
+                    } else {
+                        currentTransaction.customerName = originalBooking.customerName || '';
+                        elements.customerInput.value = originalBooking.customerName || '';
+                    }
+                    originalBooking.menuIds.forEach(menuId => {
+                        const menuItem = menuData.find(m => m.id === menuId);
+                        if (menuItem) currentTransaction.items.push({ ...menuItem });
+                    });
+                    localStorage.removeItem('checkoutBooking');
+                }
+            }
+            
+            async function saveTransaction() {
+                currentTransaction.transactionId = currentTransaction.transactionId || Date.now();
+                
+                if (originalBooking && originalBooking.bookingDocId) {
+                    const bookingRef = doc(db, `artifacts/${appId}/public/data/bookings`, originalBooking.bookingDocId);
+                    await updateDoc(bookingRef, {
+                        status: 'completed',
+                        transactionDetails: currentTransaction
+                    });
+                }
+                
+                await addTransactionToVisitHistory(currentTransaction.customerId, currentTransaction);
+                
+                alert("会計が完了しました！");
+                window.location.href = './index.html';
+            }
+
+            async function addTransactionToVisitHistory(customerId, transaction) {
+                if (!customerId) return;
+                const customerRef = doc(db, `artifacts/${appId}/public/data/customers`, customerId);
+                const customerDoc = await getDoc(customerRef);
+                if (!customerDoc.exists()) return;
+
+                const customer = customerDoc.data();
+                const visitHistory = customer.visitHistory || [];
+                const today = new Date().toISOString().split('T')[0];
+                let visit = visitHistory.find(v => v.date === today);
+
+                if (visit) {
+                    visit.transaction = transaction;
+                } else {
+                    visitHistory.unshift({
+                        date: today,
+                        memo: '会計情報',
+                        transaction: transaction,
+                    });
+                }
+                await updateDoc(customerRef, { visitHistory: visitHistory });
+            }
+            
+            function renderPosItems() {
+                elements.itemsContainer.innerHTML = '';
+                if (currentTransaction.items.length === 0) {
+                    elements.itemsContainer.innerHTML = '<p class="text-gray-400 text-center">メニュー/商品を追加してください</p>';
+                } else {
+                    currentTransaction.items.forEach((item, index) => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'flex justify-between items-center';
+                        itemDiv.innerHTML = `
+                            <span>${item.name}</span>
+                            <div class="flex items-center">
+                                <span>¥${item.price.toLocaleString()}</span>
+                                <button class="ml-4 text-red-500 hover:text-red-700 remove-item-btn" data-index="${index}"><i class="fas fa-times-circle"></i></button>
+                            </div>
+                        `;
+                        elements.itemsContainer.appendChild(itemDiv);
+                    });
+                }
+                calculateTotals();
+            }
+
+            function renderPosMenuSelection() {
+                menuCategories.sort((a,b) => a.order - b.order).forEach(cat => {
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'border rounded-lg';
+                    const header = document.createElement('div');
+                    header.className = 'flex justify-between items-center p-3 cursor-pointer bg-gray-50';
+                    header.innerHTML = `<h4 class="font-semibold">${cat.name}</h4><i class="fas fa-chevron-down transition-transform"></i>`;
+                    const content = document.createElement('div');
+                    content.className = 'accordion-content';
+                    const listContainer = document.createElement('div');
+                    listContainer.className = 'p-2 space-y-1';
+                    menuData.filter(m => m.category === cat.name).sort((a,b) => a.order - b.order).forEach(item => {
+                        listContainer.innerHTML += `<div class="p-2 hover:bg-gray-100 cursor-pointer pos-menu-item" data-id="${item.id}">${item.name} <span class="text-sm text-gray-500">¥${item.price.toLocaleString()}</span></div>`;
+                    });
+                    content.appendChild(listContainer);
+                    categoryDiv.appendChild(header);
+                    categoryDiv.appendChild(content);
+                    elements.menuSelectionContainer.appendChild(categoryDiv);
+
+                    header.addEventListener('click', () => {
+                        const icon = header.querySelector('i');
+                        if (content.style.maxHeight) {
+                            content.style.maxHeight = null;
+                            icon.classList.remove('rotate-180');
+                        } else {
+                            content.style.maxHeight = content.scrollHeight + "px";
+                            icon.classList.add('rotate-180');
+                        }
+                    });
+                });
+            }
+
+            function calculateTotals() {
+                const subtotal = currentTransaction.items.reduce((sum, item) => sum + item.price, 0);
+                const discountRaw = parseInt(elements.discountInput.value) || 0;
+                const adjustment = parseInt(elements.adjustmentSelect.value) || 0;
+                
+                let discountAmount = 0;
+                if (currentTransaction.discountType === 'percent') {
+                    discountAmount = Math.floor(subtotal * (discountRaw / 100));
+                } else {
+                    discountAmount = discountRaw;
+                }
+
+                const preTaxTotal = subtotal - discountAmount + adjustment;
+                const tax = Math.floor(preTaxTotal * 0.10);
+                const total = preTaxTotal + tax;
+                
+                elements.subtotalDisplay.textContent = `¥${subtotal.toLocaleString()}`;
+                elements.preTaxTotalDisplay.textContent = `¥${preTaxTotal.toLocaleString()}`;
+                elements.taxDisplay.textContent = `¥${tax.toLocaleString()}`;
+                elements.totalDisplay.textContent = `¥${total.toLocaleString()}`;
+
+                currentTransaction.subtotal = subtotal;
+                currentTransaction.discountValue = discountRaw;
+                currentTransaction.discountAmount = discountAmount;
+                currentTransaction.adjustment = adjustment;
+                currentTransaction.tax = tax;
+                currentTransaction.total = total;
+            }
+
+            function setupEventListeners() {
+                document.getElementById('pos-add-item-btn').addEventListener('click', () => elements.menuSelectionContainer.classList.toggle('hidden'));
+                elements.itemsContainer.addEventListener('click', e => {
+                     if (e.target.closest('.remove-item-btn')) {
+                        currentTransaction.items.splice(e.target.closest('.remove-item-btn').dataset.index, 1);
+                        renderPosItems();
+                    }
+                });
+                 elements.menuSelectionContainer.addEventListener('click', e => {
+                    const target = e.target.closest('.pos-menu-item');
+                    if (target) {
+                         const menuId = parseInt(target.dataset.id);
+                        const menuItem = menuData.find(m => m.id === menuId);
+                        if (menuItem) {
+                            currentTransaction.items.push({ ...menuItem });
+                            renderPosItems();
+                        }
+                    }
+                });
+
+                elements.paymentMethods.addEventListener('click', e => {
+                     const target = e.target.closest('.payment-method');
+                     if(target) {
+                        currentTransaction.paymentMethod = target.dataset.method;
+                        elements.paymentMethods.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+                        target.classList.add('selected');
+                     }
+                });
+                
+                elements.discountTypeButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        currentTransaction.discountType = btn.dataset.type;
+                        elements.discountTypeButtons.forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        calculateTotals();
+                    });
+                });
+                
+                elements.completeBtn.addEventListener('click', completeTransaction);
+                elements.cancelBtn.addEventListener('click', cancelTransaction);
+                
+                elements.discountInput.addEventListener('input', calculateTotals);
+                elements.adjustmentSelect.addEventListener('change', calculateTotals);
+                elements.customerInput.addEventListener('input', showCustomerSuggestions);
+                elements.customerSuggestions.addEventListener('click', (e) => {
+                    const target = e.target.closest('div');
+                    if (target && target.dataset.id) selectCustomerSuggestion(target);
+                });
+            }
+            
+            function showCustomerSuggestions(e) {
+                const input = e.target.value.toLowerCase();
+                elements.customerSuggestions.innerHTML = '';
+                if (input.length === 0) {
+                    elements.customerSuggestions.classList.add('hidden');
+                    return;
+                }
+                const matches = customerData.filter(c => (c.name && c.name.toLowerCase().includes(input)) || (c.furigana && c.furigana.includes(input)));
+                if (matches.length > 0) {
+                    matches.forEach(c => {
+                        const div = document.createElement('div');
+                        div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
+                        div.textContent = c.name;
+                        div.dataset.id = c.id;
+                        div.dataset.name = c.name;
+                        div.dataset.lineid = c.lineId || '';
+                        elements.customerSuggestions.appendChild(div);
+                    });
+                    elements.customerSuggestions.classList.remove('hidden');
+                } else {
+                    elements.customerSuggestions.classList.add('hidden');
+                }
+            }
+
+            function selectCustomerSuggestion(target) {
+                if (target && target.dataset.id) {
+                    elements.customerInput.value = target.dataset.name;
+                    currentTransaction.customerId = target.dataset.id;
+                    currentTransaction.customerName = target.dataset.name;
+                    currentTransaction.lineId = target.dataset.lineid;
+                    elements.customerSuggestions.classList.add('hidden');
+                }
+            }
+            
+            async function completeTransaction() {
+                const completeBtn = elements.completeBtn;
+                completeBtn.disabled = true;
+                completeBtn.textContent = '処理中...';
+
+                try {
+                    if (!currentTransaction.customerId && elements.customerInput.value.trim() === '') throw new Error('お客様を選択または入力してください。');
+                    if (currentTransaction.items.length === 0) throw new Error('商品が追加されていません。');
+                    if (!currentTransaction.paymentMethod) throw new Error('支払い方法を選択してください。');
+                    
+                    if (!currentTransaction.customerId) {
+                        currentTransaction.customerName = elements.customerInput.value.trim();
+                    }
+                    
+                    await saveTransaction();
+                } catch (error) {
+                    alert(error.message);
+                    completeBtn.disabled = false;
+                    completeBtn.textContent = originalBooking ? '会計を更新' : '会計完了';
+                }
+            }
+            
+            // ★ 修正点: 会計済みのデータを読み込む機能を追加
+            async function handleUrlParameters() {
+                const bookingJson = localStorage.getItem('checkoutBooking');
+                if(bookingJson) {
+                    loadBookingDataFromStorage();
+                    elements.completeBtn.textContent = '会計完了';
+                    elements.cancelBtn.classList.add('hidden');
+                } else {
+                    const params = new URLSearchParams(window.location.search);
+                    const bookingDocId = params.get('bookingDocId');
+                    if(bookingDocId) {
+                        const bookingRef = doc(db, `artifacts/${appId}/public/data/bookings`, bookingDocId);
+                        const bookingSnap = await getDoc(bookingRef);
+                        if(bookingSnap.exists() && bookingSnap.data().transactionDetails) {
+                            originalBooking = bookingSnap.data();
+                            currentTransaction = originalBooking.transactionDetails;
+                            
+                            const customer = customerData.find(c => c.id === currentTransaction.customerId);
+                            elements.customerInput.value = customer ? customer.name : (currentTransaction.customerName || '');
+                            elements.discountInput.value = currentTransaction.discountValue;
+                            elements.adjustmentSelect.value = currentTransaction.adjustment;
+                            elements.discountTypeButtons.forEach(btn => btn.classList.toggle('selected', btn.dataset.type === currentTransaction.discountType));
+                            elements.paymentMethods.querySelectorAll('button').forEach(btn => btn.classList.toggle('selected', btn.dataset.method === currentTransaction.paymentMethod));
+                            
+                            elements.completeBtn.textContent = '会計を更新';
+                            elements.cancelBtn.classList.remove('hidden');
+                        }
+                    }
+                }
+                 renderPosItems();
+            }
+
+            // ★ 新機能: 会計を取り消す関数
+            async function cancelTransaction() {
+                 if (confirm("この会計を取り消して、予約状態に戻しますか？\nこの操作は元に戻せません。")) {
+                    try {
+                         if (originalBooking && originalBooking.bookingDocId) {
+                            const bookingRef = doc(db, `artifacts/${appId}/public/data/bookings`, originalBooking.bookingDocId);
+                            await updateDoc(bookingRef, {
+                                status: 'booked',
+                                transactionDetails: null // transactionDetailsをnullに更新
+                            });
+
+                             const customerRef = doc(db, `artifacts/${appId}/public/data/customers`, originalBooking.customerId);
+                             const customerDoc = await getDoc(customerRef);
+
+                             if(customerDoc.exists()) {
+                                 const customer = customerDoc.data();
+                                 if(customer.visitHistory) {
+                                     const visit = customer.visitHistory.find(v => v.date === originalBooking.date);
+                                     if (visit && visit.transaction) {
+                                         delete visit.transaction;
+                                         await updateDoc(customerRef, { visitHistory: customer.visitHistory });
+                                     }
+                                 }
+                             }
+                        }
+                        alert("会計を取り消しました。");
+                        window.location.href = './booking.html';
+                    } catch (error) {
+                        console.error("会計の取り消しに失敗しました:", error);
+                        alert("会計の取り消しに失敗しました。");
+                    }
+                 }
+            }
+        });
+    </script>
+</body>
+</html>
+
