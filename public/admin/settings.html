@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サロン設定 - 管理画面</title>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script>
+        // Clean the URL from LIFF redirect parameters before any other script runs
+        if (window.location.search.includes("liff.state=")) {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    </script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --tiffany-blue: #0ABAB5;
+            --azure-bg: #F0FFFF;
+            --text-dark: #333;
+        }
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: var(--azure-bg);
+            color: var(--text-dark);
+        }
+        .bg-tiffany { background-color: var(--tiffany-blue); }
+        .text-tiffany { color: var(--tiffany-blue); }
+        .border-tiffany { border-color: var(--tiffany-blue); }
+        .btn-primary {
+            background-color: var(--tiffany-blue);
+            color: white;
+            transition: all 0.3s;
+            box-shadow: 0 4px 14px 0 rgba(0, 171, 181, 0.39);
+        }
+        .btn-primary:hover {
+            background-color: #089a94;
+            box-shadow: 0 6px 20px 0 rgba(0, 171, 181, 0.23);
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-tiffany"></i>
+            <p id="loading-message" class="mt-4 text-gray-600 font-bold">読み込み中...</p>
+        </div>
+    </div>
+
+    <div id="app" class="max-w-lg mx-auto bg-white min-h-screen shadow-2xl" style="display: none;">
+        <header class="bg-tiffany text-white p-4 flex items-center justify-between sticky top-0 z-20 shadow-md">
+            <div class="w-1/4">
+                <a href="./index.html" id="back-to-admin-menu" class="text-white"><i class="fas fa-chevron-left"></i> Menu</a>
+            </div>
+            <h1 id="header-title" class="w-1/2 text-xl font-bold tracking-wider text-center">サロン設定</h1>
+            <div class="w-1/4"></div>
+        </header>
+
+        <main class="p-4 md:p-6">
+            <!-- Content here -->
+        </main>
+    </div>
+
+    <script type="module">
+        import { authManager } from '../js/auth.js';
+        import * as api from '../js/api.js';
+
+        // Placeholder for future logic
+        async function initializeAppUI() {
+            // This is where you would fetch admin-specific data
+            // For now, it just shows the app
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+        }
+
+        authManager.init(initializeAppUI, true); // is_admin = true
+    </script>
+</body>
+</html>
+
