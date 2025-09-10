@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+match /databases/{database}/documents {
+// By default, deny all client-side read/write access to the entire database.
+// All data access MUST go through the trusted server environment (Cloud Functions),
+// which operates with admin privileges. This is the core of the new security model.
+match /{document=**} {
+allow read, write: if false;
+}
+}
+}
