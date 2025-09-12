@@ -1,0 +1,12 @@
+├── index.html           # ユーザー向け予約ページ
+├── mypage.html          # ユーザー向けマイページ
+├── admin/               # 管理者向けページ
+│   ├── index.html       # 管理者ダッシュボード
+│   ├── booking.html
+│   ├── customers.html
+│   ├── menu.html
+│   ├── pos.html
+│   ├── sales.html
+│   ├── settings.html
+│   └── counseling/
+│       └── index.html
