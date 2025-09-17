@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者ダッシュボード</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>管理者ダッシュボード</h1>
+        </header>
+        <!-- ★変更点: idを 'main-content' から 'content-container' に修正 -->
+        <main id="content-container" style="display: none;">
+            <div id="profile-area">
+                <img id="user-pictureUrl" src="" alt="Profile Picture" style="width:50px; height:50px; border-radius:50%;">
+                 <!-- ★変更点: idを 'displayName' から 'user-displayName' に修正 -->
+                <p id="user-displayName">ようこそ、 さん</p>
+            </div>
+            <nav class="admin-menu">
+                <a href="./booking.html" class="menu-button">予約管理</a>
+                <a href="./pos.html" class="menu-button">会計</a>
+                <a href="./customers.html" class="menu-button">顧客管理</a>
+                <a href="./sales.html" class="menu-button">売上分析</a>
+                <a href="./menu.html" class="menu-button">メニュー設定</a>
+                <a href="./settings.html" class="menu-button">サロン設定</a>
+            </nav>
+        </main>
+        <div id="loading-container" style="display: none;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+        </div>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./admin-auth.js"></script>
+    <script type="module" src="./admin.js"></script>
+</body>
+</html>
+

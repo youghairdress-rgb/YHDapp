@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会計</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>会計 (POS)</h1>
+            <a href="./index.html" class="back-button">ダッシュボードへ戻る</a>
+        </header>
+
+        <main id="content-container" style="display: none;">
+            <div class="pos-container">
+                <div class="pos-section">
+                    <label for="customer-select">顧客</label>
+                    <select id="customer-select" class="input-field"></select>
+                </div>
+
+                <div class="pos-section">
+                    <h3>メニュー追加</h3>
+                    <div id="menu-category-selects">
+                        <!-- メニューカテゴリーのプルダウンがここに動的に追加されます -->
+                    </div>
+                </div>
+
+                <div class="pos-section">
+                    <h3>選択済みメニュー</h3>
+                    <ul id="selected-menu-list">
+                        <!-- 選択されたメニューがここに表示されます -->
+                    </ul>
+                </div>
+                
+                <div class="pos-section totals-section">
+                    <div class="total-row">
+                        <span>小計</span>
+                        <span id="subtotal">¥0</span>
+                    </div>
+                    <div class="total-row">
+                        <label for="discount">割引 (円)</label>
+                        <input type="number" id="discount" value="0" class="input-field discount-input">
+                    </div>
+                    <hr>
+                    <div class="total-row grand-total">
+                        <span>合計</span>
+                        <span id="total">¥0</span>
+                    </div>
+                </div>
+
+                <div class="pos-section">
+                    <h3>支払い方法</h3>
+                    <div class="payment-methods">
+                        <label><input type="radio" name="payment-method" value="cash"> 現金</label>
+                        <label><input type="radio" name="payment-method" value="card"> カード</label>
+                        <label><input type="radio" name="payment-method" value="qr"> QR決済</label>
+                    </div>
+                </div>
+
+                <div class="pos-actions">
+                    <button id="complete-sale-btn" class="button-primary">会計完了</button>
+                </div>
+            </div>
+        </main>
+
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+        </div>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./admin-auth.js"></script>
+    <script type="module" src="./pos.js"></script>
+</body>
+</html>
+
