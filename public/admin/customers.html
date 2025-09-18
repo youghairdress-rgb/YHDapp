@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顧客管理</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <a href="./index.html" class="back-button"><i class="fa-solid fa-chevron-left"></i> Menu</a>
+            <h1>顧客管理</h1>
+        </header>
+
+        <main id="content-container" style="display: none;">
+            <div class="customer-toolbar card">
+                <button id="add-customer-btn" class="button-primary add-customer-button"><i class="fa-solid fa-user-plus"></i> 新規追加</button>
+                <div class="search-bar">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="search" id="customer-search" class="input-field" placeholder="顧客名・ふりがなで検索">
+                </div>
+                <nav id="initial-nav" class="initial-nav"></nav>
+            </div>
+            
+            <div id="customer-list-container" class="customer-list-container">
+                <!-- 顧客カードがここにJSで表示されます -->
+            </div>
+            <p id="customer-info-placeholder" class="card">検索または上のインデックスから顧客を表示します。</p>
+        </main>
+        
+        <!-- 顧客追加/編集モーダル -->
+        <div id="customer-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">新規顧客追加</h2>
+                </div>
+                <div class="modal-body">
+                    <form id="customer-form">
+                        <div class="modal-tabs">
+                            <button type="button" class="tab active" data-tab-content="basic-info-content">基本情報</button>
+                            <button type="button" class="tab" data-tab-content="visit-history-content">来店履歴</button>
+                            <button type="button" class="tab" data-tab-content="gallery-content">ギャラリー</button>
+                        </div>
+
+                        <!-- 基本情報タブ -->
+                        <div id="basic-info-content" class="tab-content active">
+                            <div class="form-group">
+                                <label for="customer-name">名前 <span class="required">*</span></label>
+                                <input type="text" id="customer-name" required class="input-field">
+                            </div>
+                            <div class="form-group">
+                                <label for="customer-kana">ふりがな <span class="required">*</span></label>
+                                <input type="text" id="customer-kana" required class="input-field">
+                            </div>
+                            <div class="form-group">
+                                <label for="customer-lineId">LINE ID (表示名)</label>
+                                <input type="text" id="customer-lineId" class="input-field">
+                            </div>
+                            <div class="form-group">
+                                <label for="customer-phone">電話番号</label>
+                                <input type="tel" id="customer-phone" class="input-field">
+                            </div>
+                            <div class="form-group">
+                                <label for="customer-notes">注意事項</label>
+                                <textarea id="customer-notes" rows="3" class="input-field" placeholder="アレルギー情報など"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="customer-memo">シークレットメモ (管理者のみ)</label>
+                                <textarea id="customer-memo" rows="4" class="input-field" placeholder="スタッフ間での共有事項を記入"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- 来店履歴タブ -->
+                        <div id="visit-history-content" class="tab-content">
+                            <div id="visit-history-list"></div>
+                        </div>
+
+                        <!-- ギャラリータブ -->
+                        <div id="gallery-content" class="tab-content">
+                            <p>まだ写真がありません。</p>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" id="close-modal-btn" class="button-secondary">閉じる</button>
+                            <button type="submit" class="button-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+            <button id="retry-button" class="button-primary">再読み込み</button>
+        </div>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./admin-auth.js"></script>
+    <script type="module" src="./customers.js"></script>
+</body>
+</html>
+
