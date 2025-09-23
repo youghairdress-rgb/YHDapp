@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- 共通ルール ---
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
+
+    // --- ユーザーサイド向けルール ---
+    // サロン設定、メニュー、スタッフ情報は誰でも読み取り可能
+    match /settings/salon {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /service_categories/{categoryId}/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+     match /staffs/{staffId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 予約情報
+    match /reservations/{reservationId} {
+      // 予約状況の確認のため、誰でも読み取り可能
+      allow read: if true;
+      
+      // 予約データにcustomerIdが含まれていれば、誰でも作成可能
+      allow create: if request.resource.data.customerId is string;
+      
+      // 更新と削除は管理者のみ可能
+      allow update, delete: if isAdmin();
+    }
+    
+    // --- 管理者サイド向けルール ---
+    // 顧客情報: 管理者のみが読み書き可能
+    match /users/{userId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 売上と目標: 管理者のみがアクセス可能
+    match /sales/{saleId} {
+        allow read, write: if isAdmin();
+    }
+    match /sales_goals/{goalId} {
+        allow read, write: if isAdmin();
+    }
+    
+    // 日々の連絡事項メモ: 管理者のみがアクセス可能
+    match /daily_memos/{memoId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
+
