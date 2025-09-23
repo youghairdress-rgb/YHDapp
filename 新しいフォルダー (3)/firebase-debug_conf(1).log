@@ -1,0 +1,16 @@
+[debug] [2025-09-15T03:46:56.235Z] ----------------------------------------------------------------------
+[debug] [2025-09-15T03:46:56.238Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\yougr\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
+[debug] [2025-09-15T03:46:56.238Z] CLI Version:   14.16.0
+[debug] [2025-09-15T03:46:56.238Z] Platform:      win32
+[debug] [2025-09-15T03:46:56.238Z] Node Version:  v22.18.0
+[debug] [2025-09-15T03:46:56.239Z] Time:          Mon Sep 15 2025 12:46:56 GMT+0900 (日本標準時)
+[debug] [2025-09-15T03:46:56.239Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-09-15T03:46:56.736Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-09-15T03:46:56.737Z] > authorizing via signed-in user (youghairdress@gmail.com)
+[debug] [2025-09-15T03:46:56.737Z] [iam] checking project yhd-db for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2025-09-15T03:46:56.740Z] Checked if tokens are valid: true, expires at: 1757911178270
+[debug] [2025-09-15T03:46:56.741Z] Checked if tokens are valid: true, expires at: 1757911178270
+[debug] [2025-09-15T03:46:56.743Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/yhd-db:testIamPermissions [none]
+[debug] [2025-09-15T03:46:56.743Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/yhd-db:testIamPermissions x-goog-quota-user=projects/yhd-db
+[debug] [2025-09-15T03:46:56.743Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/yhd-db:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
