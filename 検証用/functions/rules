@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- 共通ルール ---
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
+
+    // --- ユーザーサイド向けルール ---
+    match /settings/salon {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /service_categories/{categoryId}/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /reservations/{reservationId} {
+      allow read: if true;
+      
+      // ▼▼▼ ここを修正 ▼▼▼
+      // ユーザーは自分の予約を作成でき、管理者はどんな予約でも作成できる
+      allow create: if (request.resource.data.customerId == request.auth.uid) || isAdmin();
+      
+      // ユーザーは自身の予約を更新・削除でき、管理者はすべて操作可能
+      allow update, delete: if (resource.data.customerId == request.auth.uid) || isAdmin();
+    }
+    
+    // --- 管理者サイド向けルール ---
+    match /users/{userId} {
+      // ユーザーは自身の情報を読み取り・更新できる
+      allow read, update: if request.auth.uid == userId;
+      // 管理者は全ユーザーの情報を操作できる
+      allow read, write: if isAdmin();
+    }
+
+    match /sales/{saleId} {
+        allow read, write: if isAdmin();
+    }
+    match /sales_goals/{goalId} {
+        allow read, write: if isAdmin();
+    }
+    
+    match /daily_memos/{memoId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /staffs/{staffId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
+
