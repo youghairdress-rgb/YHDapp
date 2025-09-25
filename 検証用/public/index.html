@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YHD 予約サイト</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="user-style.css">
+</head>
+<body>
+    <div id="app-container">
+        <header class="user-header">
+            <div class="logo">
+                <img src="./img/YHDlogo2.png" alt="YHD Logo">
+            </div>
+            <h1>YOU-G HAIR Dress</h1>
+        </header>
+
+        <main id="content-container" style="display: none;">
+            <div class="progress-bar">
+                <div id="step-1-indicator" class="step active">
+                    <i class="fas fa-cut"></i><span>メニュー</span>
+                </div>
+                <div id="step-2-indicator" class="step">
+                    <i class="fas fa-calendar-alt"></i><span>日時選択</span>
+                </div>
+                <div id="step-3-indicator" class="step">
+                    <i class="fas fa-check"></i><span>確認</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Menu Selection -->
+            <div id="step-1" class="step-content active">
+                <h2>メニュー選択</h2>
+                <div id="menu-categories-container"></div>
+            </div>
+
+            <!-- Step 2: Date/Time Selection -->
+            <div id="step-2" class="step-content">
+                <h2>日時選択</h2>
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button id="prev-week-btn">‹</button>
+                        <h3 id="calendar-header-text"></h3>
+                        <button id="next-week-btn">›</button>
+                    </div>
+                    <div class="timetable-container">
+                        <table id="timetable">
+                            <thead>
+                                <tr id="timetable-header"></tr>
+                            </thead>
+                            <tbody id="timetable-body"></tbody>
+                            <tfoot id="timetable-footer"></tfoot>
+                        </table>
+                    </div>
+                </div>
+                 <div class="form-group">
+                    <label for="user-requests">ご要望</label>
+                    <textarea id="user-requests" rows="3" placeholder="（例）静かに過ごしたいです"></textarea>
+                </div>
+            </div>
+
+            <!-- Step 3: Confirmation -->
+            <div id="step-3" class="step-content">
+                 <h2>ご予約内容の確認</h2>
+                <div class="confirmation-summary">
+                     <p><i class="fas fa-calendar-alt icon"></i><strong>日時:</strong> <span id="confirm-datetime"></span></p>
+                    <p><i class="fas fa-cut icon"></i><strong>選択メニュー:</strong></p>
+                    <ul id="confirm-menu-list"></ul>
+                    <p><i class="fas fa-clock icon"></i><strong>所要時間の目安:</strong> <span id="confirm-duration"></span>分</p>
+                    <p><i class="fas fa-yen-sign icon"></i><strong>合計金額 (概算):</strong> ¥<span id="confirm-price"></span></p>
+                    
+                    <div id="confirm-requests-wrapper" style="display: none;">
+                        <p><i class="fas fa-comment icon"></i><strong>ご要望:</strong></p>
+                        <p id="confirm-requests" style="padding-left: 1.8rem; white-space: pre-wrap;"></p>
+                    </div>
+                    
+                    <div class="form-group">
+                         <label for="customer-name">お名前 (必須)</label>
+                         <input type="text" id="customer-name" required placeholder="例：山田花子">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Complete -->
+            <div id="step-4" class="step-content completion-screen">
+                <div class="completion-icon"><i class="fas fa-check"></i></div>
+                <h2>予約が完了しました！</h2>
+                <p>ご来店を心よりお待ちしております。</p>
+                <p>詳細はLINEのメッセージをご確認ください。</p>
+                <p class="close-instruction">右上の( ✕ )でトーク画面にお戻りください</p>
+            </div>
+            
+            <div class="summary-footer">
+                <button id="back-btn" class="button-secondary">戻る</button>
+                <button id="next-btn" class="button-primary">次へ</button>
+            </div>
+        </main>
+
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+        </div>
+    </div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
+
