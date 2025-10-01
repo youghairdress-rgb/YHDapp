@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- Helper Functions ---
+    function isAdmin() {
+      return request.auth.token.admin == true;
+    }
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // --- User-Side Rules ---
+    match /settings/salon {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /service_categories/{categoryId}/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /reservations/{reservationId} {
+      allow list: if request.auth != null;
+      allow get, update, delete: if isOwner(resource.data.customerId) || isAdmin();
+      // ▼▼▼ Corrected Create Rule ▼▼▼
+      // Allow creation if the user is an admin OR is creating a booking for themselves.
+      allow create: if isAdmin() || isOwner(request.resource.data.customerId);
+      // ▲▲▲ Correction End ▲▲▲
+    }
+
+    // --- Admin-Side Rules & Shared Rules ---
+    match /users/{userId}/{document=**} {
+      allow read, update: if isOwner(userId);
+      allow list, get, write: if isAdmin();
+    }
+
+    match /sales/{saleId} {
+      allow read: if isAdmin() || isOwner(resource.data.customerId);
+      allow write: if isAdmin();
+    }
+
+    match /sales_goals/{goalId} {
+        allow read, write: if isAdmin();
+    }
+
+    match /daily_memos/{memoId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /staffs/{staffId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
+

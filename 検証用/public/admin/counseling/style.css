@@ -1,0 +1,115 @@
+/* Custom styles for the application */
+body {
+    font-family: 'Noto Sans JP', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.font-poppins {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* ★★★ 追加箇所 ★★★ */
+.button-secondary .button-text {
+    white-space: nowrap; /* テキストが折り返さないようにする */
+}
+
+
+/* Fade-in animation for elements */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeIn 0.8s ease-out forwards;
+    opacity: 0;
+    /* Start hidden for animation */
+}
+
+/* Staggered animation delays */
+.delay-1 {
+    animation-delay: 0.2s;
+}
+
+.delay-2 {
+    animation-delay: 0.4s;
+}
+
+.delay-3 {
+    animation-delay: 0.6s;
+}
+
+.delay-4 {
+    animation-delay: 0.8s;
+}
+
+.delay-5 {
+    animation-delay: 1.0s;
+}
+
+/* Spinner animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+.result-card {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.result-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.result-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.result-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.result-card li {
+    margin-bottom: 0.8rem;
+    line-height: 1.6;
+}
+
+.result-card li h4 {
+    font-weight: bold;
+    margin: 0 0 0.2rem 0;
+}
+
+.generated-image {
+    width: 100%;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+}
+
