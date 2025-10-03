@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者ダッシュボード</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>ダッシュボード</h1>
+        </header>
+        
+        <main id="content-container" style="display: none;">
+            
+            <div class="dashboard-grid">
+                <div class="dashboard-main">
+                    <div class="card">
+                        <h2 id="today-date"></h2>
+                        <div class="today-schedule-container">
+                            <div class="time-labels" id="time-labels">
+                                <!-- JSで10時から20時までのラベルを生成 -->
+                            </div>
+                            <div id="today-schedule-timeline" class="today-schedule-timeline">
+                                <!-- 本日の予約がここにJSで描画されます -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2 class="card-subtitle">連絡事項</h2>
+                        <div class="memo-container">
+                            <textarea id="today-memo" placeholder="スタッフへの連絡事項や今日気をつけることなどを記入..."></textarea>
+                            <button id="save-memo-btn" class="button-primary" style="margin-top: 0.5rem;">メモを保存</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-sidebar">
+                    <div class="card">
+                        <nav class="admin-menu">
+                            <a href="./booking.html" class="menu-button"><i class="fa-solid fa-calendar-days"></i><span>予約管理</span></a>
+                            <a href="./pos.html" class="menu-button"><i class="fa-solid fa-cash-register"></i><span>会計</span></a>
+                            <a href="./customers.html" class="menu-button"><i class="fa-solid fa-users"></i><span>顧客管理</span></a>
+                            <a href="./sales.html" class="menu-button"><i class="fa-solid fa-chart-pie"></i><span>売上分析</span></a>
+                            <a href="./menu.html" class="menu-button"><i class="fa-solid fa-scissors"></i><span>メニュー設定</span></a>
+                            <a href="./settings.html" class="menu-button"><i class="fa-solid fa-gear"></i><span>サロン設定</span></a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 1. 予約詳細表示モーダル -->
+        <div id="booking-detail-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="detail-modal-title">予約詳細</h2>
+                </div>
+                <div class="modal-body">
+                    <div id="normal-booking-details">
+                        <p><strong>お客様:</strong> <span id="detail-customer-name"></span></p>
+                        <p><strong>日時:</strong> <span id="detail-datetime"></span></p>
+                        <p><strong>メニュー:</strong> <span id="detail-menus"></span></p>
+                        <div id="detail-requests-wrapper" style="display: none;">
+                            <p><strong>ご要望:</strong> <span id="detail-requests"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <div id="normal-booking-actions" class="modal-footer grid-buttons">
+                    <a href="#" id="detail-pos-link" class="button-primary"><i class="fa-solid fa-cash-register"></i> 会計へ進む</a>
+                    <button id="detail-edit-btn" class="button-secondary"><i class="fa-solid fa-pen-to-square"></i> 編集</button>
+                    <a href="#" id="detail-customer-link" class="button-secondary"><i class="fa-solid fa-user"></i> 顧客情報</a>
+                    <button id="detail-cancel-btn" class="button-danger"><i class="fa-solid fa-trash"></i> キャンセル</button>
+                </div>
+                 <div id="unavailable-booking-actions" class="modal-footer" style="display: none;">
+                    <button id="unavailable-delete-btn" class="button-danger"><i class="fa-solid fa-trash"></i> 予約不可を解除</button>
+                </div>
+                 <div class="form-actions" style="justify-content: center;">
+                    <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 空き時間クリック時のアクション選択モーダル -->
+        <div id="timeslot-action-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="timeslot-action-title"></h2>
+                </div>
+                <div class="modal-body" style="text-align: center;">
+                    <button id="action-add-booking" class="button-primary large-btn"><i class="fa-solid fa-plus"></i> 予約を追加</button>
+                    <button id="action-set-unavailable" class="button-secondary large-btn"><i class="fa-solid fa-ban"></i> 予約不可に設定</button>
+                </div>
+                 <div class="form-actions" style="justify-content: center;">
+                    <button type="button" class="button-secondary close-modal-btn">キャンセル</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 3. 予約追加/編集モーダル -->
+        <div id="booking-edit-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="edit-modal-title">新規予約追加</h2>
+                </div>
+                <form id="booking-form">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="customer-input">顧客:</label>
+                            <input type="text" id="customer-input" list="customer-datalist" class="input-field" placeholder="名前を入力または選択">
+                            <datalist id="customer-datalist"></datalist>
+                        </div>
+
+                        <!-- ★★★ 新規顧客用の入力欄を追加 ★★★ -->
+                        <div id="new-customer-fields" style="display: none; border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
+                            <p style="font-size: 0.9rem; color: var(--light-text-color); margin-top: 0;">新規顧客として登録します。</p>
+                            <div class="form-group">
+                                <label for="new-customer-kana">ふりがな <span class="required">*</span></label>
+                                <input type="text" id="new-customer-kana" class="input-field">
+                            </div>
+                            <div class="form-group">
+                                <label for="new-customer-phone">電話番号</label>
+                                <input type="tel" id="new-customer-phone" class="input-field">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>メニュー (複数選択可):</label>
+                            <div id="menu-accordion-container"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="start-time">開始時間:</label>
+                            <select id="start-time" class="input-field" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="end-time">終了時間:</label>
+                            <select id="end-time" class="input-field" required></select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="delete-booking-btn" class="button-danger" style="display: none;">削除</button>
+                        <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                        <button type="submit" class="button-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+            <button id="retry-button" class="button-primary">再読み込み</button>
+        </div>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./admin-auth.js"></script>
+    <script type="module" src="./admin.js"></script>
+</body>
+</html>
