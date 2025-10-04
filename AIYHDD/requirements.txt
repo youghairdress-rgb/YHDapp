@@ -1,0 +1,8 @@
+Flask==3.0.3
+Flask-Cors==4.0.1
+gunicorn==22.0.0
+opencv-python-headless==4.9.0.80
+mediapipe==0.10.14
+numpy==1.26.4
+Pillow==10.3.0
+google-cloud-aiplatform==1.58.0
