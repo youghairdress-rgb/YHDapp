@@ -1,0 +1,28 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // --- Helper Functions ---
+    function isAdmin() {
+      // リクエストしているユーザーが管理者権限を持っているか確認
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // --- Rules for Galleries ---
+    match /galleries/{userId}/{allPaths=**} {
+      // ★修正点: 顧客（isOwner）も自身のギャラリーを読み取れるようにする
+      // 読み取り: 写真の持ち主である顧客、または管理者のみ許可
+      allow read: if request.auth.uid == userId || isAdmin();
+      
+      // 書き込み（アップロード、更新、削除）: 管理者のみ許可
+      allow write: if isAdmin();
+    }
+
+    // --- Rules for AI Diagnosis Media ---
+    match /diagnoses/{diagnosesId}/{allPaths=**} {
+       // AIカウンセリング関連のファイルは管理者のみが読み書き可能
+       allow read, write: if isAdmin();
+    }
+  }
+}

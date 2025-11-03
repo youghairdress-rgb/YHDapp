@@ -1,0 +1,66 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- Helper Functions ---
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // ★★★ 修正点: グローバル読み取りルール ★★★
+    // 認証済みのユーザーは、アプリの動作に必要なすべてのデータの読み取りを許可する。
+    // これにより、管理者ダッシュボードのログイン時の権限エラーを解消します。
+    match /{document=**} {
+      allow read: if request.auth != null;
+      // 書き込みはデフォルトで全て拒否し、以下の個別ルールで許可する
+      allow write: if false;
+    }
+
+    // --- 各コレクションに対する詳細な書き込みルール ---
+
+    match /settings/salon {
+      allow write: if isAdmin();
+    }
+    match /service_categories/{categoryId}/{document=**} {
+      allow write: if isAdmin();
+    }
+    match /staffs/{staffId} {
+      allow write: if isAdmin();
+    }
+    match /reservations/{reservationId} {
+      allow create: if isOwner(request.resource.data.customerId) || isAdmin();
+      allow update, delete: if isOwner(resource.data.customerId) || isAdmin();
+    }
+    
+    // ★★★ 修正点: 初回登録と管理者権限を両立させるルール ★★★
+    match /users/{userId} {
+      // ユーザーによる初回登録(create)と、自身のプロフィールの更新(update)を許可
+      allow create, update: if isOwner(userId);
+      // 管理者による顧客情報の操作（削除や、管理者による書き込み）を許可
+      allow delete, write: if isAdmin();
+    }
+
+    match /users/{userId}/gallery/{imageId} {
+        // ギャラリーへの写真情報登録(create)や削除(delete)は管理者のみ
+        allow write: if isAdmin();
+    }
+
+    match /sales/{saleId} {
+      allow write: if isAdmin();
+    }
+    match /sales_goals/{goalId} {
+        allow write: if isAdmin();
+    }
+    match /daily_memos/{memoId} {
+      allow write: if isAdmin();
+    }
+    match /diagnoses/{diagnosesId} {
+        allow write: if isAdmin();
+    }
+  }
+}
+

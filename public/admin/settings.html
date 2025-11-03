@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サロン設定</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <a href="./index.html" class="back-button"><i class="fa-solid fa-chevron-left"></i> Menu</a>
+            <h1>サロン設定</h1>
+        </header>
+
+        <main id="content-container" style="display: none;">
+            <form id="settings-form">
+                <div class="card">
+                    <h2 class="card-subtitle">営業時間・定休日</h2>
+                    <div id="business-hours-container">
+                        <!-- 曜日ごとの設定がここにJSで描画されます -->
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-subtitle">特別休日設定</h2>
+                    <div class="form-group">
+                        <input type="date" id="special-holiday" class="input-field">
+                        <button type="button" id="add-special-holiday" class="button-secondary" style="margin-top: 0.5rem;">追加</button>
+                    </div>
+                    <ul id="special-holidays-list"></ul>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-subtitle">予約締切設定</h2>
+                    <div class="form-group booking-deadline-group">
+                        <span>予約の</span>
+                        <input type="number" id="booking-deadline" value="30" class="input-field" style="width: 80px;">
+                        <span>分前まで受付</span>
+                    </div>
+                </div>
+                <button type="submit" class="button-primary" style="width: 100%;">設定を保存</button>
+            </form>
+        </main>
+
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+            <button id="retry-button" class="button-primary">再読み込み</button>
+        </div>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./admin-auth.js"></script>
+    <script type="module" src="./settings.js"></script>
+</body>
+</html>

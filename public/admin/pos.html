@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会計</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <a href="./index.html" class="back-button"><i class="fa-solid fa-chevron-left"></i> Menu</a>
+            <h1>会計</h1>
+        </header>
+
+        <main id="content-container" style="display: none;">
+            <div class="pos-container">
+                <!-- 左側：商品・顧客選択 -->
+                <div class="pos-main">
+                    <div class="card">
+                        <div class="form-group">
+                            <label for="customer-input">お客様</label>
+                            <input type="text" id="customer-input" list="customer-datalist" class="input-field" placeholder="名前を入力または選択">
+                            <datalist id="customer-datalist"></datalist>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <ul id="selected-menu-list">
+                            <!-- 選択されたメニューがここに表示されます -->
+                        </ul>
+                        <button id="add-menu-modal-btn" class="button-secondary" style="width: 100%;"><i class="fa-solid fa-plus"></i> メニュー/商品を追加</button>
+                    </div>
+                </div>
+
+                <!-- 右側：金額計算・支払い -->
+                <div class="pos-sidebar">
+                    <div class="card price-card">
+                        <div class="price-details">
+                            <div class="price-row">
+                                <span>小計</span>
+                                <span id="subtotal">¥0</span>
+                            </div>
+                            <div class="price-row">
+                                <span>割引</span>
+                                <div class="discount-input-group">
+                                    <input type="number" id="discount-value" class="input-field" value="0">
+                                    <select id="discount-type" class="input-field">
+                                        <option value="yen">円</option>
+                                        <option value="percent">%</option>
+                                    </select>
+                                </div>
+                            </div>
+                             <div class="price-row">
+                                <span>レングス調整額</span>
+                               <select id="length-fee" class="input-field">
+                                    <option value="0">+ ¥0</option>
+                                    <option value="500">+ ¥500</option>
+                                    <option value="1000">+ ¥1,000</option>
+                                    <option value="1500">+ ¥1,500</option>
+                                    <option value="2000">+ ¥2,000</option>
+                                    <option value="2500">+ ¥2,500</option>
+                                    <option value="3000">+ ¥3,000</option>
+                                    <option value="3500">+ ¥3,500</option>
+                                    <option value="4000">+ ¥4,000</option>
+                                    <option value="4500">+ ¥4,500</option>
+                                    <option value="5000">+ ¥5,000</option>
+                                </select>
+                            </div>
+                            <hr>
+                            <div class="price-row">
+                                <span>税抜合計</span>
+                                <span id="tax-exclusive-total">¥0</span>
+                            </div>
+                            <div class="price-row">
+                                <span>消費税 (10%)</span>
+                                <span id="tax-amount">¥0</span>
+                            </div>
+                            <!-- ▼▼▼ ポイント利用の入力欄を追加 ▼▼▼ -->
+                            <div class="price-row">
+                                <span>ポイント利用</span>
+                                <div class="discount-input-group">
+                                    <input type="number" id="point-discount" class="input-field" value="0">
+                                    <span>円</span>
+                                </div>
+                            </div>
+                            <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+                            <div class="price-row total-row">
+                                <span>お支払い合計</span>
+                                <span id="total">¥0</span>
+                            </div>
+                        </div>
+                        <div class="payment-methods">
+                            <h4>お支払い方法</h4>
+                            <!-- ▼▼▼ 支払い方法のボタンを修正 ▼▼▼ -->
+                            <div class="payment-options">
+                                <button class="payment-btn" data-method="現金"><i class="fa-solid fa-money-bill-wave"></i> 現金</button>
+                                <button class="payment-btn" data-method="カード"><i class="fa-solid fa-credit-card"></i> カード</button>
+                                <button class="payment-btn" data-method="PayPay"><i class="fa-brands fa-paypal"></i> PayPay</button>
+                                <button class="payment-btn" data-method="auPAY"><i class="fa-solid fa-mobile-screen-button"></i> auPAY</button>
+                                <button class="payment-btn" data-method="d払い"><i class="fa-solid fa-mobile-screen-button"></i> d払い</button>
+                                <button class="payment-btn" data-method="メルペイ"><i class="fa-solid fa-mobile-screen-button"></i> メルペイ</button>
+                            </div>
+                            <!-- ▲▲▲ 修正ここまで ▲▲▲ -->
+                        </div>
+                        <button id="complete-sale-btn" class="button-primary" disabled>
+                            <i class="fa-solid fa-check"></i> 会計完了
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- メニュー追加モーダル -->
+        <div id="add-menu-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>メニュー/商品を追加</h2>
+                </div>
+                <div class="modal-body">
+                    <div id="menu-accordion-container">
+                        <!-- メニューがここに表示されます -->
+                    </div>
+                </div>
+                <div class="form-actions" style="justify-content: center;">
+                    <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+            <button id="retry-button" class="button-primary">再読み込み</button>
+        </div>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./admin-auth.js"></script>
+    <script type="module" src="./pos.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メニュー設定</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <a href="./index.html" class="back-button"><i class="fa-solid fa-chevron-left"></i> Menu</a>
+            <h1>メニュー設定</h1>
+        </header>
+
+        <main id="content-container" style="display: none;">
+            <div class="card">
+                <div class="toolbar" style="margin-bottom: 1.5rem;">
+                    <button id="add-category-btn" class="button-primary"><i class="fa-solid fa-plus"></i> 新規カテゴリー追加</button>
+                </div>
+                <div id="categories-container">
+                    <!-- カテゴリーとメニューがここに動的に追加されます -->
+                </div>
+            </div>
+        </main>
+        
+        <!-- カテゴリー追加/編集モーダル -->
+        <div id="category-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="category-modal-title">新規カテゴリー追加</h2>
+                </div>
+                <form id="category-form">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="category-name">カテゴリー名 <span class="required">*</span></label>
+                            <input type="text" id="category-name" required class="input-field">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                        <button type="submit" class="button-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- メニュー追加/編集モーダル -->
+        <div id="menu-modal" class="modal">
+            <div class="modal-content">
+                 <div class="modal-header">
+                    <h2 id="menu-modal-title">新規メニュー追加</h2>
+                </div>
+                <form id="menu-form">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="menu-name">メニュー名 <span class="required">*</span></label>
+                            <input type="text" id="menu-name" required class="input-field">
+                        </div>
+                        <div class="form-group">
+                            <label for="menu-description">メニュー説明</label>
+                            <textarea id="menu-description" rows="3" class="input-field"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="menu-price">価格(円) <span class="required">*</span></label>
+                            <input type="number" id="menu-price" required class="input-field">
+                            <label class="checkbox-label" style="margin-top: 0.5rem;">
+                                <input type="checkbox" id="menu-price-prefix">
+                                <span>価格に「～」をつける</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="menu-duration">所要時間 <span class="required">*</span></label>
+                            <select id="menu-duration" required class="input-field">
+                                <option value="10">10分</option>
+                                <option value="30">30分</option>
+                                <option value="45">45分</option>
+                                <option value="60" selected>60分</option>
+                                <option value="90">1.5時間</option>
+                                <option value="120">2時間</option>
+                                <option value="150">2.5時間</option>
+                                <option value="180">3時間</option>
+                                <option value="210">3.5時間</option>
+                                <option value="240">4時間</option>
+                                <option value="270">4.5時間</option>
+                                <option value="300">5時間</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                        <button type="submit" class="button-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+            <button id="retry-button" class="button-primary">再読み込み</button>
+        </div>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./admin-auth.js"></script>
+    <script type="module" src="./menu.js"></script>
+</body>
+</html>

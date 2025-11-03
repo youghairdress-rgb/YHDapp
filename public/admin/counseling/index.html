@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YHD AI Diagnosis</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600&display=swap"
+        rel="stylesheet">
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <!-- Custom Styles for this page -->
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body class="bg-gradient-to-br from-teal-50 to-white min-h-screen flex items-center justify-center p-4">
+
+    <main id="main-container"
+        class="w-full max-w-md mx-auto bg-white/70 backdrop-blur-lg rounded-3xl shadow-2xl shadow-teal-500/10 text-center p-6 md:p-10 overflow-hidden transition-all duration-500">
+
+        <!-- Loading Screen -->
+        <div id="loading-screen">
+            <div class="flex flex-col items-center justify-center py-16">
+                <img src="../img/YHDlogo2.png" alt="YHD Logo" class="w-24 h-24 mx-auto rounded-full shadow-lg">
+                <p class="text-gray-500 text-sm mt-4 animate-pulse-slow">読み込み中...</p>
+            </div>
+        </div>
+
+        <!-- Capture Screen -->
+        <div id="capture-screen" class="hidden text-left">
+            <h2 class="font-poppins text-2xl font-bold text-teal-800 mb-2">写真・動画の撮影</h2>
+            <p class="text-gray-500 mb-6 text-sm">正確な診断のために、以下の素材をアップロードしてください。</p>
+            <div class="space-y-4" id="capture-items">
+                <!-- Items will be injected by JS -->
+            </div>
+            <button id="submit-diagnosis-button"
+                class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-xl mt-8 transition-all duration-300 shadow-lg shadow-teal-500/30 disabled:bg-gray-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center"
+                disabled>
+                <ion-icon name="sparkles-outline" class="mr-2"></ion-icon>
+                <span>AI診断を開始する</span>
+            </button>
+        </div>
+
+        <!-- Analyzing Screen -->
+        <div id="analyzing-screen" class="hidden">
+            <div class="flex flex-col items-center justify-center py-12">
+                <div class="relative w-24 h-24">
+                    <div class="spinner w-full h-full border-4 border-teal-200 border-t-teal-500 rounded-full"></div>
+                    <ion-icon name="color-wand-outline"
+                        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl text-teal-500"></ion-icon>
+                </div>
+                <h2 class="font-poppins text-2xl font-bold text-teal-800 mt-6 mb-2">AIが分析中です</h2>
+                <p id="analyzing-status" class="text-gray-500 text-sm transition-all duration-300">顔の輪郭を分析中...</p>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="hidden text-left">
+            <h2 class="font-poppins text-2xl font-bold text-teal-800 mb-4 text-center">AI診断結果</h2>
+            <!-- Results will be injected by JS -->
+            <div id="results-content" class="space-y-6"></div>
+            <div class="mt-8 flex space-x-4">
+                <button id="restart-button"
+                    class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-xl transition-all duration-300">
+                    <ion-icon name="refresh-outline" class="mr-2"></ion-icon>
+                    もう一度診断
+                </button>
+                <button id="save-button"
+                    class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg shadow-teal-500/30 flex items-center justify-center">
+                    <ion-icon name="cloud-download-outline" class="mr-2"></ion-icon>
+                    結果を保存
+                </button>
+            </div>
+        </div>
+
+        <!-- Error Modal -->
+        <div id="error-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-2xl p-8 shadow-xl text-center max-w-sm mx-auto">
+                <ion-icon name="alert-circle-outline" class="text-5xl text-red-500 mx-auto"></ion-icon>
+                <h3 class="text-xl font-bold mt-4">エラーが発生しました</h3>
+                <p id="error-message-text" class="text-gray-600 my-4">エラー内容</p>
+                <button onclick="document.getElementById('error-modal').classList.add('hidden')"
+                    class="bg-red-500 text-white font-bold py-2 px-6 rounded-lg">閉じる</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- Firebase -->
+    <script type="module" src="../admin/firebase-init.js"></script>
+    <!-- This page's specific logic -->
+    <script type="module" src="./counseling.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,1334 @@
+/* 基本設定と変数 */
+:root {
+    --primary-color: #0ABAB5;
+    /* ティファニーブルー */
+    --secondary-color: #F0FDF4;
+    --accent-color: #ffc107;
+    --text-color: #333;
+    --light-text-color: #666;
+    --background-color: #F8F9FA;
+    --border-color: #E0E0E0;
+    --white-color: #FFFFFF;
+    --danger-color: #ffc1cc;
+    /* バブルガムピンクに変更 */
+    --completed-color: #c3ffff;
+    /* ベイビーブルー */
+    --font-family: 'Helvetica Neue', Arial, 'Hirino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    margin: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ★★★ 追加: モーダル表示時に背景をスクロールさせない ★★★ */
+body.modal-open {
+    overflow: hidden;
+}
+
+
+#app-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* ヘッダー */
+header {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    padding: 1.25rem 1.5rem;
+    text-align: center;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 171, 181, 0.2);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.back-button {
+    position: absolute;
+    top: 50%;
+    left: 1.5rem;
+    transform: translateY(-50%);
+    color: var(--white-color);
+    text-decoration: none;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* メインコンテンツ */
+main {
+    padding: 0;
+}
+
+/* カード共通スタイル */
+.card {
+    background-color: var(--white-color);
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1rem;
+}
+
+.card-subtitle {
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--light-text-color);
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+
+/* 共通コンポーネント */
+.button-primary {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.button-primary:hover {
+    background-color: #089a94;
+}
+
+.button-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.button-secondary {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.button-secondary:hover {
+    background-color: #e9ecef;
+}
+
+.button-danger {
+    background-color: var(--danger-color);
+    color: var(--text-color);
+    border: 1px solid #f2b3be;
+}
+
+.button-danger:hover {
+    background-color: #f2b3be;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--light-text-color);
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.icon-button:hover {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.icon-button.small-btn {
+    width: 32px;
+    height: 32px;
+}
+
+
+.input-field {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+}
+
+/* フォーム */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: var(--light-text-color);
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.required {
+    color: var(--danger-color);
+    font-size: 0.8em;
+    margin-left: 0.25rem;
+}
+
+/* ★★★ 修正点: モーダルのスタイルを全体的に見直し ★★★ */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+    display: none; /* Initially hidden */
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.modal-content {
+    background-color: var(--white-color);
+    padding: 0;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    margin: 5vh auto;
+}
+
+.modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.modal-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.modal-tabs .tab {
+    padding: 0.8rem 1.2rem;
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 3px solid transparent;
+    color: var(--light-text-color);
+}
+
+.modal-tabs .tab.active {
+    border-bottom-color: var(--primary-color);
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* 読み込み・エラー表示 */
+#loading-container,
+#error-container {
+    padding: 2rem;
+    text-align: center;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/*
+ * ===============================================
+ * ダッシュボード (`index.html`) 専用スタイル
+ * ===============================================
+ */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1rem;
+}
+
+.dashboard-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.admin-menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.menu-button {
+    background-color: var(--white-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: bold;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.menu-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    color: var(--primary-color);
+}
+
+.menu-button i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    transition: color 0.2s;
+}
+
+.menu-button:hover i {
+    color: var(--primary-color);
+}
+
+.today-schedule-container {
+    height: 80px;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.time-labels {
+    position: relative;
+    height: 20px;
+    font-size: 0.75rem;
+    color: var(--light-text-color);
+}
+
+.time-labels span {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+}
+
+.today-schedule-timeline {
+    position: relative;
+    height: 100%;
+    background: repeating-linear-gradient(to right, var(--border-color), var(--border-color) 1px, transparent 1px, transparent calc(100% / 10));
+    cursor: pointer;
+}
+
+.timeline-item {
+    position: absolute;
+    height: 100%;
+    top: 0;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.timeline-item.unavailable {
+    background-color: #A0AEC0;
+    border-left-color: #718096;
+}
+
+.timeline-item.completed {
+    background-color: var(--completed-color);
+    border-left-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.memo-container textarea {
+    width: 100%;
+    height: 100px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+/*
+ * ===============================================
+ * 顧客管理 (`customers.html`) 専用スタイル
+ * ===============================================
+ */
+.customer-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.toolbar-row-1,
+.toolbar-row-2 {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.search-bar {
+    position: relative;
+    flex-grow: 1;
+}
+
+.search-bar .fa-magnifying-glass {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--light-text-color);
+}
+
+.search-bar input {
+    padding-left: 2.5rem;
+    width: 100%;
+}
+
+.initial-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    overflow-x: auto;
+    padding: 0.5rem 0;
+}
+
+.initial-nav button {
+    background: var(--white-color);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-weight: bold;
+    color: var(--light-text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.initial-nav button:hover {
+    transform: scale(1.1);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.initial-nav button.active {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border-color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.customer-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.customer-card {
+    background-color: var(--white-color);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.customer-card-header {
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.customer-card-header:hover {
+    background-color: #f7f7f7;
+}
+
+.customer-card-header .fa-triangle-exclamation {
+    color: #f59e0b;
+}
+
+.customer-card-name {
+    font-weight: bold;
+    flex-grow: 1;
+}
+
+.customer-card-actions {
+    display: flex;
+    border-top: 1px solid var(--border-color);
+    align-items: center;
+}
+
+.customer-card-actions .icon-button,
+.customer-card-actions a.icon-button {
+    flex: 1;
+    border-left: 1px solid var(--border-color);
+    font-size: 1.1rem;
+    padding: 0.8rem;
+    border-radius: 0;
+}
+
+.customer-card-actions .icon-button:first-child,
+.customer-card-actions a.icon-button:first-child {
+    border-left: none;
+}
+
+#customer-info-placeholder {
+    padding: 2rem;
+    text-align: center;
+    color: var(--light-text-color);
+}
+
+.visit-history-item {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.visit-history-item:first-child {
+    padding-top: 0;
+}
+
+.visit-history-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.visit-info {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.visit-menus {
+    color: var(--light-text-color);
+    font-size: 0.9rem;
+}
+
+.staff-note-section,
+.customer-note-section {
+    margin-top: 0.5rem;
+}
+
+.staff-note-section label,
+.customer-note-section strong {
+    font-size: 0.9rem;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.customer-note-section p {
+    margin: 0;
+    padding: 0.8rem;
+    background-color: #f7f7f7;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+}
+
+/* --- ギャラリー関連のスタイル --- */
+.gallery-date-header {
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--light-text-color);
+    margin: 1.5rem 0 0.5rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.gallery-grid-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.gallery-grid-group img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.gallery-grid-group img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-body-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+    z-index: 10;
+}
+
+.image-viewer {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.close-viewer {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.image-viewer-content {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+
+/*
+ * ===============================================
+ * 予約管理 (`booking.html`) 専用スタイル
+ * ===============================================
+ */
+.booking-container {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1rem;
+}
+
+.booking-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.calendar-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    white-space: nowrap;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+}
+
+.calendar-weekdays {
+    font-size: 0.8rem;
+    color: var(--light-text-color);
+    margin-bottom: 0.5rem;
+}
+
+.calendar-day {
+    padding: 0.5rem 0;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 42px;
+    box-sizing: border-box;
+}
+
+.calendar-day.holiday span:first-child {
+    color: var(--danger-color);
+}
+
+.calendar-day:hover {
+    background-color: var(--secondary-color);
+}
+
+.calendar-day.today span:first-child {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-day.selected {
+    outline: 2px solid var(--primary-color);
+}
+
+.booking-count {
+    font-size: 0.7rem;
+    background-color: var(--border-color);
+    border-radius: 8px;
+    padding: 1px 5px;
+    height: 14px;
+    line-height: 14px;
+}
+
+.timeline-card {
+    padding: 0;
+}
+
+.timeline-card h3 {
+    margin: 0;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.timeline-wrapper {
+    display: flex;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+.timeline-hours {
+    font-size: 0.8rem;
+    color: var(--light-text-color);
+    position: relative;
+    width: 50px;
+    flex-shrink: 0;
+}
+
+.timeline-hour-label {
+    position: absolute;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    background-color: var(--white-color);
+    padding: 0 0.25rem;
+    z-index: 1;
+}
+
+.timeline-slots {
+    position: relative;
+    flex-grow: 1;
+    cursor: pointer;
+}
+
+.timeline-border {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.timeline-border-half {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    border-top: 1px dashed var(--border-color);
+}
+
+.reservation-item {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    overflow: hidden;
+    cursor: pointer;
+    border-left: 4px solid #089a94;
+    box-sizing: border-box;
+    z-index: 0;
+}
+
+.reservation-item.unavailable {
+    background-color: #A0AEC0;
+    border-left-color: #718096;
+}
+
+.reservation-item.completed {
+    background-color: var(--completed-color);
+    border-left-color: var(--primary-color);
+    color: var(--text-color);
+}
+
+.reservation-item strong {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reservation-item .menu-names {
+    opacity: 0.8;
+}
+
+#menu-accordion-container .menu-category-accordion {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+#menu-accordion-container .accordion-header {
+    padding: 0.8rem 1rem;
+}
+
+#menu-accordion-container .accordion-content {
+    padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.modal-footer.grid-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.large-btn {
+    padding: 1rem;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+#consultation-card {
+    border-top: 2px solid var(--primary-color);
+}
+
+.consultation-item {
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.consultation-item:last-child {
+    border-bottom: none;
+}
+
+.consultation-item:hover {
+    background-color: var(--secondary-color);
+}
+
+.consultation-item span {
+    font-size: 0.8rem;
+    color: var(--light-text-color);
+    max-width: 60%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/*
+ * ===============================================
+ * メニュー設定 (`menu.html`) 専用スタイル
+ * ===============================================
+ */
+.menu-category-accordion {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.accordion-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    background-color: var(--white-color);
+}
+
+.accordion-header:hover {
+    background-color: var(--secondary-color);
+}
+
+.accordion-title {
+    flex-grow: 1;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.accordion-content {
+    border-top: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.menu-item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+}
+
+.menu-item-info {
+    flex-grow: 1;
+}
+
+.menu-item-name {
+    font-weight: bold;
+}
+
+.menu-item-details {
+    font-size: 0.9rem;
+    color: var(--light-text-color);
+}
+
+.order-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.order-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    color: var(--light-text-color);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.order-btn:hover {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+}
+
+.order-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+
+/*
+ * ===============================================
+ * 会計 (`pos.html`) 専用スタイル
+ * ===============================================
+ */
+.pos-container {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 1.5rem;
+}
+
+.pos-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.pos-sidebar .card.price-card {
+    background: linear-gradient(135deg, #f0fdfa, #ffffff);
+    border: 1px solid var(--primary-color);
+}
+
+#selected-menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+    min-height: 50px;
+}
+
+#selected-menu-list .placeholder {
+    text-align: center;
+    color: var(--light-text-color);
+    padding: 2rem 0;
+}
+
+.selected-menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.selected-menu-item:last-child {
+    border-bottom: none;
+}
+
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.price-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price-row.total-row {
+    font-weight: bold;
+    font-size: 2rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px dashed var(--primary-color);
+    color: var(--primary-color);
+}
+
+.discount-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    width: 150px;
+}
+
+.payment-methods {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.payment-methods h4 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--light-text-color);
+}
+
+.payment-options {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.payment-btn {
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--white-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+}
+
+.payment-btn i {
+    font-size: 1.2rem;
+}
+
+.payment-btn.active {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 171, 181, 0.3);
+}
+
+#complete-sale-btn {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 1rem;
+    font-size: 1.2rem;
+}
+
+.menu-item-selectable {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.menu-item-selectable:hover {
+    background-color: var(--secondary-color);
+}
+
+/*
+ * ===============================================
+ * 売上分析 (`sales.html`) 専用スタイル
+ * ===============================================
+ */
+.goal-setter {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.goal-progress p {
+    margin: 0 0 0.5rem 0;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 10px;
+    background-color: var(--border-color);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.5s ease-in-out;
+}
+
+.history-controls {
+    margin-bottom: 1rem;
+    max-width: 200px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.smart-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.smart-table th,
+.smart-table td {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.smart-table th {
+    background-color: var(--background-color);
+}
+
+#monthly-summary-table {
+    width: 100%;
+    text-align: center;
+}
+
+#monthly-summary-table td {
+    padding: 0.5rem;
+}
+
+#sales-history-table td {
+    white-space: nowrap;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/*
+ * ===============================================
+ * サロン設定 (`settings.html`) 専用スタイル
+ * ===============================================
+ */
+#business-hours-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.day-setting-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 2fr;
+    gap: 1rem;
+    align-items: center;
+}
+
+.day-label {
+    font-weight: bold;
+    text-align: center;
+}
+
+.holiday-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.booking-deadline-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/*
+ * ===============================================
+ * レスポンシブ対応 (スマートフォンなど)
+ * ===============================================
+ */
+@media (max-width: 860px) {
+    .pos-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+
+    .dashboard-grid,
+    .booking-container {
+        grid-template-columns: 1fr;
+    }
+
+    .toolbar-row-1 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
