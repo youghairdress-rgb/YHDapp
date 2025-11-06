@@ -16,6 +16,17 @@
             <h1>顧客管理</h1>
         </header>
 
+        <!-- ▼▼▼ 追加: クイックナビゲーション ▼▼▼ -->
+        <nav class="quick-nav-menu card">
+            <a href="./index.html" class="quick-nav-button"><i class="fa-solid fa-table-columns"></i> ダッシュボード</a>
+            <a href="./booking.html" class="quick-nav-button"><i class="fa-solid fa-calendar-days"></i> 予約管理</a>
+            <a href="./pos.html" class="quick-nav-button"><i class="fa-solid fa-cash-register"></i> 会計</a>
+            <a href="./sales.html" class="quick-nav-button"><i class="fa-solid fa-chart-pie"></i> 売上分析</a>
+            <a href="./menu.html" class="quick-nav-button"><i class="fa-solid fa-scissors"></i> メニュー設定</a>
+            <a href="./settings.html" class="quick-nav-button"><i class="fa-solid fa-gear"></i> サロン設定</a>
+        </nav>
+        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
         <main id="content-container" style="display: none;">
             <div class="customer-toolbar card">
                 <div class="toolbar-row-1">
@@ -23,7 +34,9 @@
                         新規顧客追加</button>
                     <div class="search-bar">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="search" id="customer-search" class="input-field" placeholder="顧客名・ふりがなで検索">
+                        <!-- ▼▼▼ 修正 ▼▼▼ -->
+                        <input type="search" id="customer-search" class="input-field" placeholder="顧客名・ふりがなで検索" inputmode="kana">
+                        <!-- ▲▲▲ 修正 ▲▲▲ -->
                     </div>
                 </div>
                 <div class="toolbar-row-2">
@@ -55,11 +68,15 @@
                         <div id="basic-info-content" class="tab-content active">
                             <div class="form-group">
                                 <label for="customer-name">名前 <span class="required">*</span></label>
-                                <input type="text" id="customer-name" required class="input-field">
+                                <!-- ▼▼▼ 修正 ▼▼▼ -->
+                                <input type="text" id="customer-name" required class="input-field" inputmode="kana">
+                                <!-- ▲▲▲ 修正 ▲▲▲ -->
                             </div>
                             <div class="form-group">
                                 <label for="customer-kana">ふりがな <span class="required">*</span></label>
-                                <input type="text" id="customer-kana" required class="input-field">
+                                <!-- ▼▼▼ 修正 ▼▼▼ -->
+                                <input type="text" id="customer-kana" required class="input-field" inputmode="kana">
+                                <!-- ▲▲▲ 修正 ▲▲▲ -->
                             </div>
                             <div class="form-group">
                                 <label for="customer-lineId">LINE ID (表示名)</label>
@@ -71,13 +88,17 @@
                             </div>
                             <div class="form-group">
                                 <label for="customer-notes">注意事項</label>
+                                <!-- ▼▼▼ 修正 ▼▼▼ -->
                                 <textarea id="customer-notes" rows="3" class="input-field"
-                                    placeholder="アレルギー情報など"></textarea>
+                                    placeholder="アレルギー情報など" inputmode="kana"></textarea>
+                                <!-- ▲▲▲ 修正 ▲▲▲ -->
                             </div>
                             <div class="form-group">
                                 <label for="customer-memo">シークレットメモ (管理者のみ)</label>
+                                <!-- ▼▼▼ 修正 ▼▼▼ -->
                                 <textarea id="customer-memo" rows="4" class="input-field"
-                                    placeholder="スタッフ間での共有事項を記入"></textarea>
+                                    placeholder="スタッフ間での共有事項を記入" inputmode="kana"></textarea>
+                                <!-- ▲▲▲ 修正 ▲▲▲ -->
                             </div>
                         </div>
 

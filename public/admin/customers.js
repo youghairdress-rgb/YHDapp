@@ -42,17 +42,27 @@ const customersMain = async (auth, user) => {
     let editingCustomerId = null;
     let allCustomers = [];
     let unsubscribeCustomers = null;
+    // ▼▼▼ 修正: URLパラメータ処理用の変数を追加 ▼▼▼
+    let targetCustomerId = null;
+    let paramsHandled = false;
+    // ▲▲▲ 修正ここまで ▲▲▲
 
+    // ▼▼▼ 修正: checkUrlParamsを修正 ▼▼▼
     const checkUrlParams = () => {
         const params = new URLSearchParams(window.location.search);
-        const customerName = params.get('customerName');
-        if (customerName) {
-            customerSearchInput.value = customerName;
-            setTimeout(() => {
-                filterCustomers();
-            }, 500); 
+        const customerId = params.get('customerId');
+        if (customerId) {
+            // 顧客IDが指定されている場合、グローバル変数にセット
+            targetCustomerId = customerId;
+        } else {
+            // 顧客名が指定されている場合（従来）
+            const customerName = params.get('customerName');
+            if (customerName) {
+                customerSearchInput.value = customerName;
+            }
         }
     };
+    // ▲▲▲ 修正ここまで ▲▲▲
 
     const createInitialNav = () => {
         const hiraganaRows = {
@@ -190,6 +200,7 @@ const customersMain = async (auth, user) => {
                     ? sale.menus.map(m => m.name || '名称不明').join(', ')
                     : 'メニュー情報なし';
 
+                // ▼▼▼ 修正: メモ欄を2つに分割 ▼▼▼
                 html += `
                     <div class="visit-history-item">
                         <div class="visit-info">
@@ -197,11 +208,21 @@ const customersMain = async (auth, user) => {
                             <span>${menus}</span>
                         </div>
                         <div class="visit-total">¥${sale.total.toLocaleString()}</div>
+                        
+                        <!-- メッセージ（お客様と共有） -->
                         <div class="staff-note-section">
-                            <label for="staff-note-${sale.id}">スタッフメモ（お客様へのメッセージ）</label>
-                            <textarea id="staff-note-${sale.id}" class="input-field" rows="3">${sale.staffNote || ''}</textarea>
-                            <button class="button-secondary save-staff-note-btn" data-sale-id="${sale.id}">メモを保存</button>
+                            <label for="staff-public-message-${sale.id}">メッセージ（お客様と共有）</label>
+                            <textarea id="staff-public-message-${sale.id}" class="input-field" rows="3" inputmode="kana">${sale.staffPublicMessage || ''}</textarea>
+                            <button class="button-secondary save-staff-note-btn" data-sale-id="${sale.id}" data-field-type="staffPublicMessage">共有メッセージを保存</button>
                         </div>
+                        
+                        <!-- スタッフ専用メモ（非公開） -->
+                        <div class="staff-note-section">
+                            <label for="staff-note-${sale.id}">スタッフ専用メモ（非公開）</label>
+                            <textarea id="staff-note-${sale.id}" class="input-field" rows="3" inputmode="kana">${sale.staffNote || ''}</textarea>
+                            <button class="button-secondary save-staff-note-btn" data-sale-id="${sale.id}" data-field-type="staffNote">専用メモを保存</button>
+                        </div>
+
                         ${sale.customerNote ? `
                         <div class="customer-note-section">
                             <strong>お客様からのコメント:</strong>
@@ -210,23 +231,28 @@ const customersMain = async (auth, user) => {
                         ` : ''}
                     </div>
                 `;
+                // ▲▲▲ 修正ここまで ▲▲▲
             });
             visitHistoryList.innerHTML = html;
 
             visitHistoryList.querySelectorAll('.save-staff-note-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const saleId = e.target.dataset.saleId;
-                    const note = document.getElementById(`staff-note-${saleId}`).value.trim();
+                    const fieldType = e.target.dataset.fieldType; // 'staffNote' or 'staffPublicMessage'
+                    const note = document.getElementById(`${fieldType === 'staffNote' ? 'staff-note' : 'staff-public-message'}-${saleId}`).value.trim();
+                    
                     btn.textContent = "保存中...";
                     btn.disabled = true;
                     try {
-                        await updateDoc(doc(db, "sales", saleId), { staffNote: note });
-                        alert('スタッフメモを保存しました。');
+                        const dataToUpdate = {};
+                        dataToUpdate[fieldType] = note;
+                        await updateDoc(doc(db, "sales", saleId), dataToUpdate);
+                        alert('メモを保存しました。');
                     } catch (error) {
                         alert('メモの保存に失敗しました。');
                         console.error(error);
                     } finally {
-                        btn.textContent = "メモを保存";
+                        btn.textContent = fieldType === 'staffNote' ? "専用メモを保存" : "共有メッセージを保存";
                         btn.disabled = false;
                     }
                 });
@@ -270,6 +296,7 @@ const customersMain = async (auth, user) => {
             galleryGrid.querySelectorAll('.gallery-thumbnail').forEach(img => {
                 img.addEventListener('click', () => {
                     viewerImg.src = img.src;
+                    document.body.classList.add('modal-open'); // スクロール禁止
                     imageViewer.style.display = 'flex';
                 });
             });
@@ -332,7 +359,7 @@ const customersMain = async (auth, user) => {
                 <div class="customer-card-actions">
                     <button class="icon-button camera-btn" title="写真"><i class="fa-solid fa-camera"></i></button>
                     <a href="./counseling/index.html?customerId=${customer.id}" class="icon-button" title="AIカウンセリング"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
-                    <a href="./pos.html?bookingId=&customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
+                    <a href="./pos.html?customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
                     <button class="icon-button delete-btn" title="削除"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
@@ -372,19 +399,36 @@ const customersMain = async (auth, user) => {
         const q = query(collection(db, "users"), orderBy("kana", "asc"));
         unsubscribeCustomers = onSnapshot(q, (snapshot) => {
             allCustomers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            const searchTerm = customerSearchInput.value.trim();
             const activeInitial = document.querySelector('.initial-nav button.active');
 
-            if (searchTerm) {
+            // ▼▼▼ 修正: URLパラメータ処理を onSnapshot 内に移動 ▼▼▼
+            if (targetCustomerId && !paramsHandled) {
+                // 会計ページから顧客ID付きでリダイレクトされた場合
+                const customer = allCustomers.find(c => c.id === targetCustomerId);
+                if (customer) {
+                    openCustomerModal(customer);
+                    paramsHandled = true;
+                    customerInfoPlaceholder.style.display = 'none';
+                    customerListContainer.innerHTML = ''; // リストをクリア
+                }
+            } else if (customerSearchInput.value && !paramsHandled) {
+                // 予約ページなどから顧客名付きでリダイレクトされた場合
+                filterCustomers();
+                paramsHandled = true;
+            } else if (customerSearchInput.value) {
+                // 通常の検索入力
                 filterCustomers();
             } else if (activeInitial) {
+                // 通常のインデックスクリック
                 activeInitial.click();
-            } else if (allCustomers.length > 0) {
+            } else if (allCustomers.length > 0 && !paramsHandled) {
+                // 初期ロード時 (URLパラメータなし)
                  customerInfoPlaceholder.textContent = '検索または上のインデックスから顧客を表示します。';
                  customerInfoPlaceholder.style.display = 'block';
                  customerListContainer.innerHTML = '';
             }
+            // ▲▲▲ 修正ここまで ▲▲▲
+
         }, (error) => {
             console.error("顧客データの取得に失敗:", error);
             customerInfoPlaceholder.textContent = "顧客データの読み込みに失敗しました。";
@@ -395,13 +439,20 @@ const customersMain = async (auth, user) => {
     addCustomerBtn.addEventListener('click', () => openCustomerModal());
     closeModalBtn.addEventListener('click', closeModal);
     customerForm.addEventListener('submit', saveCustomer);
-    customerSearchInput.addEventListener('input', filterCustomers);
+    customerSearchInput.addEventListener('input', () => {
+         // ▼▼▼ 修正: 手動検索時はURLパラメータフラグをリセット ▼▼▼
+         paramsHandled = true; // URLパラメータ処理を停止
+         targetCustomerId = null; // 顧客ID指定を解除
+         // ▲▲▲ 修正ここまで ▲▲▲
+        filterCustomers();
+    });
     photoUploadInput.addEventListener('change', (e) => {
         if(e.target.files.length > 0) {
             uploadAndSavePhoto(e.target.files[0])
         }
     });
     closeViewerBtn.addEventListener('click', () => {
+        document.body.classList.remove('modal-open'); // スクロール許可
         imageViewer.style.display = 'none';
     });
     
@@ -428,7 +479,9 @@ const customersMain = async (auth, user) => {
     // --- 初期化処理 ---
     createInitialNav();
     startCustomerListener();
+    // ▼▼▼ 修正: checkUrlParamsはリスナー起動前に呼び出す ▼▼▼
     checkUrlParams();
+    // ▲▲▲ 修正ここまで ▲▲▲
 };
 
 runAdminPage(customersMain);

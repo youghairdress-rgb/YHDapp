@@ -151,3 +151,94 @@ exports.sendBookingConfirmation = functions.region("asia-northeast1").firestore
         return null;
     });
 
+
+// ▼▼▼ 新規追加: 顧客データ統合のためのCloud Function ▼▼▼
+/**
+ * 既存の顧客データ(oldUserId)を新しいLINE連携アカウント(newUserId)に統合する
+ */
+exports.mergeUserData = functions.region("asia-northeast1").https.onCall(async (data, context) => {
+    // 認証チェック
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "この操作には認証が必要です。");
+    }
+
+    const { oldUserId, newUserId, profile, newUserData } = data;
+
+    // バリデーション
+    if (!oldUserId || !newUserId || !profile || !newUserData) {
+        throw new functions.https.HttpsError("invalid-argument", "必要なパラメータが不足しています。");
+    }
+
+    // セキュリティチェック（自分自身のLINE IDに対してのみ操作を許可）
+    if (context.auth.uid !== newUserId) {
+        throw new functions.https.HttpsError("permission-denied", "操作権限がありません。");
+    }
+
+    const db = admin.firestore();
+    const batch = db.batch();
+
+    try {
+        // 1. 既存の顧客ドキュメント(old)を取得
+        const oldUserRef = db.doc(`users/${oldUserId}`);
+        const oldUserSnap = await oldUserRef.get();
+        if (!oldUserSnap.exists) {
+            throw new functions.https.HttpsError("not-found", "統合元の顧客データが見つかりません。");
+        }
+        const oldUserData = oldUserSnap.data();
+
+        // 2. 新しい顧客ドキュメント(new)を作成または更新
+        const newUserRef = db.doc(`users/${newUserId}`);
+        
+        // フォームからの最新情報とLINEプロフィール、既存のメモ情報をマージ
+        const mergedData = {
+            ...oldUserData, // 既存のメモ(memo, notes)を引き継ぐ
+            ...newUserData, // フォームからの最新情報 (name, kana, phone)
+            lineUserId: profile.userId,
+            lineDisplayName: profile.displayName,
+            isLineUser: true,
+            createdAt: oldUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(), // 作成日を引き継ぐ
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        
+        batch.set(newUserRef, mergedData, { merge: true });
+
+        // 3. 既存の関連データを新しいIDに付け替える
+        // (A) 来店履歴 (sales)
+        const salesQuery = db.collection("sales").where("customerId", "==", oldUserId);
+        const salesSnapshot = await salesQuery.get();
+        salesSnapshot.forEach(doc => {
+            batch.update(doc.ref, { customerId: newUserId });
+        });
+
+        // (B) 予約履歴 (reservations)
+        const reservationsQuery = db.collection("reservations").where("customerId", "==", oldUserId);
+        const reservationsSnapshot = await reservationsQuery.get();
+        reservationsSnapshot.forEach(doc => {
+            batch.update(doc.ref, { customerId: newUserId });
+        });
+        
+        // (C) ギャラリー (users/{oldUserId}/gallery)
+        const oldGalleryQuery = db.collection(`users/${oldUserId}/gallery`);
+        const oldGallerySnapshot = await oldGalleryQuery.get();
+        
+        oldGallerySnapshot.forEach(doc => {
+            const newGalleryRef = db.doc(`users/${newUserId}/gallery/${doc.id}`);
+            batch.set(newGalleryRef, doc.data());
+            batch.delete(doc.ref);
+        });
+
+        // 4. 古い顧客ドキュメント(old)を削除
+        batch.delete(oldUserRef);
+
+        // 5. バッチ処理を実行
+        await batch.commit();
+
+        return { success: true, message: "顧客データの統合が完了しました。" };
+
+    } catch (error) {
+        console.error("顧客データの統合に失敗しました:", error);
+        throw new functions.https.HttpsError("internal", "データの統合処理中にエラーが発生しました。", error.message);
+    }
+});
+// ▲▲▲ 新規追加ここまで ▲▲▲
+

@@ -76,10 +76,13 @@
                         <p id="confirm-requests" style="padding-left: 1.8rem; white-space: pre-wrap;"></p>
                     </div>
                     
+                    <!-- ▼▼▼ 修正: お名前の「入力欄」を表示用の「確認欄」に変更 ▼▼▼ -->
                     <div class="form-group">
-                         <label for="customer-name">お名前 (必須)</label>
-                         <input type="text" id="customer-name" required placeholder="例：山田花子">
+                         <label for="customer-name">お名前</label>
+                         <!-- <input type="text" id="customer-name" required placeholder="例：山田花子"> -->
+                         <p id="confirm-name" style="font-size: 1.2rem; font-weight: bold; margin: 0; padding: 0.5rem 0;">読み込み中...</p>
                     </div>
+                    <!-- ▲▲▲ 修正ここまで ▲▲▲ -->
                 </div>
             </div>
 
@@ -117,3 +120,4 @@
     <script type="module" src="./main.js"></script>
 </body>
 </html>
+

@@ -14,6 +14,17 @@
             <h1>会計</h1>
         </header>
 
+        <!-- ▼▼▼ 追加: クイックナビゲーション ▼▼▼ -->
+        <nav class="quick-nav-menu card">
+            <a href="./index.html" class="quick-nav-button"><i class="fa-solid fa-table-columns"></i> ダッシュボード</a>
+            <a href="./booking.html" class="quick-nav-button"><i class="fa-solid fa-calendar-days"></i> 予約管理</a>
+            <a href="./customers.html" class="quick-nav-button"><i class="fa-solid fa-users"></i> 顧客管理</a>
+            <a href="./sales.html" class="quick-nav-button"><i class="fa-solid fa-chart-pie"></i> 売上分析</a>
+            <a href="./menu.html" class="quick-nav-button"><i class="fa-solid fa-scissors"></i> メニュー設定</a>
+            <a href="./settings.html" class="quick-nav-button"><i class="fa-solid fa-gear"></i> サロン設定</a>
+        </nav>
+        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
         <main id="content-container" style="display: none;">
             <div class="pos-container">
                 <!-- 左側：商品・顧客選択 -->
@@ -21,7 +32,9 @@
                     <div class="card">
                         <div class="form-group">
                             <label for="customer-input">お客様</label>
-                            <input type="text" id="customer-input" list="customer-datalist" class="input-field" placeholder="名前を入力または選択">
+                            <!-- ▼▼▼ 修正 ▼▼▼ -->
+                            <input type="text" id="customer-input" list="customer-datalist" class="input-field" placeholder="名前を入力または選択" inputmode="kana">
+                            <!-- ▲▲▲ 修正 ▲▲▲ -->
                             <datalist id="customer-datalist"></datalist>
                         </div>
                     </div>

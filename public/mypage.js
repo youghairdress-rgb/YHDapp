@@ -97,7 +97,9 @@ const fetchReservationHistory = async (userId) => {
                     <p><strong>合計金額:</strong> ¥${sale.total.toLocaleString()}</p>
                     <div class="note-section">
                         <strong>担当スタッフより:</strong>
-                        <p>${sale.staffNote || 'メッセージはまだありません。'}</p>
+                        <!-- ▼▼▼ 修正: staffNote から staffPublicMessage に変更 ▼▼▼ -->
+                        <p>${sale.staffPublicMessage || 'メッセージはまだありません。'}</p>
+                        <!-- ▲▲▲ 修正ここまで ▲▲▲ -->
                     </div>
                     <div class="note-section">
                         <strong>お客様コメント:</strong>

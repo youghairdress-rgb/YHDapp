@@ -36,10 +36,13 @@ const salesMain = async (auth, user) => {
 
             const startOfMonth = new Date(year, month, 1);
             const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
+            
+            // ▼▼▼ 修正: 月間売上集計は `createdAt` (会計日) 基準のままにする ▼▼▼
             const salesQuery = query(collection(db, 'sales'), 
                 where('createdAt', '>=', Timestamp.fromDate(startOfMonth)),
                 where('createdAt', '<=', Timestamp.fromDate(endOfMonth))
             );
+            // ▲▲▲ 修正ここまで ▲▲▲
             
             const salesSnapshot = await getDocs(salesQuery);
             const sales = salesSnapshot.docs.map(doc => doc.data());
@@ -84,7 +87,6 @@ const salesMain = async (auth, user) => {
         goalProgressBar.style.width = `${percentage}%`;
     };
     
-    // ▼▼▼ この関数を修正 ▼▼▼
     const getMonthlySalesForLastSixMonths = async () => {
         const salesByMonth = {};
         const monthLabels = [];
@@ -101,10 +103,12 @@ const salesMain = async (auth, user) => {
             const start = new Date(year, month, 1);
             const end = new Date(year, month + 1, 0, 23, 59, 59);
             
+            // ▼▼▼ 修正: 月次集計も `createdAt` (会計日) 基準のままにする ▼▼▼
             const q = query(collection(db, 'sales'),
                 where('createdAt', '>=', Timestamp.fromDate(start)),
                 where('createdAt', '<=', Timestamp.fromDate(end))
             );
+            // ▲▲▲ 修正ここまで ▲▲▲
 
             const snapshot = await getDocs(q);
             snapshot.forEach(doc => {
@@ -113,7 +117,6 @@ const salesMain = async (auth, user) => {
                 salesByMonth[label].count += 1;
             });
 
-            // 客単価を計算
             if (salesByMonth[label].count > 0) {
                 salesByMonth[label].average = Math.round(salesByMonth[label].total / salesByMonth[label].count);
             }
@@ -121,9 +124,7 @@ const salesMain = async (auth, user) => {
         return { salesByMonth, monthLabels };
     };
 
-    // ▼▼▼ この関数を修正 ▼▼▼
     const renderMonthlySalesChart = ({ salesByMonth, monthLabels }) => {
-        // --- グラフ描画 (既存のロジック) ---
         const ctx = document.getElementById('monthly-sales-chart').getContext('2d');
         const salesTotals = monthLabels.map(label => salesByMonth[label].total);
         const customerCounts = monthLabels.map(label => salesByMonth[label].count);
@@ -154,7 +155,6 @@ const salesMain = async (auth, user) => {
             }
         });
 
-        // --- 月次サマリーテーブル描画 (新規追加) ---
         const summaryTableBody = document.querySelector('#monthly-summary-table tbody');
         summaryTableBody.innerHTML = '';
         monthLabels.slice().reverse().forEach(label => { // 最新の月から表示
@@ -177,22 +177,27 @@ const salesMain = async (auth, user) => {
         const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
 
+        // ▼▼▼ 修正: クエリ対象を 'createdAt' から 'reservationTime' に変更 ▼▼▼
+        // これにより、日付ピッカーは「予約日」として機能します。
         const q = query(collection(db, 'sales'), 
-            where('createdAt', '>=', Timestamp.fromDate(startOfDay)),
-            where('createdAt', '<=', Timestamp.fromDate(endOfDay)),
-            orderBy('createdAt', 'desc')
+            where('reservationTime', '>=', Timestamp.fromDate(startOfDay)),
+            where('reservationTime', '<=', Timestamp.fromDate(endOfDay)),
+            orderBy('reservationTime', 'desc') // 並び順も予約日時に基づく
         );
+        // ▲▲▲ 修正ここまで ▲▲▲
 
         const snapshot = await getDocs(q);
         if (snapshot.empty) {
-            salesHistoryTableBody.innerHTML = '<tr><td colspan="4">この日の会計履歴はありません。</td></tr>';
+            salesHistoryTableBody.innerHTML = '<tr><td colspan="4">この日の予約に基づく会計履歴はありません。</td></tr>';
             return;
         }
 
         salesHistoryTableBody.innerHTML = '';
         snapshot.forEach(doc => {
             const sale = { id: doc.id, ...doc.data() };
+            // ▼▼▼ 修正: 表示する日時は 'createdAt' (会計日時) を使用 ▼▼▼
             const saleTime = sale.createdAt.toDate().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+            // ▲▲▲ 修正ここまで ▲▲▲
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -242,4 +247,3 @@ const salesMain = async (auth, user) => {
 };
 
 runAdminPage(salesMain);
-

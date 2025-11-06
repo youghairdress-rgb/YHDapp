@@ -43,7 +43,9 @@ header {
     padding: 1.25rem 1.5rem;
     text-align: center;
     border-radius: 12px;
-    margin-bottom: 1.5rem;
+    /* ▼▼▼ 修正: ナビ追加のため、ヘッダー下のマージンを減らす ▼▼▼ */
+    margin-bottom: 1rem;
+    /* ▲▲▲ 修正ここまで ▲▲▲ */
     box-shadow: 0 4px 12px rgba(0, 171, 181, 0.2);
     position: relative;
     display: flex;
@@ -68,6 +70,45 @@ header h1 {
     align-items: center;
     gap: 0.5rem;
 }
+
+/* ▼▼▼ 追加: クイックナビゲーション ▼▼▼ */
+.quick-nav-menu {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    padding: 0.75rem; /* カードのpaddingを少し減らす */
+    margin-bottom: 1rem;
+}
+
+.quick-nav-button {
+    background-color: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-color);
+    font-size: 0.8rem;
+    font-weight: bold;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+}
+
+.quick-nav-button:hover {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+}
+
+.quick-nav-button i {
+    font-size: 1.25rem;
+    color: var(--primary-color);
+}
+/* ▲▲▲ 追加ここまで ▲▲▲ */
+
 
 /* メインコンテンツ */
 main {
@@ -181,6 +222,8 @@ main {
     border-radius: 8px;
     font-size: 1rem;
     box-sizing: border-box;
+    /* ★★★ 追加: 背景色を明示的に指定 ★★★ */
+    background-color: var(--white-color);
 }
 
 .checkbox-label {
@@ -403,7 +446,9 @@ main {
 .today-schedule-timeline {
     position: relative;
     height: 100%;
-    background: repeating-linear-gradient(to right, var(--border-color), var(--border-color) 1px, transparent 1px, transparent calc(100% / 10));
+    /* ▼▼▼ 修正: 8-20時の12時間（1時間ごと）のグリッドに変更 ▼▼▼ */
+    background: repeating-linear-gradient(to right, var(--border-color), var(--border-color) 1px, transparent 1px, transparent calc(100% / 12));
+    /* ▲▲▲ 修正ここまで ▲▲▲ */
     cursor: pointer;
 }
 
@@ -1331,4 +1376,26 @@ main {
         align-items: stretch;
     }
 }
+
+/* ▼▼▼ 修正: タイムラインマーカーのCSSを追加 ▼▼▼ */
+.business-hours-marker-h {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--primary-color);
+    opacity: 0.7;
+    z-index: 1; /* 予約アイテムより手前、クリックの邪魔にならない程度 */
+}
+
+.business-hours-marker-v {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    opacity: 0.7;
+    z-index: 1;
+}
+/* ▲▲▲ 修正ここまで ▲▲▲ */
 

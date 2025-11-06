@@ -10,9 +10,12 @@ const posMain = async (auth, user) => {
     let customers = [];
     let menuCategories = [];
     let selectedMenus = [];
-    let editingSaleId = null;
+    let editingSaleId = null; // ★★★ 編集対象のSaleIDを保持
     let paymentMethod = null;
     let sourceBookingId = null; // 予約情報から来た場合のIDを保持
+    let sourceBookingData = null; 
+    let sourceCustomerId = null;
+    let sourceCustomerName = '';
 
     // --- DOM Elements ---
     const customerInput = document.getElementById('customer-input');
@@ -148,6 +151,11 @@ const posMain = async (auth, user) => {
         const customerName = customerInput.value.trim();
         const selectedCustomer = customers.find(c => c.name === customerName);
         
+        let customerId = selectedCustomer ? selectedCustomer.id : null;
+        if (!customerId && sourceCustomerId) {
+            customerId = sourceCustomerId;
+        }
+        
         const subtotal = selectedMenus.reduce((sum, menu) => sum + menu.price, 0);
         const discountValue = parseFloat(discountValueInput.value) || 0;
         const discountType = discountTypeSelect.value;
@@ -157,9 +165,10 @@ const posMain = async (auth, user) => {
         const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
         const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
         const total = taxExclusiveTotal + taxAmount - pointDiscount;
+        const now = Timestamp.now(); // 会計日時
 
         const saleData = {
-            customerId: selectedCustomer ? selectedCustomer.id : null,
+            customerId: customerId, 
             customerName: customerName,
             menus: selectedMenus,
             subtotal: subtotal,
@@ -169,35 +178,73 @@ const posMain = async (auth, user) => {
             pointDiscount: pointDiscount,
             total: total,
             paymentMethod: paymentMethod,
-            createdAt: Timestamp.now(),
-            bookingId: sourceBookingId // 元の予約IDを保存
+            createdAt: now, 
+            bookingId: sourceBookingId,
+            reservationTime: sourceBookingData ? sourceBookingData.startTime : now
         };
+
+        // ▼▼▼ 修正: 編集中の場合、`createdAt` と `reservationTime` を上書きしない ▼▼▼
+        if (editingSaleId) {
+            // 編集の場合、元の予約時間と作成時間を保持する（もしあれば）
+            try {
+                const originalSaleDoc = await getDoc(doc(db, 'sales', editingSaleId));
+                if (originalSaleDoc.exists()) {
+                    const originalData = originalSaleDoc.data();
+                    saleData.createdAt = originalData.createdAt || now; // 元の会計日を保持
+                    saleData.reservationTime = originalData.reservationTime || (sourceBookingData ? sourceBookingData.startTime : now); // 元の予約日を保持
+                }
+            } catch (e) {
+                console.warn("元の会計情報の読み込みに失敗:", e);
+                // 失敗した場合は、新しい会計情報（createdAt: nowなど）でそのまま進む
+            }
+        }
+        // ▲▲▲ 修正ここまで ▲▲▲
 
         try {
             completeSaleBtn.disabled = true;
             completeSaleBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 処理中...';
             
             if (editingSaleId) {
-                await setDoc(doc(db, 'sales', editingSaleId), saleData, { merge: true });
-                alert('会計情報を更新しました。');
+                // ▼▼▼ 修正: `setDoc` を使用して既存のドキュメントを上書き ▼▼▼
+                await setDoc(doc(db, 'sales', editingSaleId), saleData);
+                // ▲▲▲ 修正ここまで ▲▲▲
             } else {
                 await addDoc(collection(db, 'sales'), saleData);
-                // ▼▼▼ 予約ステータスを更新する処理を追加 ▼▼▼
                 if (sourceBookingId) {
                     const bookingRef = doc(db, "reservations", sourceBookingId);
                     await setDoc(bookingRef, { status: 'completed' }, { merge: true });
                 }
-                alert('会計が完了しました。');
             }
-            resetForm();
+            
+            if (customerId) {
+                const customerNameEncoded = encodeURIComponent(customerName);
+                // ▼▼▼ 修正: 編集完了時は売上分析ページに戻る ▼▼▼
+                if (editingSaleId) {
+                    alert('会計情報を更新しました。売上分析ページに戻ります。');
+                    window.location.href = './sales.html';
+                } else {
+                    window.location.href = `./customers.html?customerId=${customerId}&customerName=${customerNameEncoded}`;
+                }
+                // ▲▲▲ 修正ここまで ▲▲▲
+            } else {
+                // ▼▼▼ 修正: 編集完了時は売上分析ページに戻る ▼▼▼
+                if (editingSaleId) {
+                    alert('会計情報を更新しました。売上分析ページに戻ります。');
+                    window.location.href = './sales.html';
+                } else {
+                    alert('会計が完了しました。顧客管理ページに戻ります。');
+                    window.location.href = './customers.html';
+                }
+                // ▲▲▲ 修正ここまで ▲▲▲
+            }
+
         } catch (error) {
             console.error("会計処理に失敗:", error);
             alert("会計処理に失敗しました。");
-        } finally {
             completeSaleBtn.disabled = false;
             completeSaleBtn.innerHTML = '<i class="fa-solid fa-check"></i> 会計完了';
             validateForm();
-        }
+        } 
     };
     
     const resetForm = () => {
@@ -210,33 +257,97 @@ const posMain = async (auth, user) => {
         paymentMethod = null;
         editingSaleId = null;
         sourceBookingId = null;
+        sourceBookingData = null;
+        sourceCustomerId = null;
+        sourceCustomerName = '';
         
         paymentBtns.forEach(btn => btn.classList.remove('active'));
         renderSelectedMenus();
         calculateTotals();
     };
 
+    // ▼▼▼ 修正: `checkUrlParams` を `saleId` に対応 ▼▼▼
     const checkUrlParams = async () => {
         const params = new URLSearchParams(window.location.search);
-        sourceBookingId = params.get('bookingId'); // bookingIdをグローバル変数に保持
-        if (!sourceBookingId) return;
+        sourceBookingId = params.get('bookingId');
+        sourceCustomerId = params.get('customerId');
+        sourceCustomerName = params.get('customerName');
+        const saleId = params.get('saleId');
 
-        showLoading("予約情報を読み込み中...");
-        try {
-            const bookingDoc = await getDoc(doc(db, "reservations", sourceBookingId));
-            if (bookingDoc.exists()) {
-                const booking = bookingDoc.data();
-                customerInput.value = booking.customerName;
-                selectedMenus = booking.selectedMenus || [];
-                renderSelectedMenus();
-                calculateTotals();
+        if (saleId) { 
+            editingSaleId = saleId; // 編集モードに設定
+            showLoading("会計履歴を読み込み中...");
+            try {
+                const saleDoc = await getDoc(doc(db, "sales", saleId));
+                if (saleDoc.exists()) {
+                    const sale = saleDoc.data();
+                    
+                    // フォームにデータを充填
+                    customerInput.value = sale.customerName;
+                    selectedMenus = sale.menus || [];
+                    sourceCustomerId = sale.customerId; // 顧客IDをセット
+                    sourceBookingId = sale.bookingId; // 元の予約IDもセット
+                    
+                    discountValueInput.value = sale.discountValue || 0;
+                    discountTypeSelect.value = sale.discountType || 'yen';
+                    lengthFeeSelect.value = sale.lengthFee || 0;
+                    pointDiscountInput.value = sale.pointDiscount || 0;
+                    
+                    paymentMethod = sale.paymentMethod;
+                    if (paymentMethod) {
+                        paymentBtns.forEach(btn => {
+                            btn.classList.toggle('active', btn.dataset.method === paymentMethod);
+                        });
+                    }
+                    
+                    // 予約データを取得（`reservationTime`を保持するため）
+                    if (sourceBookingId) {
+                         const bookingDoc = await getDoc(doc(db, "reservations", sourceBookingId));
+                         if (bookingDoc.exists()) {
+                             sourceBookingData = bookingDoc.data();
+                         }
+                    }
+
+                    renderSelectedMenus();
+                    calculateTotals();
+                } else {
+                    showError("該当する会計履歴が見つかりません。");
+                }
+            } catch (error) {
+                showError("会計履歴の読み込みに失敗しました。");
+            } finally {
+                showContent();
             }
-        } catch (error) {
-            showError("予約情報の読み込みに失敗しました。");
-        } finally {
+        } else if (sourceBookingId) {
+            // 予約IDがある場合（予約管理からの遷移）
+            showLoading("予約情報を読み込み中...");
+            try {
+                const bookingDoc = await getDoc(doc(db, "reservations", sourceBookingId));
+                if (bookingDoc.exists()) {
+                    const booking = bookingDoc.data();
+                    sourceBookingData = booking; 
+                    customerInput.value = booking.customerName;
+                    selectedMenus = booking.selectedMenus || [];
+                    sourceCustomerId = booking.customerId; 
+                    renderSelectedMenus();
+                    calculateTotals();
+                }
+            } catch (error) {
+                showError("予約情報の読み込みに失敗しました。");
+            } finally {
+                showContent();
+            }
+        } else if (sourceCustomerId && sourceCustomerName) {
+            // 顧客IDと名前がある場合（顧客管理からの遷移）
+            customerInput.value = sourceCustomerName;
+            renderSelectedMenus();
+            calculateTotals();
             showContent();
+        } else {
+             showContent();
         }
     };
+    // ▲▲▲ 修正ここまで ▲▲▲
 
     // --- Event Listeners ---
     addMenuModalBtn.addEventListener('click', () => addMenuModal.style.display = 'flex');
@@ -260,10 +371,11 @@ const posMain = async (auth, user) => {
     completeSaleBtn.addEventListener('click', completeSale);
     
     // --- Initial Load ---
+    showLoading("会計ページを準備中...");
     await loadInitialData();
-    renderSelectedMenus();
-    calculateTotals();
+    // ▼▼▼ 修正: ページ読み込み時の関数呼び出しを変更 ▼▼▼
     await checkUrlParams();
+    // ▲▲▲ 修正ここまで ▲▲▲
 };
 
 runAdminPage(posMain);

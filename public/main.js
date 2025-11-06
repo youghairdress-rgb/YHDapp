@@ -31,6 +31,23 @@ const main = async () => {
         showLoading("LIFFを初期化中...");
         const { user, profile } = await initializeLiffAndAuth("2008029428-GNNaR1Nm");
 
+        // ▼▼▼ 修正: 顧客情報の存在チェックを追加 ▼▼▼
+        showLoading("顧客情報を確認中...");
+        const userDocRef = doc(db, "users", profile.userId);
+        const userDocSnap = await getDoc(userDocRef);
+
+        let userData;
+        if (userDocSnap.exists()) {
+            userData = userDocSnap.data();
+        } else {
+            // 未登録の場合は初回登録ページへリダイレクト
+            showLoading("初回登録画面に移動します...");
+            window.location.href = './entry.html';
+            return; // これ以上処理を進めない
+        }
+        // ▲▲▲ 修正ここまで ▲▲▲
+
+
         showLoading("店舗情報を読み込み中...");
         const salonSettings = await loadSalonSettings();
         if (!salonSettings || !salonSettings.businessHours) {
@@ -46,6 +63,8 @@ const main = async () => {
             selectedDateTime: null,
             userRequests: '',
             profile: profile,
+            // ▼▼▼ 修正: 取得した顧客データをstateに追加 ▼▼▼
+            userData: userData,
         };
         
         let unsubscribeReservations = null;
@@ -54,7 +73,8 @@ const main = async () => {
         const stepContents = [document.getElementById('step-1'), document.getElementById('step-2'), document.getElementById('step-3'), document.getElementById('step-4')];
         const nextBtn = document.getElementById('next-btn');
         const backBtn = document.getElementById('back-btn');
-        const customerNameInput = document.getElementById('customer-name');
+        // ▼▼▼ 修正: customerNameInput への参照を削除 ▼▼▼
+        // const customerNameInput = document.getElementById('customer-name');
         const userRequestsTextarea = document.getElementById('user-requests');
         
         const navigateToStep = (step) => {
@@ -94,7 +114,9 @@ const main = async () => {
                 backBtn.style.display = 'block';
                 nextBtn.style.display = 'block';
                 nextBtn.textContent = '予約を確定する';
-                nextBtn.disabled = customerNameInput.value.trim() === '';
+                // ▼▼▼ 修正: 名前のバリデーションを削除 ▼▼▼
+                // nextBtn.disabled = customerNameInput.value.trim() === '';
+                nextBtn.disabled = false;
                 summaryContent.style.display = 'none';
             } else if (state.currentStep === 4) {
                 summaryFooter.style.display = 'none';
@@ -423,8 +445,14 @@ const main = async () => {
                 requestsWrapper.style.display = 'none';
             }
             
-            customerNameInput.value = '';
-            customerNameInput.placeholder = '例：山田花子';
+            // ▼▼▼ 修正: 顧客名をstateから取得して表示 ▼▼▼
+            const confirmNameEl = document.getElementById('confirm-name');
+            if (state.userData && state.userData.name) {
+                confirmNameEl.textContent = state.userData.name + " 様";
+            } else {
+                confirmNameEl.textContent = state.profile.displayName + " 様";
+            }
+            // ▲▲▲ 修正ここまで ▲▲▲
 
             updateNavigation();
         };
@@ -451,9 +479,12 @@ const main = async () => {
                     endTime = new Date(startTime.getTime() + totalDuration * 60000);
                 }
                 
+                // ▼▼▼ 修正: 顧客名をstateのuserDataから取得 ▼▼▼
+                const customerName = state.userData.name || state.profile.displayName;
+                
                 const bookingData = {
                     customerId: state.profile.userId,
-                    customerName: customerNameInput.value.trim(),
+                    customerName: customerName,
                     lineDisplayName: state.profile.displayName,
                     selectedMenus: selectedMenusData.map(m => ({ id: m.id, name: m.name, price: m.price, duration: m.duration, pricePrefix: m.pricePrefix || false })),
                     startTime: Timestamp.fromDate(startTime),
@@ -495,7 +526,8 @@ const main = async () => {
             renderTimetable();
         });
         
-        customerNameInput.addEventListener('input', updateNavigation);
+        // ▼▼▼ 修正: customerNameInput のイベントリスナーを削除 ▼▼▼
+        // customerNameInput.addEventListener('input', updateNavigation);
         
         // --- Initialization ---
         renderMenus();
@@ -545,3 +577,4 @@ async function loadMenus() {
 }
 
 document.addEventListener('DOMContentLoaded', main);
+

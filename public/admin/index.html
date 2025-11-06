@@ -31,7 +31,9 @@
                     <div class="card">
                         <h2 class="card-subtitle">連絡事項</h2>
                         <div class="memo-container">
-                            <textarea id="today-memo" placeholder="スタッフへの連絡事項や今日気をつけることなどを記入..."></textarea>
+                            <!-- ▼▼▼ 修正 ▼▼▼ -->
+                            <textarea id="today-memo" placeholder="スタッフへの連絡事項や今日気をつけることなどを記入..." inputmode="kana"></textarea>
+                            <!-- ▲▲▲ 修正 ▲▲▲ -->
                             <button id="save-memo-btn" class="button-primary" style="margin-top: 0.5rem;">メモを保存</button>
                         </div>
                     </div>
@@ -108,7 +110,9 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label for="customer-input">顧客:</label>
-                            <input type="text" id="customer-input" list="customer-datalist" class="input-field" placeholder="名前を入力または選択">
+                            <!-- ▼▼▼ 修正 ▼▼▼ -->
+                            <input type="text" id="customer-input" list="customer-datalist" class="input-field" placeholder="名前を入力または選択" inputmode="kana" required>
+                            <!-- ▲▲▲ 修正 ▲▲▲ -->
                             <datalist id="customer-datalist"></datalist>
                         </div>
 
@@ -117,7 +121,9 @@
                             <p style="font-size: 0.9rem; color: var(--light-text-color); margin-top: 0;">新規顧客として登録します。</p>
                             <div class="form-group">
                                 <label for="new-customer-kana">ふりがな <span class="required">*</span></label>
-                                <input type="text" id="new-customer-kana" class="input-field">
+                                <!-- ▼▼▼ 修正 ▼▼▼ -->
+                                <input type="text" id="new-customer-kana" class="input-field" inputmode="kana">
+                                <!-- ▲▲▲ 修正 ▲▲▲ -->
                             </div>
                             <div class="form-group">
                                 <label for="new-customer-phone">電話番号</label>
@@ -147,6 +153,33 @@
             </div>
         </div>
 
+        <!-- ▼▼▼ 4. 予約不可設定モーダル (新規追加) ▼▼▼ -->
+        <div id="unavailable-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="unavailable-modal-title">予約不可時間を設定</h2>
+                </div>
+                <form id="unavailable-form">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="unavailable-start-time">開始時間:</label>
+                            <select id="unavailable-start-time" class="input-field" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="unavailable-end-time">終了時間:</label>
+                            <select id="unavailable-end-time" class="input-field" required></select>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                        <button type="submit" class="button-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
+
+
         <div id="loading-container" style="display: flex;">
             <div class="spinner"></div>
             <p id="loading-text">読み込み中...</p>
@@ -163,3 +196,4 @@
     <script type="module" src="./admin.js"></script>
 </body>
 </html>
+

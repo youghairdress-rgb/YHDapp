@@ -1,4 +1,4 @@
-import { db, initializeLiffAndAuth } from './admin/firebase-init.js';
+import { db, initializeLiffAndAuth, functions } from './admin/firebase-init.js'; // ★ functions をインポート
 import { doc, getDoc, setDoc, collection, query, where, getDocs, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
@@ -68,21 +68,58 @@ const setupRegistrationForm = (profile) => {
         }
 
         try {
-            const existingUserQuery = query(
-                collection(db, "users"),
-                where("kana", "==", kana),
-                where("phone", "==", phone),
-                where("isLineUser", "==", false)
-            );
+            // ▼▼▼ 修正: 既存顧客の検索ロジックを強化 ▼▼▼
+            let existingUserDoc = null;
 
-            const querySnapshot = await getDocs(existingUserQuery);
-            
-            if (!querySnapshot.empty) {
-                const existingUserDoc = querySnapshot.docs[0];
+            // 1. 電話番号が入力されている場合、電話番号で検索
+            if (phone) {
+                const phoneQuery = query(
+                    collection(db, "users"),
+                    where("phone", "==", phone),
+                    where("isLineUser", "==", false)
+                );
+                const phoneSnapshot = await getDocs(phoneQuery);
+                if (!phoneSnapshot.empty) {
+                    existingUserDoc = phoneSnapshot.docs[0];
+                }
+            }
+
+            // 2. 電話番号で見つからない、または電話番号が未入力の場合、名前とカナで検索
+            if (!existingUserDoc) {
+                const nameQuery = query(
+                    collection(db, "users"),
+                    where("name", "==", name),
+                    where("kana", "==", kana),
+                    where("isLineUser", "==", false)
+                );
+                const nameSnapshot = await getDocs(nameQuery);
+                if (!nameSnapshot.empty) {
+                    existingUserDoc = nameSnapshot.docs[0];
+                }
+            }
+            // ▲▲▲ 修正ここまで ▲▲▲
+
+            if (existingUserDoc) {
+                // ★ 修正: 既存顧客が見つかった場合、Cloud Functionを呼び出して統合
                 const oldUserId = existingUserDoc.id;
+                
+                // 顧客に統合を確認する（オプション）
+                if (!confirm("既存の顧客情報が見つかりました。LINEアカウントと統合しますか？")) {
+                    showContent();
+                    return;
+                }
 
                 const mergeUserData = httpsCallable(functions, 'mergeUserData');
-                await mergeUserData({ oldUserId: oldUserId, newUserId: profile.userId, profile: profile });
+                await mergeUserData({ 
+                    oldUserId: oldUserId, 
+                    newUserId: profile.userId, 
+                    profile: profile,
+                    newUserData: { // フォームから入力された最新情報
+                        name: name,
+                        kana: kana,
+                        phone: phone
+                    }
+                });
                 
                 alert("既存の顧客情報とLINEアカウントを統合しました。");
 
@@ -109,3 +146,4 @@ const setupRegistrationForm = (profile) => {
 };
 
 document.addEventListener('DOMContentLoaded', main);
+
