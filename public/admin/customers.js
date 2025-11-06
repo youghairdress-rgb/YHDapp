@@ -351,6 +351,12 @@ const customersMain = async (auth, user) => {
             const card = document.createElement('div');
             card.className = 'customer-card';
 
+            // ▼▼▼ ★★★ 修正: AIカウンセリングボタンのLIFF IDを `2008345232-zq4A3Vg3` に変更 ★★★ ▼▼▼
+            const encodedName = encodeURIComponent(customer.name);
+            // AIカウンセリングアプリ(yhd_ai_diagnosis)のLIFF URLにパラメータを付与
+            // ご指定のLIFF ID (2008345232-zq4A3Vg3) を使用
+            const counselingLiffUrl = `https://liff.line.me/2008345232-zq4A3Vg3?customerId=${customer.id}&customerName=${encodedName}`;
+
             card.innerHTML = `
                 <div class="customer-card-header">
                     ${customer.notes ? '<i class="fa-solid fa-triangle-exclamation"></i>' : ''}
@@ -358,11 +364,15 @@ const customersMain = async (auth, user) => {
                 </div>
                 <div class="customer-card-actions">
                     <button class="icon-button camera-btn" title="写真"><i class="fa-solid fa-camera"></i></button>
-                    <a href="./counseling/index.html?customerId=${customer.id}" class="icon-button" title="AIカウンセリング"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
+                    
+                    <!-- 修正: hrefをcounselingLiffUrlに変更し、target="_blank" を追加 -->
+                    <a href="${counselingLiffUrl}" class="icon-button" title="AIカウンセリング" target="_blank"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
+                    
                     <a href="./pos.html?customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
                     <button class="icon-button delete-btn" title="削除"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
+            // ▲▲▲ ★★★ 修正ここまで ★★★ ▲▲▲
 
             card.querySelector('.customer-card-header').addEventListener('click', () => openCustomerModal(customer));
             card.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteCustomer(customer.id, customer.name); });
@@ -485,4 +495,3 @@ const customersMain = async (auth, user) => {
 };
 
 runAdminPage(customersMain);
-
