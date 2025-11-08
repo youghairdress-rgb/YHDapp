@@ -8,7 +8,8 @@ const { defineString } = require('firebase-functions/params');
 admin.initializeApp();
 
 // 環境変数を定義
-const LINE_CHANNEL_ID = defineString('LINE_CHANNEL_ID');
+// ★ 修正: 複数のチャンネルIDをカンマ区切りで受け取るように想定
+const LINE_CHANNEL_IDS = defineString('LINE_CHANNEL_IDS'); // 変数名を変更 (LINE_CHANNEL_ID -> LINE_CHANNEL_IDS)
 const LINE_CHANNEL_ACCESS_TOKEN = defineString('LINE_CHANNEL_ACCESS_TOKEN');
 const ADMIN_LINE_USER_IDS = defineString('ADMIN_LINE_USER_IDS');
 
@@ -19,11 +20,18 @@ exports.createFirebaseCustomToken = functions.region("asia-northeast1").https.on
             return res.status(405).send("Method Not Allowed");
         }
 
-        const channelId = LINE_CHANNEL_ID.value();
-        if (!channelId) {
-            console.error("LINE_CHANNEL_ID is not set in environment variables.");
-            return res.status(500).send("Server configuration error: LINE Channel ID is not set.");
+        // ★ 修正: カンマ区切りの文字列を配列に変換
+        const channelIdsString = LINE_CHANNEL_IDS.value();
+        if (!channelIdsString) {
+            console.error("LINE_CHANNEL_IDS is not set in environment variables.");
+            return res.status(500).send("Server configuration error: LINE Channel IDs are not set.");
         }
+        const allowedChannelIds = channelIdsString.split(',').map(id => id.trim()).filter(id => id);
+        if (allowedChannelIds.length === 0) {
+             console.error("LINE_CHANNEL_IDS is empty or invalid.");
+             return res.status(500).send("Server configuration error: LINE Channel IDs are invalid.");
+        }
+        // ★ 修正ここまで
 
         const { accessToken } = req.body;
         if (!accessToken) {
@@ -37,10 +45,13 @@ exports.createFirebaseCustomToken = functions.region("asia-northeast1").https.on
 
             const verifyResponse = await axios.get(verifyUrl.toString());
 
-            if (verifyResponse.data.client_id !== channelId) {
-                console.error("Channel ID mismatch");
+            // ★ 修正: 厳格な一致 (===) から、配列に含まれるか (includes) に変更
+            const requestChannelId = verifyResponse.data.client_id;
+            if (!allowedChannelIds.includes(requestChannelId)) {
+                console.error(`Channel ID mismatch. Expected one of [${allowedChannelIds.join(', ')}] but got ${requestChannelId}`);
                 return res.status(401).send("Invalid LIFF app or Channel ID mismatch.");
             }
+            // ★ 修正ここまで
 
             const profileResponse = await axios.get("https://api.line.me/v2/profile", {
                 headers: { "Authorization": `Bearer ${accessToken}` },
@@ -241,4 +252,3 @@ exports.mergeUserData = functions.region("asia-northeast1").https.onCall(async (
     }
 });
 // ▲▲▲ 新規追加ここまで ▲▲▲
-
