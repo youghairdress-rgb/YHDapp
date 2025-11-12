@@ -13,10 +13,22 @@
             <h1>ダッシュボード</h1>
         </header>
         
+        <!-- ▼▼▼ 追加: クイックナビゲーション (他のページと統一) ▼▼▼ -->
+        <nav class="quick-nav-menu card">
+            <a href="./booking.html" class="quick-nav-button"><i class="fa-solid fa-calendar-days"></i> 予約管理</a>
+            <a href="./pos.html" class="quick-nav-button"><i class="fa-solid fa-cash-register"></i> 会計</a>
+            <a href="./customers.html" class="quick-nav-button"><i class="fa-solid fa-users"></i> 顧客管理</a>
+            <a href="./sales.html" class="quick-nav-button"><i class="fa-solid fa-chart-pie"></i> 売上分析</a>
+            <a href="./menu.html" class="quick-nav-button"><i class="fa-solid fa-scissors"></i> メニュー設定</a>
+            <a href="./settings.html" class="quick-nav-button"><i class="fa-solid fa-gear"></i> サロン設定</a>
+        </nav>
+        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
         <main id="content-container" style="display: none;">
             
-            <div class="dashboard-grid">
-                <div class="dashboard-main">
+            <!-- ▼▼▼ 修正: dashboard-grid から dashboard-main に変更し、サイドバーを削除 ▼▼▼ -->
+            <div class="dashboard-main">
+                <!-- <div class="dashboard-main"> (ネストされていたものを解除) -->
                     <div class="card">
                         <h2 id="today-date"></h2>
                         <div class="today-schedule-container">
@@ -37,7 +49,9 @@
                             <button id="save-memo-btn" class="button-primary" style="margin-top: 0.5rem;">メモを保存</button>
                         </div>
                     </div>
-                </div>
+                <!-- </div> (ネストされていたものを解除) -->
+                <!-- ▼▼▼ 削除: dashboard-sidebar を削除 ▼▼▼ -->
+                <!-- 
                 <div class="dashboard-sidebar">
                     <div class="card">
                         <nav class="admin-menu">
@@ -50,7 +64,10 @@
                         </nav>
                     </div>
                 </div>
+                -->
+                <!-- ▲▲▲ 削除ここまで ▲▲▲ -->
             </div>
+            <!-- ▲▲▲ 修正ここまで ▲▲▲ -->
         </main>
 
         <!-- 1. 予約詳細表示モーダル -->
@@ -196,4 +213,3 @@
     <script type="module" src="./admin.js"></script>
 </body>
 </html>
-
