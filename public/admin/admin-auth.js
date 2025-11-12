@@ -53,10 +53,16 @@ export const runAdminPage = (mainFunction, pageLiffId = null) => {
             const { user } = await initializeLiffAndAuth(liffId);
 
             showLoading("管理者権限を確認中...");
-            const idTokenResult = await user.getIdTokenResult(true); // Force refresh the token
+            
+            // ▼▼▼ 修正点: forceRefresh (true) を削除 ▼▼▼
+            // キャッシュされたトークン（とクレーム）を使用することで高速化する
+            const idTokenResult = await user.getIdTokenResult(); 
+            // ▲▲▲ 修正ここまで ▲▲▲
+
             if (!idTokenResult.claims.admin) {
                 throw new Error("管理者権限がありません。");
             }
+            console.log("管理者権限を確認しました。");
 
             showLoading("ページを読み込み中...");
             await mainFunction(user);
@@ -72,4 +78,3 @@ export const runAdminPage = (mainFunction, pageLiffId = null) => {
         start();
     }
 };
-

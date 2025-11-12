@@ -318,7 +318,7 @@ const customersMain = async (auth, user) => {
         if(galleryUploadingOverlay) galleryUploadingOverlay.style.display = 'flex';
         try {
             const timestamp = Date.now();
-            const storageRef = ref(storage, `galleries/${editingCustomerId}/${timestamp}-${file.name}`);
+            const storageRef = ref(storage, `users/${editingCustomerId}/gallery/${timestamp}-${file.name}`);
 
             const snapshot = await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
@@ -351,11 +351,10 @@ const customersMain = async (auth, user) => {
             const card = document.createElement('div');
             card.className = 'customer-card';
 
-            // ▼▼▼ ★★★ 修正: AIカウンセリングボタンのLIFF IDを `2008345232-zq4A3Vg3` に変更 ★★★ ▼▼▼
+            // ▼▼▼ ★★★ ステップ1 修正: AIカウンセリングボタンのLIFF IDを `2008345232-pVNR18m1` に変更 ★★★ ▼▼▼
             const encodedName = encodeURIComponent(customer.name);
-            // AIカウンセリングアプリ(yhd_ai_diagnosis)のLIFF URLにパラメータを付与
-            // ご指定のLIFF ID (2008345232-zq4A3Vg3) を使用
-            const counselingLiffUrl = `https://liff.line.me/2008345232-zq4A3Vg3?customerId=${customer.id}&customerName=${encodedName}`;
+            // ご指定の新しいLIFF ID (2008345232-pVNR18m1) を使用
+            const counselingLiffUrl = `https://liff.line.me/2008345232-pVNR18m1?customerId=${customer.id}&customerName=${encodedName}`;
 
             card.innerHTML = `
                 <div class="customer-card-header">

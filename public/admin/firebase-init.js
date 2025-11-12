@@ -25,6 +25,22 @@ const functions = getFunctions(app, "asia-northeast1");
 // Cloud FunctionsのURL
 const CLOUD_FUNCTIONS_URL = "https://asia-northeast1-yhd-db.cloudfunctions.net";
 
+// --- ▼▼▼ 認証ロジックを修正 ▼▼▼ ---
+
+// onAuthStateChanged を Promise 化し、現在の認証状態を取得するヘルパー
+const getFirebaseUser = () => new Promise((resolve, reject) => {
+    const unsubscribe = onAuthStateChanged(auth, 
+        (user) => {
+            unsubscribe(); // 最初の状態変更でリスナーを解除
+            resolve(user); // ユーザー情報（ログインしていなければ null）を解決
+        }, 
+        (error) => {
+            unsubscribe();
+            reject(error);
+        }
+    );
+});
+
 /**
  * LIFFの初期化とFirebaseへの認証を行う共通関数
  * @param {string} liffId - 初期化するLIFFアプリのID
@@ -40,27 +56,35 @@ const initializeLiffAndAuth = (liffId) => {
             if (!liff.isLoggedIn()) {
                 console.log("LIFFにログインしていません。ログインページにリダイレクトします。");
                 liff.login({ redirectUri: window.location.href });
-                return; // リダイレクトするためPromiseは解決しない
+                // リダイレクトするためPromiseは解決しない
+                return; 
             }
             console.log("LIFFにログイン済みです。");
 
+            // まずローカルのFirebaseセッションを確認
+            let currentUser = await getFirebaseUser();
+
+            if (currentUser) {
+                console.log(`Firebaseセッションが有効です。ユーザー: ${currentUser.uid}`);
+                // セッションは有効だが、念のためLINEプロフィールを取得
+                try {
+                    const profile = await liff.getProfile();
+                    return resolve({ user: currentUser, profile });
+                } catch (profileError) {
+                    return reject(new Error(`LINEプロフィールの取得に失敗しました: ${profileError.message}`));
+                }
+            }
+
+            // Firebaseセッションが無効、または初回ログインの場合
+            console.log("Firebaseセッションが無効です。カスタムトークンを取得します。");
             const accessToken = liff.getAccessToken();
             if (!accessToken) {
-                // トークンが即座に利用できない場合があるため、1秒待ってから再試行
-                console.warn("アクセストークンがすぐに取得できませんでした。1秒後に再試行します。");
-                setTimeout(async () => {
-                    const newAccessToken = liff.getAccessToken();
-                    if (!newAccessToken) {
-                        console.error("アクセストークンの再取得に失敗しました。");
-                        return reject(new Error("LIFFアクセストークンが取得できませんでした。ログインし直してください。"));
-                    }
-                    console.log("アクセストークンを再取得しました。");
-                    await firebaseLogin(newAccessToken, resolve, reject);
-                }, 1000);
-            } else {
-                console.log("アクセストークンを取得しました。");
-                await firebaseLogin(accessToken, resolve, reject);
+                 return reject(new Error("LIFFアクセストークンが取得できませんでした。ログインし直してください。"));
             }
+
+            const { user, profile } = await firebaseLoginWithToken(accessToken);
+            resolve({ user, profile });
+
         } catch (error) {
             console.error("LIFFの初期化または認証プロセスでエラーが発生しました:", error);
             reject(new Error(`LIFFの処理中にエラーが発生しました: ${error.message}`));
@@ -68,21 +92,8 @@ const initializeLiffAndAuth = (liffId) => {
     });
 };
 
-const firebaseLogin = async (accessToken, resolve, reject) => {
-    // 既にFirebaseにサインインしているか確認
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-        console.log(`Firebaseにログイン済みです。ユーザー: ${currentUser.uid}`);
-        try {
-            const profile = await liff.getProfile();
-            return resolve({ user: currentUser, profile });
-        } catch (profileError) {
-            return reject(new Error(`LINEプロフィールの取得に失敗しました: ${profileError.message}`));
-        }
-    }
-    
-    console.log("Firebaseのカスタムトークンを取得します...");
-    
+// カスタムトークンを使用してFirebaseにログインする関数
+const firebaseLoginWithToken = async (accessToken) => {
     try {
         const response = await fetch(`${CLOUD_FUNCTIONS_URL}/createFirebaseCustomToken`, {
             method: 'POST',
@@ -91,14 +102,12 @@ const firebaseLogin = async (accessToken, resolve, reject) => {
         });
 
         if (!response.ok) {
-            // アクセストークンの有効期限切れなどで401エラーが返ってきた場合、
-            // LIFFのログインを再度実行させてトークンを更新させる
             if (response.status === 401) {
                 console.warn("アクセストークンが無効(401)です。LIFFの再ログインを試みます。");
                 liff.login({ redirectUri: window.location.href });
-                return; // 再ログインのためリダイレクト
+                // リダイレクト待機
+                return new Promise(() => {}); 
             }
-            // その他のサーバーエラー
             const errorText = await response.text();
             throw new Error(`カスタムトークンの取得に失敗しました。ステータス: ${response.status}, サーバー応答: ${errorText}`);
         }
@@ -112,12 +121,16 @@ const firebaseLogin = async (accessToken, resolve, reject) => {
         const profile = await liff.getProfile();
         console.log("LINEプロフィールを正常に取得しました。");
         
-        resolve({ user: userCredential.user, profile });
+        return { user: userCredential.user, profile };
     } catch(error) {
         console.error("Firebaseログイン処理中にエラーが発生しました:", error);
-        reject(error); // エラーを呼び出し元に伝える
+        throw error; // エラーを呼び出し元に投げる
     }
 };
 
-export { db, auth, storage, functions, initializeLiffAndAuth };
+// 以前の `firebaseLogin` 関数は `initializeLiffAndAuth` に統合・リファクタリングされました。
 
+// --- ▲▲▲ 認証ロジックを修正 ▲▲▲ ---
+
+
+export { db, auth, storage, functions, initializeLiffAndAuth };
