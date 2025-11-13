@@ -249,11 +249,18 @@ const bookingMain = async (auth, user) => {
                 ? res.selectedMenus.map(m => m.name).join(', ') 
                 : (res.status === 'unavailable' ? '予約不可' : 'メニュー情報なし');
             
+            // ▼▼▼ 修正: 顧客情報を検索し、アイコンを追加 ▼▼▼
+            const customer = customers.find(c => c.id === res.customerId);
+            const lineIcon = customer && customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
+            const noteIcon = customer && customer.notes ? '<i class="fa-solid fa-triangle-exclamation note-icon"></i>' : '';
+
             resElement.innerHTML = `
-                <strong>${res.customerName || ''}</strong>
+                <strong>${lineIcon}<span class="reservation-item-name">${res.customerName || ''}</span>${noteIcon}</strong>
                 <small>${start.getHours()}:${String(start.getMinutes()).padStart(2, '0')} - ${end.getHours()}:${String(end.getMinutes()).padStart(2, '0')}</small>
                 <small class="menu-names">${menuNames}</small>
             `;
+            // ▲▲▲ 修正ここまで ▲▲▲
+
             resElement.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 openDetailModal(res);
@@ -791,4 +798,3 @@ const bookingMain = async (auth, user) => {
 };
 
 runAdminPage(bookingMain);
-

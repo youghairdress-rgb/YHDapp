@@ -351,27 +351,29 @@ const customersMain = async (auth, user) => {
             const card = document.createElement('div');
             card.className = 'customer-card';
 
-            // ▼▼▼ ★★★ ステップ1 修正: AIカウンセリングボタンのLIFF IDを `2008345232-pVNR18m1` に変更 ★★★ ▼▼▼
             const encodedName = encodeURIComponent(customer.name);
-            // ご指定の新しいLIFF ID (2008345232-pVNR18m1) を使用
             const counselingLiffUrl = `https://liff.line.me/2008345232-pVNR18m1?customerId=${customer.id}&customerName=${encodedName}`;
+
+            // ▼▼▼ 修正: LINEアイコンと注意事項アイコンのロジックを変更 ▼▼▼
+            const lineIcon = customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
+            const noteIcon = customer.notes ? '<i class="fa-solid fa-triangle-exclamation note-icon"></i>' : '';
 
             card.innerHTML = `
                 <div class="customer-card-header">
-                    ${customer.notes ? '<i class="fa-solid fa-triangle-exclamation"></i>' : ''}
+                    ${lineIcon}
                     <span class="customer-card-name">${customer.name}</span>
+                    ${noteIcon}
                 </div>
                 <div class="customer-card-actions">
                     <button class="icon-button camera-btn" title="写真"><i class="fa-solid fa-camera"></i></button>
                     
-                    <!-- 修正: hrefをcounselingLiffUrlに変更し、target="_blank" を追加 -->
                     <a href="${counselingLiffUrl}" class="icon-button" title="AIカウンセリング" target="_blank"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
                     
                     <a href="./pos.html?customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
                     <button class="icon-button delete-btn" title="削除"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
-            // ▲▲▲ ★★★ 修正ここまで ★★★ ▲▲▲
+            // ▲▲▲ 修正ここまで ▲▲▲
 
             card.querySelector('.customer-card-header').addEventListener('click', () => openCustomerModal(customer));
             card.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteCustomer(customer.id, customer.name); });

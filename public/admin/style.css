@@ -466,7 +466,22 @@ main {
     text-overflow: ellipsis;
     box-sizing: border-box;
     cursor: pointer;
+    /* ▼▼▼ 追加: flex設定 ▼▼▼ */
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    /* ▲▲▲ 追加ここまで ▲▲▲ */
 }
+
+/* ▼▼▼ 追加: タイムライン内の名前スパン ▼▼▼ */
+.timeline-item-name {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* ▲▲▲ 追加ここまで ▲▲▲ */
+
 
 .timeline-item.unavailable {
     background-color: #A0AEC0;
@@ -578,26 +593,45 @@ main {
     flex-direction: column;
 }
 
+/* ▼▼▼ 修正: アイコン配置のためにflexとgapを設定 ▼▼▼ */
 .customer-card-header {
     padding: 1rem 1.25rem;
     cursor: pointer;
     transition: background-color 0.2s;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.5rem; /* アイコンと名前の間隔 */
 }
+/* ▲▲▲ 修正ここまで ▲▲▲ */
 
 .customer-card-header:hover {
     background-color: #f7f7f7;
 }
 
-.customer-card-header .fa-triangle-exclamation {
+/* ▼▼▼ 修正: 注意事項アイコンのスタイルを変更 (汎用化) ▼▼▼ */
+.note-icon {
     color: #f59e0b;
+    margin-left: auto; /* ★名前の右側に寄せる */
+    flex-shrink: 0; /* 縮まないように */
 }
+/* ▲▲▲ 修正ここまで ▲▲▲ */
+
+/* ▼▼▼ 修正: LINEアイコンのスタイル (汎用化) ▼▼▼ */
+.line-icon {
+    color: #06C755; /* LINE Green */
+    font-size: 1.25rem; /* 少し大きめに */
+    flex-shrink: 0; /* 縮まないように */
+}
+/* ▲▲▲ 修正ここまで ▲▲▲ */
 
 .customer-card-name {
     font-weight: bold;
-    flex-grow: 1;
+    flex-grow: 1; /* ★名前が残りのスペースを埋める */
+    /* ▼▼▼ 追加: 名前が長い場合に省略する設定 ▼▼▼ */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* ▲▲▲ 追加ここまで ▲▲▲ */
 }
 
 .customer-card-actions {
@@ -896,6 +930,7 @@ main {
     border-top: 1px dashed var(--border-color);
 }
 
+/* ▼▼▼ 修正: タイムラインアイテムのスタイル変更 ▼▼▼ */
 .reservation-item {
     position: absolute;
     left: 10px;
@@ -910,7 +945,34 @@ main {
     border-left: 4px solid #089a94;
     box-sizing: border-box;
     z-index: 0;
+    /* ★追加: flex設定 */
+    display: flex;
+    flex-direction: column;
 }
+
+.reservation-item strong {
+    /* ★追加: flex設定 */
+    display: flex;
+    align-items: center;
+    gap: 0.4rem; /* アイコンと名前の間隔 */
+}
+
+.reservation-item-name {
+    /* ★追加: 名前が省略されるように */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+}
+
+/* ★追加: タイムライン内のアイコンサイズ調整 */
+.reservation-item .line-icon {
+    font-size: 1rem;
+}
+.reservation-item .note-icon {
+    font-size: 0.9rem;
+}
+/* ▲▲▲ 修正ここまで ▲▲▲ */
 
 .reservation-item.unavailable {
     background-color: #A0AEC0;
@@ -921,13 +983,6 @@ main {
     background-color: var(--completed-color);
     border-left-color: var(--primary-color);
     color: var(--text-color);
-}
-
-.reservation-item strong {
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .reservation-item .menu-names {
@@ -1398,4 +1453,3 @@ main {
     z-index: 1;
 }
 /* ▲▲▲ 修正ここまで ▲▲▲ */
-

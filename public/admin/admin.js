@@ -135,7 +135,14 @@ const adminMain = async (auth, user) => {
             item.style.left = `${left}%`;
             item.style.width = `${width}%`;
             const customerName = booking.status === 'unavailable' ? '予約不可' : (booking.customerName || '顧客');
-            item.textContent = customerName;
+            
+            // ▼▼▼ 修正: 顧客情報を検索し、アイコンを追加 ▼▼▼
+            const customer = customers.find(c => c.id === booking.customerId);
+            const lineIcon = customer && customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
+            const noteIcon = customer && customer.notes ? '<i class="fa-solid fa-triangle-exclamation note-icon"></i>' : '';
+            
+            item.innerHTML = `${lineIcon}<span class="timeline-item-name">${customerName}</span>${noteIcon}`;
+            // ▲▲▲ 修正ここまで ▲▲▲
             
             item.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -679,4 +686,3 @@ const adminMain = async (auth, user) => {
 };
 
 runAdminPage(adminMain);
-
