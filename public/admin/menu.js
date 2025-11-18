@@ -1,6 +1,8 @@
 import { runAdminPage } from './admin-auth.js';
 import { db } from './firebase-init.js';
-import { collection, getDocs, addDoc, doc, setDoc, deleteDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// ▼▼▼ 修正: collectionGroup をインポート ▼▼▼
+import { collection, getDocs, addDoc, doc, setDoc, deleteDoc, query, orderBy, writeBatch, collectionGroup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// ▲▲▲ 修正ここまで ▲▲▲
 
 const menuMain = async (auth, user) => {
     // DOM Elements
@@ -46,17 +48,28 @@ const menuMain = async (auth, user) => {
     const loadData = async () => {
         try {
             categoriesContainer.innerHTML = '';
-            const categoriesQuery = query(collection(db, 'service_categories'), orderBy('order'));
-            const querySnapshot = await getDocs(categoriesQuery);
             
-            categories = []; // Reset state
-            for (const categoryDoc of querySnapshot.docs) {
-                const categoryData = { id: categoryDoc.id, ...categoryDoc.data(), menus: [] };
-                const menusQuery = query(collection(db, `service_categories/${categoryData.id}/menus`), orderBy('order'));
-                const menusSnapshot = await getDocs(menusQuery);
-                categoryData.menus = menusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                categories.push(categoryData);
-            }
+            // ▼▼▼ 修正: カテゴリとメニューを collectionGroup で並列取得 ▼▼▼
+            const [categoriesSnapshot, menusSnapshot] = await Promise.all([
+                getDocs(query(collection(db, 'service_categories'), orderBy('order'))),
+                getDocs(query(collectionGroup(db, 'menus'), orderBy('order')))
+            ]);
+            
+            const allMenus = menusSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                categoryId: doc.ref.parent.parent.id // 親カテゴリのIDを取得
+            }));
+
+            categories = categoriesSnapshot.docs.map(categoryDoc => {
+                const categoryData = { id: categoryDoc.id, ...categoryDoc.data() };
+                return {
+                    ...categoryData,
+                    menus: allMenus.filter(menu => menu.categoryId === categoryData.id)
+                };
+            });
+            // ▲▲▲ 修正ここまで ▲▲▲
+            
             renderCategories();
         } catch(error) {
             console.error("データ読み込みエラー:", error);

@@ -25,6 +25,11 @@ const adminMain = async (auth, user) => {
     const timelineContainer = document.getElementById('today-schedule-timeline');
     const memoTextarea = document.getElementById('today-memo');
     const saveMemoBtn = document.getElementById('save-memo-btn');
+
+    // ▼▼▼ 日計表示用DOM (新規追加) ▼▼▼
+    const dailySalesTotalEl = document.getElementById('daily-sales-total');
+    const dailySalesCountEl = document.getElementById('daily-sales-count');
+    // ▲▲▲ 新規追加ここまで ▲▲▲
     
     // --- Modal Elements ---
     const detailModal = document.getElementById('booking-detail-modal');
@@ -557,6 +562,43 @@ const adminMain = async (auth, user) => {
         });
     };
 
+    // ▼▼▼ 日計集計リスナー (新規追加) ▼▼▼
+    const listenToDailySales = () => {
+        const startOfDay = new Date(today); // today は adminMain の冒頭で 00:00:00 に設定済み
+        const endOfDay = new Date(today);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const q = query(
+            collection(db, "sales"),
+            where("createdAt", ">=", Timestamp.fromDate(startOfDay)),
+            where("createdAt", "<=", Timestamp.fromDate(endOfDay))
+        );
+
+        onSnapshot(q, (snapshot) => {
+            let totalSales = 0;
+            const customerCount = snapshot.size;
+
+            snapshot.forEach(doc => {
+                totalSales += doc.data().total || 0;
+            });
+
+            if (dailySalesTotalEl && dailySalesCountEl) {
+                dailySalesTotalEl.textContent = `¥${totalSales.toLocaleString()}`;
+                dailySalesCountEl.textContent = `${customerCount}人`;
+            }
+
+        }, (error) => {
+            console.error("日次売上の取得に失敗:", error);
+            if (dailySalesTotalEl) {
+                dailySalesTotalEl.textContent = "取得エラー";
+            }
+            if (dailySalesCountEl) {
+                dailySalesCountEl.textContent = "-";
+            }
+        });
+    };
+    // ▲▲▲ 新規追加ここまで ▲▲▲
+
     // --- Initial Data Load ---
     const loadInitialData = async () => {
         // 顧客データをロード
@@ -683,6 +725,7 @@ const adminMain = async (auth, user) => {
     await loadInitialData();
     listenToBookings();
     loadMemo();
+    listenToDailySales(); // ★★★ 新規追加 ★★★
 };
 
 runAdminPage(adminMain);

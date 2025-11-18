@@ -1,9 +1,11 @@
 import { runAdminPage, showLoading, showContent, showError } from './admin-auth.js';
 import { db } from './firebase-init.js';
+// ▼▼▼ 修正: collectionGroup をインポート ▼▼▼
 import { 
     collection, getDocs, doc, getDoc, addDoc, setDoc,
-    Timestamp, query, orderBy 
+    Timestamp, query, orderBy, collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// ▲▲▲ 修正ここまで ▲▲▲
 
 const posMain = async (auth, user) => {
     // --- State ---
@@ -41,24 +43,39 @@ const posMain = async (auth, user) => {
 
     // --- Functions ---
     const loadInitialData = async () => {
-        const customersSnapshot = await getDocs(query(collection(db, 'users'), orderBy('kana')));
+        // ▼▼▼ 修正: 顧客とメニューの読み込みを並列化＆collectionGroupを使用 ▼▼▼
+        const [customersSnapshot, categoriesSnapshot, menusSnapshot] = await Promise.all([
+            getDocs(query(collection(db, 'users'), orderBy('kana'))),
+            getDocs(query(collection(db, 'service_categories'), orderBy('order'))),
+            getDocs(query(collectionGroup(db, 'menus'), orderBy('order')))
+        ]);
+
+        // 顧客リストの処理
         customers = customersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         customerDatalist.innerHTML = customers.map(c => `<option value="${c.name}"></option>`).join('');
 
-        const categoriesSnapshot = await getDocs(query(collection(db, 'service_categories'), orderBy('order')));
+        // メニューとカテゴリの処理
+        const allMenus = menusSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            categoryId: doc.ref.parent.parent.id // 親カテゴリのIDを取得
+        }));
+
+        menuCategories = categoriesSnapshot.docs.map(catDoc => {
+            const category = { id: catDoc.id, ...catDoc.data() };
+            return {
+                ...category,
+                menus: allMenus.filter(menu => menu.categoryId === category.id)
+            };
+        });
+
         menuAccordionContainer.innerHTML = '';
-        menuCategories = [];
-        for (const catDoc of categoriesSnapshot.docs) {
-            const category = { id: catDoc.id, ...catDoc.data(), menus: [] };
-            const menusSnapshot = await getDocs(query(collection(db, `service_categories/${catDoc.id}/menus`), orderBy('order')));
-            
+        menuCategories.forEach(category => {
             const accordion = document.createElement('details');
             accordion.className = 'menu-category-accordion';
             
             let menuHtml = '';
-            menusSnapshot.forEach(menuDoc => {
-                const menu = { id: menuDoc.id, ...menuDoc.data() };
-                category.menus.push(menu);
+            category.menus.forEach(menu => { // 修正: `category.menus` を使用
                 menuHtml += `<div class="menu-item-selectable" data-menu='${JSON.stringify(menu)}'>
                                 <span>${menu.name}</span>
                                 <span>¥${menu.price.toLocaleString()}</span>
@@ -69,9 +86,9 @@ const posMain = async (auth, user) => {
                 <summary class="accordion-header">${category.name}</summary>
                 <div class="accordion-content">${menuHtml}</div>
             `;
-            menuCategories.push(category);
             menuAccordionContainer.appendChild(accordion);
-        }
+        });
+        // ▲▲▲ 修正ここまで ▲▲▲
         
         menuAccordionContainer.querySelectorAll('.menu-item-selectable').forEach(item => {
             item.addEventListener('click', (e) => {
@@ -379,4 +396,3 @@ const posMain = async (auth, user) => {
 };
 
 runAdminPage(posMain);
-

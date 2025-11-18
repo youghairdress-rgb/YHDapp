@@ -1,5 +1,8 @@
-import { db, initializeLiffAndAuth } from './admin/firebase-init.js';
-import { doc, getDoc, setDoc, collection, query, where, orderBy, getDocs, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// ▼▼▼ 修正: storage と addDoc をインポート ▼▼▼
+import { db, initializeLiffAndAuth, storage } from './admin/firebase-init.js';
+import { doc, getDoc, setDoc, collection, query, where, orderBy, getDocs, serverTimestamp, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+// ▲▲▲ 修正ここまで ▲▲▲
 
 // --- DOM Helper Functions ---
 const loadingContainer = document.getElementById('loading-container');
@@ -7,6 +10,11 @@ const contentContainer = document.getElementById('content-container');
 const errorContainer = document.getElementById('error-container');
 const errorMessage = document.getElementById('error-message');
 const mypageContainer = document.getElementById('mypage-container');
+// ▼▼▼ 新規追加: アップロード関連DOM ▼▼▼
+const uploadPhotoBtn = document.getElementById('upload-photo-btn');
+const photoUploadInput = document.getElementById('photo-upload-input');
+const uploadingOverlay = document.getElementById('uploading-overlay');
+// ▲▲▲ 新規追加ここまで ▲▲▲
 
 const showLoading = (text) => {
     loadingContainer.querySelector('p').textContent = text;
@@ -25,6 +33,17 @@ const showError = (text) => {
     errorContainer.style.display = 'block';
 };
 
+// ▼▼▼ 新規追加: アップロードオーバーレイ表示/非表示 ▼▼▼
+const showUploadingOverlay = (show) => {
+    if (uploadingOverlay) {
+        uploadingOverlay.style.display = show ? 'flex' : 'none';
+    }
+};
+// ▲▲▲ 新規追加ここまで ▲▲▲
+
+// ▼▼▼ 修正: currentUserId をグローバルで保持 ▼▼▼
+let currentUserId = null;
+// ▲▲▲ 修正ここまで ▲▲▲
 
 // --- Main Application Logic ---
 const main = async () => {
@@ -32,6 +51,10 @@ const main = async () => {
         showLoading("LIFFを初期化中...");
         const { user, profile } = await initializeLiffAndAuth("2008029428-VljQlRjZ");
         
+        // ▼▼▼ 修正: currentUserId にセット ▼▼▼
+        currentUserId = profile.userId;
+        // ▲▲▲ 修正ここまで ▲▲▲
+
         showLoading("顧客情報を確認中...");
         const userDocRef = doc(db, "users", profile.userId);
         const userDocSnap = await getDoc(userDocRef);
@@ -45,6 +68,9 @@ const main = async () => {
             window.location.href = './entry.html';
         }
         setupTabEvents();
+        // ▼▼▼ 新規追加: アップロードイベントリスナーをセットアップ ▼▼▼
+        setupUploadEvents();
+        // ▲▲▲ 新規追加ここまで ▲▲▲
 
     } catch (error) {
         console.error("メイン処理でエラー:", error);
@@ -67,6 +93,69 @@ const setupTabEvents = () => {
         });
     });
 };
+
+// ▼▼▼ 新規追加: アップロード関連のイベントリスナー ▼▼▼
+const setupUploadEvents = () => {
+    if (uploadPhotoBtn) {
+        uploadPhotoBtn.addEventListener('click', () => {
+            // "environment"（背面カメラ）より "user"（自撮り）の方が使う可能性が高いかも？
+            // capture属性を外すと、ファイル選択（ギャラリー）も選べるようになります。
+            // photoUploadInput.setAttribute('capture', 'user'); 
+            photoUploadInput.removeAttribute('capture'); // ファイル選択を許可
+            photoUploadInput.click();
+        });
+    }
+
+    if (photoUploadInput) {
+        photoUploadInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                uploadAndSavePhoto(e.target.files[0]);
+            }
+        });
+    }
+};
+// ▲▲▲ 新規追加ここまで ▲▲▲
+
+// ▼▼▼ 新規追加: 写真アップロード処理 ▼▼▼
+const uploadAndSavePhoto = async (file) => {
+    if (!currentUserId || !file) return;
+
+    // 1MB = 1048576 bytes
+    if (file.size > 5 * 1048576) {
+        alert("ファイルサイズが大きすぎます。5MB以下の画像を選択してください。");
+        return;
+    }
+
+    showUploadingOverlay(true);
+    try {
+        const timestamp = Date.now();
+        const storageRef = ref(storage, `users/${currentUserId}/gallery/${timestamp}-${file.name}`);
+
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        await addDoc(collection(db, `users/${currentUserId}/gallery`), {
+            url: downloadURL,
+            createdAt: serverTimestamp(),
+        });
+
+        // ギャラリータブが現在アクティブでなくても、データを再読み込みする
+        await fetchGallery(currentUserId);
+        
+        // ギャラリータブを強制的に開く
+        document.querySelector('.tab-button[data-tab="gallery"]').click();
+        alert("写真をアップロードしました。");
+
+    } catch (error) {
+        console.error("写真のアップロードに失敗:", error);
+        alert("写真のアップロードに失敗しました。");
+    } finally {
+        showUploadingOverlay(false);
+        // 同じファイルを連続でアップロードできるように入力値をリセット
+        photoUploadInput.value = '';
+    }
+};
+// ▲▲▲ 新規追加ここまで ▲▲▲
 
 const displayMyPage = (userData) => {
     mypageContainer.style.display = 'block';

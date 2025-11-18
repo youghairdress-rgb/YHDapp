@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales</title>
+        <link rel="icon" href="../img/YHDlogo2.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Chart.jsの読み込み -->
@@ -47,7 +48,7 @@
                 <canvas id="monthly-sales-chart" height="200"></canvas>
                 <!-- ▼▼▼ 月次サマリーテーブルを追加 ▼▼▼ -->
                 <div class="table-container" style="margin-top: 1.5rem;">
-                    <table id="monthly-summary-table">
+                    <table id="monthly-summary-table" class="smart-table"> <!-- ▼ 修正: smart-tableクラスを追加 -->
                         <thead>
                             <tr>
                                 <th>月</th>
@@ -82,6 +83,15 @@
                         <tbody>
                             <!-- 履歴がここに表示されます -->
                         </tbody>
+                        <!-- ▼▼▼ 合計表示用のフッター (新規追加) ▼▼▼ -->
+                        <tfoot>
+                            <tr>
+                                <td colspan="2"><strong>合計</strong></td>
+                                <td id="history-daily-total" class="text-right"><strong>¥0</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                        <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
                     </table>
                 </div>
             </div>

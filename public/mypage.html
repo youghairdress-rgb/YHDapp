@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>マイページ</title>
+        <link rel="icon" href="../img/YHDlogo2.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="user-style.css">
 </head>
@@ -21,7 +22,14 @@
             <div id="mypage-container">
                 <div class="mypage-container">
                     <div class="mypage-section">
-                        <h2><span id="mypage-name"></span> 様</h2>
+                        <!-- ▼▼▼ 修正: h2にflexコンテナ化とボタンを追加 ▼▼▼ -->
+                        <h2 class="mypage-header-flex">
+                            <span id="mypage-name"></span> 様
+                            <button id="upload-photo-btn" class="button-primary small-btn">
+                                <i class="fa-solid fa-camera"></i> アップロード
+                            </button>
+                        </h2>
+                        <!-- ▲▲▲ 修正ここまで ▲▲▲ -->
                     </div>
 
                     <div class="mypage-tabs">
@@ -41,6 +49,10 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ▼▼▼ 新規追加: 非表示のファイル入力 ▼▼▼ -->
+            <input type="file" id="photo-upload-input" accept="image/*" style="display: none;">
+            <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
         </main>
 
         <!-- 画像全画面表示モーダル -->
@@ -57,6 +69,13 @@
             <h2>エラー</h2>
             <p id="error-message"></p>
         </div>
+
+        <!-- ▼▼▼ 新規追加: アップロード中オーバーレイ ▼▼▼ -->
+        <div id="uploading-overlay" class="uploading-overlay">
+            <div class="spinner"></div>
+            <p>アップロード中...</p>
+        </div>
+        <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
     </div>
 
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>

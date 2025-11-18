@@ -1,5 +1,7 @@
 import { db, initializeLiffAndAuth } from './admin/firebase-init.js';
-import { collection, getDocs, doc, getDoc, addDoc, query, orderBy, where, Timestamp, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// ▼▼▼ 修正: collectionGroup をインポート ▼▼▼
+import { collection, getDocs, doc, getDoc, addDoc, query, orderBy, where, Timestamp, serverTimestamp, onSnapshot, collectionGroup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// ▲▲▲ 修正ここまで ▲▲▲
 
 // --- DOM Helper Functions ---
 const loadingContainer = document.getElementById('loading-container');
@@ -53,7 +55,17 @@ const main = async () => {
         if (!salonSettings || !salonSettings.businessHours) {
             throw new Error("サロン情報が設定されていません。管理者にご連絡ください。");
         }
-        const menuCategories = await loadMenus();
+        // ▼▼▼ 修正: メニュー読み込み失敗時のエラーハンドリングを強化 ▼▼▼
+        let menuCategories;
+        try {
+            menuCategories = await loadMenus();
+        } catch (menuError) {
+            console.error(menuError);
+            showError(menuError.message); // loadMenus からのエラーメッセージを表示
+            return; // 処理を中断
+        }
+        // ▲▲▲ 修正ここまで ▲▲▲
+        
         const allMenus = menuCategories.flatMap(cat => cat.menus);
 
         let state = {
@@ -233,7 +245,8 @@ const main = async () => {
         
             const q = query(collection(db, "reservations"), 
                 where("startTime", ">=", Timestamp.fromDate(viewStartDate)),
-                where("startTime", "<", Timestamp.fromDate(viewEndDate))
+                where("startTime", "<", Timestamp.fromDate(viewEndDate)),
+                orderBy("startTime") // ★★★ 修正: orderBy("startTime") を追加 ★★★
             );
         
             unsubscribeReservations = onSnapshot(q, (snapshot) => {
@@ -556,25 +569,39 @@ async function loadSalonSettings() {
     }
 }
 
+// ▼▼▼ 修正: collectionGroup を使うように関数全体を書き換え ▼▼▼
 async function loadMenus() {
     try {
-        const categories = [];
+        // 1. カテゴリを 'order' 順で取得
         const categoriesQuery = query(collection(db, 'service_categories'), orderBy('order'));
-        const querySnapshot = await getDocs(categoriesQuery);
+        const categoriesSnapshot = await getDocs(categoriesQuery);
         
-        for (const categoryDoc of querySnapshot.docs) {
-            const category = { id: categoryDoc.id, ...categoryDoc.data(), menus: [] };
-            const menusQuery = query(collection(db, `service_categories/${category.id}/menus`), orderBy('order'));
-            const menusSnapshot = await getDocs(menusQuery);
-            category.menus = menusSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            categories.push(category);
-        }
+        // 2. 全ての 'menus' サブコレクションを 'order' 順で一度に取得 (Collection Group Query)
+        const menusQuery = query(collectionGroup(db, 'menus'), orderBy('order'));
+        const menusSnapshot = await getDocs(menusQuery);
+
+        const allMenus = menusSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            categoryId: doc.ref.parent.parent.id // 親のカテゴリIDを取得
+        }));
+
+        // 3. カテゴリにメニューを割り当てる
+        const categories = categoriesSnapshot.docs.map(categoryDoc => {
+            const category = { id: categoryDoc.id, ...categoryDoc.data() };
+            return {
+                ...category,
+                menus: allMenus.filter(menu => menu.categoryId === category.id)
+            };
+        });
+
         return categories;
     } catch (error) {
         console.error("メニューの読み込みに失敗しました:", error);
-        throw new Error("メニューの読み込みに失敗しました。");
+        // エラーメッセージをそのまま投げる
+        throw new Error(`メニューの読み込みに失敗しました: ${error.message}`);
     }
 }
+// ▲▲▲ 修正ここまで ▲▲▲
 
 document.addEventListener('DOMContentLoaded', main);
-

@@ -373,6 +373,35 @@ main {
  * ダッシュボード (`index.html`) 専用スタイル
  * ===============================================
  */
+/* ▼▼▼ 日計表示カード (新規追加) ▼▼▼ */
+.daily-stats-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, var(--primary-color), #089a94);
+    color: var(--white-color);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: bold;
+}
+/* ▲▲▲ 新規追加ここまで ▲▲▲ */
+
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 300px;
@@ -1351,6 +1380,14 @@ main {
 .smart-table th {
     background-color: var(--background-color);
 }
+
+/* ▼▼▼ テーブルフッター用のスタイル (新規追加) ▼▼▼ */
+.smart-table tfoot td {
+    background-color: var(--background-color);
+    font-size: 1.1rem;
+    border-top: 2px solid var(--text-color);
+}
+/* ▲▲▲ 新規追加ここまで ▲▲▲ */
 
 #monthly-summary-table {
     width: 100%;

@@ -18,6 +18,9 @@ const salesMain = async (auth, user) => {
     // History elements
     const historyDatePicker = document.getElementById('history-date-picker');
     const salesHistoryTableBody = document.querySelector('#sales-history-table tbody');
+    // ▼▼▼ 合計表示用DOM (新規追加) ▼▼▼
+    const historyDailyTotalEl = document.getElementById('history-daily-total');
+    // ▲▲▲ 新規追加ここまで ▲▲▲
     
     // Chart instances
     let monthlySalesChart = null;
@@ -177,8 +180,7 @@ const salesMain = async (auth, user) => {
         const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
 
-        // ▼▼▼ 修正: クエリ対象を 'createdAt' から 'reservationTime' に変更 ▼▼▼
-        // これにより、日付ピッカーは「予約日」として機能します。
+        // ▼▼▼ 修正: クエリ対象を 'createdAt' (会計日) から 'reservationTime' (予約日) に戻します ▼▼▼
         const q = query(collection(db, 'sales'), 
             where('reservationTime', '>=', Timestamp.fromDate(startOfDay)),
             where('reservationTime', '<=', Timestamp.fromDate(endOfDay)),
@@ -187,36 +189,47 @@ const salesMain = async (auth, user) => {
         // ▲▲▲ 修正ここまで ▲▲▲
 
         const snapshot = await getDocs(q);
+        
+        // ▼▼▼ 日次合計計算ロジック (新規追加) ▼▼▼
+        let dailyTotal = 0;
+        
         if (snapshot.empty) {
-            salesHistoryTableBody.innerHTML = '<tr><td colspan="4">この日の予約に基づく会計履歴はありません。</td></tr>';
-            return;
-        }
+            salesHistoryTableBody.innerHTML = '<tr><td colspan="4">この日の会計履歴はありません。</td></tr>';
+        } else {
+            salesHistoryTableBody.innerHTML = '';
+            snapshot.forEach(doc => {
+                const sale = { id: doc.id, ...doc.data() };
+                dailyTotal += sale.total || 0; // 合計に加算
+                
+                // ▼▼▼ 表示する日時は 'createdAt' (会計日時) を使用 ▼▼▼
+                const saleTime = sale.createdAt.toDate().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+                // ▲▲▲ 修正ここまで ▲▲▲
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${saleTime}</td>
+                    <td>${sale.customerName}</td>
+                    <td class="text-right">¥${(sale.total || 0).toLocaleString()}</td>
+                    <td class="text-center">
+                        <a href="./pos.html?saleId=${sale.id}" class="icon-button small-btn" title="編集"><i class="fa-solid fa-pen"></i></a>
+                        <button class="icon-button small-btn delete-btn" data-id="${sale.id}" title="削除"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
 
-        salesHistoryTableBody.innerHTML = '';
-        snapshot.forEach(doc => {
-            const sale = { id: doc.id, ...doc.data() };
-            // ▼▼▼ 修正: 表示する日時は 'createdAt' (会計日時) を使用 ▼▼▼
-            const saleTime = sale.createdAt.toDate().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
-            // ▲▲▲ 修正ここまで ▲▲▲
-            
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${saleTime}</td>
-                <td>${sale.customerName}</td>
-                <td class="text-right">¥${(sale.total || 0).toLocaleString()}</td>
-                <td class="text-center">
-                    <a href="./pos.html?saleId=${sale.id}" class="icon-button small-btn" title="編集"><i class="fa-solid fa-pen"></i></a>
-                    <button class="icon-button small-btn delete-btn" data-id="${sale.id}" title="削除"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            `;
+                tr.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    const saleId = e.currentTarget.dataset.id;
+                    deleteSale(saleId);
+                });
 
-            tr.querySelector('.delete-btn').addEventListener('click', (e) => {
-                const saleId = e.currentTarget.dataset.id;
-                deleteSale(saleId);
+                salesHistoryTableBody.appendChild(tr);
             });
-
-            salesHistoryTableBody.appendChild(tr);
-        });
+        }
+        
+        // 合計金額をフッターに表示
+        if (historyDailyTotalEl) {
+            historyDailyTotalEl.innerHTML = `<strong>¥${dailyTotal.toLocaleString()}</strong>`;
+        }
+        // ▲▲▲ 新規追加ここまで ▲▲▲
     };
     
     const deleteSale = async (saleId) => {
