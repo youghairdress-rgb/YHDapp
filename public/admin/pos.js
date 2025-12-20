@@ -234,6 +234,13 @@ const posMain = async (auth, user) => {
             }
             
             if (customerId) {
+                // ▼▼▼ 追加: 顧客の最終来店日を更新 ▼▼▼
+                const userRef = doc(db, "users", customerId);
+                await updateDoc(userRef, {
+                    lastVisit: saleData.reservationTime
+                });
+                // ▲▲▲ 追加ここまで ▲▲▲
+
                 const customerNameEncoded = encodeURIComponent(customerName);
                 // ▼▼▼ 修正: 編集完了時は売上分析ページに戻る ▼▼▼
                 if (editingSaleId) {

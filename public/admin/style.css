@@ -76,7 +76,8 @@ header h1 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5rem;
-    padding: 0.75rem; /* カードのpaddingを少し減らす */
+    padding: 0.75rem;
+    /* カードのpaddingを少し減らす */
     margin-bottom: 1rem;
 }
 
@@ -107,6 +108,7 @@ header h1 {
     font-size: 1.25rem;
     color: var(--primary-color);
 }
+
 /* ▲▲▲ 追加ここまで ▲▲▲ */
 
 
@@ -272,7 +274,8 @@ main {
     padding: 1rem;
     box-sizing: border-box;
     overflow-y: auto;
-    display: none; /* Initially hidden */
+    display: none;
+    /* Initially hidden */
     justify-content: center;
     align-items: flex-start;
 }
@@ -398,8 +401,12 @@ main {
 
 .stat-value {
     font-size: 1.75rem;
-    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    /* アイコンと名前の間隔 */
 }
+
 /* ▲▲▲ 新規追加ここまで ▲▲▲ */
 
 .dashboard-grid {
@@ -470,15 +477,26 @@ main {
     position: absolute;
     top: 0;
     transform: translateX(-50%);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .today-schedule-timeline {
     position: relative;
     height: 100%;
-    /* ▼▼▼ 修正: 8-20時の12時間（1時間ごと）のグリッドに変更 ▼▼▼ */
-    background: repeating-linear-gradient(to right, var(--border-color), var(--border-color) 1px, transparent 1px, transparent calc(100% / 12));
-    /* ▲▲▲ 修正ここまで ▲▲▲ */
+    background: none;
     cursor: pointer;
+}
+
+.timeline-grid-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--border-color);
+    z-index: 0;
+    pointer-events: none;
 }
 
 .timeline-item {
@@ -495,22 +513,18 @@ main {
     text-overflow: ellipsis;
     box-sizing: border-box;
     cursor: pointer;
-    /* ▼▼▼ 追加: flex設定 ▼▼▼ */
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    /* ▲▲▲ 追加ここまで ▲▲▲ */
+    z-index: 1;
 }
 
-/* ▼▼▼ 追加: タイムライン内の名前スパン ▼▼▼ */
 .timeline-item-name {
     flex-grow: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-/* ▲▲▲ 追加ここまで ▲▲▲ */
-
 
 .timeline-item.unavailable {
     background-color: #A0AEC0;
@@ -629,8 +643,10 @@ main {
     transition: background-color 0.2s;
     display: flex;
     align-items: center;
-    gap: 0.5rem; /* アイコンと名前の間隔 */
+    gap: 0.5rem;
+    /* アイコンと名前の間隔 */
 }
+
 /* ▲▲▲ 修正ここまで ▲▲▲ */
 
 .customer-card-header:hover {
@@ -640,22 +656,30 @@ main {
 /* ▼▼▼ 修正: 注意事項アイコンのスタイルを変更 (汎用化) ▼▼▼ */
 .note-icon {
     color: #f59e0b;
-    margin-left: auto; /* ★名前の右側に寄せる */
-    flex-shrink: 0; /* 縮まないように */
+    margin-left: auto;
+    /* ★名前の右側に寄せる */
+    flex-shrink: 0;
+    /* 縮まないように */
 }
+
 /* ▲▲▲ 修正ここまで ▲▲▲ */
 
 /* ▼▼▼ 修正: LINEアイコンのスタイル (汎用化) ▼▼▼ */
 .line-icon {
-    color: #06C755; /* LINE Green */
-    font-size: 1.25rem; /* 少し大きめに */
-    flex-shrink: 0; /* 縮まないように */
+    color: #06C755;
+    /* LINE Green */
+    font-size: 1.25rem;
+    /* 少し大きめに */
+    flex-shrink: 0;
+    /* 縮まないように */
 }
+
 /* ▲▲▲ 修正ここまで ▲▲▲ */
 
 .customer-card-name {
     font-weight: bold;
-    flex-grow: 1; /* ★名前が残りのスペースを埋める */
+    flex-grow: 1;
+    /* ★名前が残りのスペースを埋める */
     /* ▼▼▼ 追加: 名前が長い場合に省略する設定 ▼▼▼ */
     white-space: nowrap;
     overflow: hidden;
@@ -983,7 +1007,8 @@ main {
     /* ★追加: flex設定 */
     display: flex;
     align-items: center;
-    gap: 0.4rem; /* アイコンと名前の間隔 */
+    gap: 0.4rem;
+    /* アイコンと名前の間隔 */
 }
 
 .reservation-item-name {
@@ -998,9 +1023,11 @@ main {
 .reservation-item .line-icon {
     font-size: 1rem;
 }
+
 .reservation-item .note-icon {
     font-size: 0.9rem;
 }
+
 /* ▲▲▲ 修正ここまで ▲▲▲ */
 
 .reservation-item.unavailable {
@@ -1387,6 +1414,7 @@ main {
     font-size: 1.1rem;
     border-top: 2px solid var(--text-color);
 }
+
 /* ▲▲▲ 新規追加ここまで ▲▲▲ */
 
 #monthly-summary-table {
@@ -1477,7 +1505,8 @@ main {
     width: 2px;
     background-color: var(--primary-color);
     opacity: 0.7;
-    z-index: 1; /* 予約アイテムより手前、クリックの邪魔にならない程度 */
+    z-index: 1;
+    /* 予約アイテムより手前、クリックの邪魔にならない程度 */
 }
 
 .business-hours-marker-v {
@@ -1489,4 +1518,27 @@ main {
     opacity: 0.7;
     z-index: 1;
 }
+
 /* ▲▲▲ 修正ここまで ▲▲▲ */
+
+/* ������ �ǉ�: �o�ߓ����\���X�^�C�� ������ */
+.days-elapsed {
+    font-size: 0.85rem;
+    color: var(--light-text-color);
+    margin-left: auto;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.days-warning-yellow {
+    color: #f1c40f !important;
+}
+
+.days-warning-orange {
+    color: #e67e22 !important;
+}
+
+.days-warning-red {
+    color: #e74c3c !important;
+}
+/* ������ �ǉ������܂� ������ */

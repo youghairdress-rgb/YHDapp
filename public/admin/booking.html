@@ -77,6 +77,11 @@
                         <div id="detail-requests-wrapper" style="display: none;">
                             <p><strong>ご要望:</strong> <span id="detail-requests"></span></p>
                         </div>
+                        <!-- ★★★ 追加: 管理者メモ表示 ★★★ -->
+                        <div id="detail-admin-notes-wrapper" style="display: none;">
+                            <p><strong>管理者メモ:</strong> <span id="detail-admin-notes" style="white-space: pre-wrap;"></span></p>
+                        </div>
+                        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
                     </div>
                 </div>
                 <div id="normal-booking-actions" class="modal-footer grid-buttons">
@@ -152,6 +157,12 @@
                             <label for="end-time">終了時間:</label>
                             <select id="end-time" class="input-field" required></select>
                         </div>
+                        <!-- ★★★ 追加: 管理者メモ入力欄 ★★★ -->
+                        <div class="form-group">
+                            <label for="admin-notes">管理者メモ:</label>
+                            <textarea id="admin-notes" class="input-field" placeholder="予約に関するメモを入力..." rows="3"></textarea>
+                        </div>
+                        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
                     </div>
                     <div class="form-actions">
                         <button type="button" id="delete-booking-btn" class="button-danger" style="display: none; margin-right: auto;">削除</button>

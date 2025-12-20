@@ -126,7 +126,7 @@ const customersMain = async (auth, user) => {
             visitHistoryList.innerHTML = '<p>まだ来店履歴はありません。</p>';
             galleryContent.querySelector('#gallery-grid').innerHTML = '<p>まだ写真がありません。</p>';
         }
-        
+
         document.body.classList.add('modal-open');
         customerModal.style.display = 'flex';
     };
@@ -240,7 +240,7 @@ const customersMain = async (auth, user) => {
                     const saleId = e.target.dataset.saleId;
                     const fieldType = e.target.dataset.fieldType; // 'staffNote' or 'staffPublicMessage'
                     const note = document.getElementById(`${fieldType === 'staffNote' ? 'staff-note' : 'staff-public-message'}-${saleId}`).value.trim();
-                    
+
                     btn.textContent = "保存中...";
                     btn.disabled = true;
                     try {
@@ -314,8 +314,8 @@ const customersMain = async (auth, user) => {
 
     const uploadAndSavePhoto = async (file) => {
         if (!editingCustomerId || !file) return;
-        
-        if(galleryUploadingOverlay) galleryUploadingOverlay.style.display = 'flex';
+
+        if (galleryUploadingOverlay) galleryUploadingOverlay.style.display = 'flex';
         try {
             const timestamp = Date.now();
             const storageRef = ref(storage, `users/${editingCustomerId}/gallery/${timestamp}-${file.name}`);
@@ -328,17 +328,43 @@ const customersMain = async (auth, user) => {
                 createdAt: serverTimestamp(),
             });
             if (customerModal.style.display === 'flex') {
-                 await fetchGallery(editingCustomerId);
+                await fetchGallery(editingCustomerId);
             }
         } catch (error) {
             console.error("写真のアップロードに失敗:", error);
             alert("写真のアップロードに失敗しました。");
         } finally {
-            if(galleryUploadingOverlay) galleryUploadingOverlay.style.display = 'none';
+            if (galleryUploadingOverlay) galleryUploadingOverlay.style.display = 'none';
         }
     };
 
     const renderCustomers = (customersToRender) => {
+        // ▼▼▼ 追加: 経過日数表示用のHTML生成関数 ▼▼▼
+        const generateElapsedDaysHtml = (lastVisitTimestamp) => {
+            if (!lastVisitTimestamp) return '';
+
+            const lastVisitDate = lastVisitTimestamp.toDate();
+            const today = new Date();
+            // 時間部分をリセットして日付のみで比較
+            lastVisitDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
+            const diffTime = today - lastVisitDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+            let className = 'days-elapsed';
+            if (diffDays >= 121) {
+                className += ' days-warning-red';
+            } else if (diffDays >= 91) {
+                className += ' days-warning-orange';
+            } else if (diffDays >= 61) {
+                className += ' days-warning-yellow';
+            }
+
+            return `<span class="${className}">前回から${diffDays}日</span>`;
+        };
+        // ▲▲▲ 追加ここまで ▲▲▲
+
         customerListContainer.innerHTML = '';
         if (customersToRender.length === 0) {
             customerInfoPlaceholder.textContent = '該当する顧客情報がありません。';
@@ -352,7 +378,7 @@ const customersMain = async (auth, user) => {
             card.className = 'customer-card';
 
             const encodedName = encodeURIComponent(customer.name);
-            
+
             // ▼▼▼ 修正: リンク先を YHD-DX のLIFF IDに変更 ▼▼▼
             // 注意: "ここに_YHD-DX_のLIFF_ID" の部分を、実際の YHD-DX の LIFF ID (例: 1234567890-AbCdEfGh) に書き換えてください。
             // YHD-AI (旧): 2008345232-pVNR18m1
@@ -368,6 +394,7 @@ const customersMain = async (auth, user) => {
                 <div class="customer-card-header">
                     ${lineIcon}
                     <span class="customer-card-name">${customer.name}</span>
+                    ${generateElapsedDaysHtml(customer.lastVisit)} <!-- 追加: 経過日数表示 -->
                     ${noteIcon}
                 </div>
                 <div class="customer-card-actions">
@@ -383,10 +410,10 @@ const customersMain = async (auth, user) => {
 
             card.querySelector('.customer-card-header').addEventListener('click', () => openCustomerModal(customer));
             card.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteCustomer(customer.id, customer.name); });
-            card.querySelector('.camera-btn').addEventListener('click', (e) => { 
-                e.stopPropagation(); 
-                editingCustomerId = customer.id; 
-                handleTakePhoto(); 
+            card.querySelector('.camera-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                editingCustomerId = customer.id;
+                handleTakePhoto();
             });
             customerListContainer.appendChild(card);
         });
@@ -440,9 +467,9 @@ const customersMain = async (auth, user) => {
                 activeInitial.click();
             } else if (allCustomers.length > 0 && !paramsHandled) {
                 // 初期ロード時 (URLパラメータなし)
-                 customerInfoPlaceholder.textContent = '検索または上のインデックスから顧客を表示します。';
-                 customerInfoPlaceholder.style.display = 'block';
-                 customerListContainer.innerHTML = '';
+                customerInfoPlaceholder.textContent = '検索または上のインデックスから顧客を表示します。';
+                customerInfoPlaceholder.style.display = 'block';
+                customerListContainer.innerHTML = '';
             }
             // ▲▲▲ 修正ここまで ▲▲▲
 
@@ -457,14 +484,14 @@ const customersMain = async (auth, user) => {
     closeModalBtn.addEventListener('click', closeModal);
     customerForm.addEventListener('submit', saveCustomer);
     customerSearchInput.addEventListener('input', () => {
-         // ▼▼▼ 修正: 手動検索時はURLパラメータフラグをリセット ▼▼▼
-         paramsHandled = true; // URLパラメータ処理を停止
-         targetCustomerId = null; // 顧客ID指定を解除
-         // ▲▲▲ 修正ここまで ▲▲▲
+        // ▼▼▼ 修正: 手動検索時はURLパラメータフラグをリセット ▼▼▼
+        paramsHandled = true; // URLパラメータ処理を停止
+        targetCustomerId = null; // 顧客ID指定を解除
+        // ▲▲▲ 修正ここまで ▲▲▲
         filterCustomers();
     });
     photoUploadInput.addEventListener('change', (e) => {
-        if(e.target.files.length > 0) {
+        if (e.target.files.length > 0) {
             uploadAndSavePhoto(e.target.files[0])
         }
     });
@@ -472,7 +499,7 @@ const customersMain = async (auth, user) => {
         document.body.classList.remove('modal-open'); // スクロール許可
         imageViewer.style.display = 'none';
     });
-    
+
     tabButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetContentId = button.dataset.tabContent;

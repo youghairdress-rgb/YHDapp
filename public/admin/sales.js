@@ -1,8 +1,8 @@
 import { runAdminPage } from './admin-auth.js';
 import { db } from './firebase-init.js';
-import { 
-    collection, getDocs, doc, getDoc, setDoc, deleteDoc, 
-    query, where, Timestamp, orderBy 
+import {
+    collection, getDocs, doc, getDoc, setDoc, deleteDoc,
+    query, where, Timestamp, orderBy
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const salesMain = async (auth, user) => {
@@ -14,14 +14,14 @@ const salesMain = async (auth, user) => {
     const setGoalBtn = document.getElementById('set-goal-btn');
     const goalProgressText = document.getElementById('goal-progress-text');
     const goalProgressBar = document.getElementById('goal-progress-bar');
-    
+
     // History elements
     const historyDatePicker = document.getElementById('history-date-picker');
     const salesHistoryTableBody = document.querySelector('#sales-history-table tbody');
     // ▼▼▼ 合計表示用DOM (新規追加) ▼▼▼
     const historyDailyTotalEl = document.getElementById('history-daily-total');
     // ▲▲▲ 新規追加ここまで ▲▲▲
-    
+
     // Chart instances
     let monthlySalesChart = null;
 
@@ -31,7 +31,7 @@ const salesMain = async (auth, user) => {
             const now = new Date();
             const year = now.getFullYear();
             const month = now.getMonth();
-            
+
             const goalDocRef = doc(db, 'sales_goals', `${year}-${String(month + 1).padStart(2, '0')}`);
             const goalDoc = await getDoc(goalDocRef);
             const monthlyGoal = goalDoc.exists() ? goalDoc.data().goal : 0;
@@ -39,19 +39,19 @@ const salesMain = async (auth, user) => {
 
             const startOfMonth = new Date(year, month, 1);
             const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
-            
-            // ▼▼▼ 修正: 月間売上集計は `createdAt` (会計日) 基準のままにする ▼▼▼
-            const salesQuery = query(collection(db, 'sales'), 
-                where('createdAt', '>=', Timestamp.fromDate(startOfMonth)),
-                where('createdAt', '<=', Timestamp.fromDate(endOfMonth))
+
+            // ▼▼▼ 修正: 月間売上集計は `reservationTime` (予約日) 基準に変更 ▼▼▼
+            const salesQuery = query(collection(db, 'sales'),
+                where('reservationTime', '>=', Timestamp.fromDate(startOfMonth)),
+                where('reservationTime', '<=', Timestamp.fromDate(endOfMonth))
             );
             // ▲▲▲ 修正ここまで ▲▲▲
-            
+
             const salesSnapshot = await getDocs(salesQuery);
             const sales = salesSnapshot.docs.map(doc => doc.data());
-            
+
             updateMonthlyGoalProgress(sales, monthlyGoal);
-            
+
             const monthlySalesData = await getMonthlySalesForLastSixMonths();
             renderMonthlySalesChart(monthlySalesData); // この中でテーブルも描画
         } catch (error) {
@@ -59,14 +59,14 @@ const salesMain = async (auth, user) => {
             alert("売上データの読み込みに失敗しました。");
         }
     };
-    
+
     const setMonthlyGoal = async () => {
         const goal = parseInt(monthlyGoalInput.value);
         if (isNaN(goal) || goal < 0) {
             alert('有効な数値を入力してください。');
             return;
         }
-        
+
         const now = new Date();
         const year = now.getFullYear();
         const month = now.getMonth();
@@ -85,11 +85,11 @@ const salesMain = async (auth, user) => {
     const updateMonthlyGoalProgress = (sales, goal) => {
         const currentSales = sales.reduce((sum, sale) => sum + (sale.total || 0), 0);
         const percentage = goal > 0 ? Math.min(Math.round((currentSales / goal) * 100), 100) : 0;
-        
+
         goalProgressText.textContent = `${percentage}% 達成 (¥${currentSales.toLocaleString()} / ¥${goal.toLocaleString()})`;
         goalProgressBar.style.width = `${percentage}%`;
     };
-    
+
     const getMonthlySalesForLastSixMonths = async () => {
         const salesByMonth = {};
         const monthLabels = [];
@@ -105,11 +105,11 @@ const salesMain = async (auth, user) => {
 
             const start = new Date(year, month, 1);
             const end = new Date(year, month + 1, 0, 23, 59, 59);
-            
-            // ▼▼▼ 修正: 月次集計も `createdAt` (会計日) 基準のままにする ▼▼▼
+
+            // ▼▼▼ 修正: 月次集計も `reservationTime` (予約日) 基準に変更 ▼▼▼
             const q = query(collection(db, 'sales'),
-                where('createdAt', '>=', Timestamp.fromDate(start)),
-                where('createdAt', '<=', Timestamp.fromDate(end))
+                where('reservationTime', '>=', Timestamp.fromDate(start)),
+                where('reservationTime', '<=', Timestamp.fromDate(end))
             );
             // ▲▲▲ 修正ここまで ▲▲▲
 
@@ -172,16 +172,16 @@ const salesMain = async (auth, user) => {
             summaryTableBody.appendChild(tr);
         });
     };
-    
+
     const loadSalesHistory = async (dateStr) => {
         salesHistoryTableBody.innerHTML = '<tr><td colspan="4">読み込み中...</td></tr>';
-        
+
         const date = new Date(dateStr);
         const startOfDay = new Date(date); startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(date); endOfDay.setHours(23, 59, 59, 999);
 
         // ▼▼▼ 修正: クエリ対象を 'createdAt' (会計日) から 'reservationTime' (予約日) に戻します ▼▼▼
-        const q = query(collection(db, 'sales'), 
+        const q = query(collection(db, 'sales'),
             where('reservationTime', '>=', Timestamp.fromDate(startOfDay)),
             where('reservationTime', '<=', Timestamp.fromDate(endOfDay)),
             orderBy('reservationTime', 'desc') // 並び順も予約日時に基づく
@@ -189,10 +189,10 @@ const salesMain = async (auth, user) => {
         // ▲▲▲ 修正ここまで ▲▲▲
 
         const snapshot = await getDocs(q);
-        
+
         // ▼▼▼ 日次合計計算ロジック (新規追加) ▼▼▼
         let dailyTotal = 0;
-        
+
         if (snapshot.empty) {
             salesHistoryTableBody.innerHTML = '<tr><td colspan="4">この日の会計履歴はありません。</td></tr>';
         } else {
@@ -200,11 +200,11 @@ const salesMain = async (auth, user) => {
             snapshot.forEach(doc => {
                 const sale = { id: doc.id, ...doc.data() };
                 dailyTotal += sale.total || 0; // 合計に加算
-                
+
                 // ▼▼▼ 表示する日時は 'createdAt' (会計日時) を使用 ▼▼▼
                 const saleTime = sale.createdAt.toDate().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
                 // ▲▲▲ 修正ここまで ▲▲▲
-                
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${saleTime}</td>
@@ -224,14 +224,14 @@ const salesMain = async (auth, user) => {
                 salesHistoryTableBody.appendChild(tr);
             });
         }
-        
+
         // 合計金額をフッターに表示
         if (historyDailyTotalEl) {
             historyDailyTotalEl.innerHTML = `<strong>¥${dailyTotal.toLocaleString()}</strong>`;
         }
         // ▲▲▲ 新規追加ここまで ▲▲▲
     };
-    
+
     const deleteSale = async (saleId) => {
         if (confirm('この会計履歴を本当に削除しますか？この操作は元に戻せません。')) {
             try {
@@ -245,11 +245,11 @@ const salesMain = async (auth, user) => {
             }
         }
     };
-    
+
     // --- Event Listeners ---
     setGoalBtn.addEventListener('click', setMonthlyGoal);
     historyDatePicker.addEventListener('change', (e) => loadSalesHistory(e.target.value));
-    
+
     // --- Initial Load ---
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;

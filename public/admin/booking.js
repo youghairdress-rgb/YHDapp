@@ -1,7 +1,7 @@
 import { runAdminPage } from './admin-auth.js';
 import { db } from './firebase-init.js';
-import { 
-    collection, getDocs, onSnapshot, addDoc, doc, setDoc, deleteDoc, 
+import {
+    collection, getDocs, onSnapshot, addDoc, doc, setDoc, deleteDoc,
     query, where, Timestamp, orderBy, getDoc, serverTimestamp, collectionGroup, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -23,7 +23,7 @@ const bookingMain = async (auth, user) => {
     const detailModal = document.getElementById('booking-detail-modal');
     const actionModal = document.getElementById('timeslot-action-modal');
     const editModal = document.getElementById('booking-edit-modal');
-    
+
     // Edit Modal Form Fields
     const bookingForm = document.getElementById('booking-form');
     const editModalTitle = document.getElementById('edit-modal-title');
@@ -36,14 +36,15 @@ const bookingMain = async (auth, user) => {
     const newCustomerFields = document.getElementById('new-customer-fields');
     const newCustomerKanaInput = document.getElementById('new-customer-kana');
     const newCustomerPhoneInput = document.getElementById('new-customer-phone');
-    
+    const adminNotesInput = document.getElementById('admin-notes');
+
     // ★★★ 予約不可モーダル関連 ★★★
     const unavailableModal = document.getElementById('unavailable-modal');
     const unavailableForm = document.getElementById('unavailable-form');
     const unavailableStartTimeSelect = document.getElementById('unavailable-start-time');
     const unavailableEndTimeSelect = document.getElementById('unavailable-end-time');
     const unavailableTitle = document.getElementById('unavailable-modal-title');
-    
+
     // State
     let salonSettings = {};
     let currentDate = new Date();
@@ -52,7 +53,7 @@ const bookingMain = async (auth, user) => {
     let customers = [];
     let menuCategories = [];
     let editingBooking = null;
-    let unsubscribeReservations = null; 
+    let unsubscribeReservations = null;
     // ▼▼▼ 修正: 8:00～22:00（14時間） ▼▼▼
     const fixedStartHour = 8;
     const fixedEndHour = 22;
@@ -66,7 +67,7 @@ const bookingMain = async (auth, user) => {
         document.body.classList.remove('modal-open');
         modal.style.display = 'none';
     };
-    
+
     const loadSalonSettings = async () => {
         const docRef = doc(db, "settings", "salon");
         const docSnap = await getDoc(docRef);
@@ -74,7 +75,7 @@ const bookingMain = async (auth, user) => {
             salonSettings = docSnap.data();
         } else {
             console.log("サロン設定が見つかりません。デフォルト値を使用します。");
-             salonSettings = { 
+            salonSettings = {
                 businessHours: {
                     '0': { isOpen: true, start: '10:00', end: '20:00' },
                     '1': { isOpen: true, start: '10:00', end: '20:00' },
@@ -93,10 +94,10 @@ const bookingMain = async (auth, user) => {
         const month = currentDate.getMonth();
         const year = currentDate.getFullYear();
         calendarMonthEl.textContent = `${year}年 ${month + 1}月`;
-        
+
         const firstDayOfMonth = new Date(year, month, 1);
         const lastDayOfMonth = new Date(year, month + 1, 0);
-        
+
         const startOfMonth = Timestamp.fromDate(firstDayOfMonth);
         const endOfMonth = Timestamp.fromDate(new Date(year, month + 1, 1));
         const q = query(collection(db, "reservations"), where("startTime", ">=", startOfMonth), where("startTime", "<", endOfMonth));
@@ -117,12 +118,12 @@ const bookingMain = async (auth, user) => {
         for (let i = 0; i < startDay; i++) {
             calendarGridEl.innerHTML += '<div></div>';
         }
-        
+
         for (let i = 1; i <= lastDayOfMonth.getDate(); i++) {
             const dayCell = document.createElement('div');
             dayCell.className = 'calendar-day';
             const date = new Date(year, month, i);
-            
+
             let html = `<span>${i}</span>`;
             if (bookingCounts[i]) {
                 html += `<span class="booking-count">${bookingCounts[i]}</span>`;
@@ -132,7 +133,7 @@ const bookingMain = async (auth, user) => {
             dayCell.innerHTML = html;
             const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
             dayCell.dataset.date = dateString;
-            
+
             const dayOfWeek = date.getDay();
             const daySetting = salonSettings.businessHours ? salonSettings.businessHours[dayOfWeek] : { isOpen: true };
             if (!daySetting.isOpen || (salonSettings.specialHolidays && salonSettings.specialHolidays.includes(dateString))) {
@@ -140,7 +141,7 @@ const bookingMain = async (auth, user) => {
             }
 
             const today = new Date();
-            today.setHours(0,0,0,0);
+            today.setHours(0, 0, 0, 0);
             if (date.getTime() === today.getTime()) {
                 dayCell.classList.add('today');
             }
@@ -148,11 +149,11 @@ const bookingMain = async (auth, user) => {
             if (date.getTime() === selectedDate.getTime()) {
                 dayCell.classList.add('selected');
             }
-            
+
             dayCell.addEventListener('click', (e) => {
                 const dateStr = e.currentTarget.dataset.date;
                 selectedDate = new Date(dateStr);
-                selectedDate.setHours(0,0,0,0);
+                selectedDate.setHours(0, 0, 0, 0);
                 renderCalendar(); // カレンダーを再描画して選択状態を更新
                 listenToReservations(); // タイムラインを更新
                 loadDailyMemo(); // メモを更新
@@ -163,13 +164,13 @@ const bookingMain = async (auth, user) => {
 
     const renderTimeline = (reservations) => {
         timelineDateEl.textContent = `${selectedDate.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}`;
-        
+
         const normalReservations = reservations.filter(r => !r.isConsultation && r.status !== 'unavailable');
         const unavailableSlots = reservations.filter(r => r.status === 'unavailable');
         const consultationRequests = reservations.filter(r => r.isConsultation);
 
-        timelineSlotsEl.innerHTML = ''; 
-        
+        timelineSlotsEl.innerHTML = '';
+
         // ▼▼▼ 修正: 8:00～22:00（14時間）で描画 ▼▼▼
         timelineHoursEl.innerHTML = '';
         const totalHours = fixedEndHour - fixedStartHour; // 14
@@ -197,7 +198,7 @@ const bookingMain = async (auth, user) => {
                 timelineSlotsEl.appendChild(borderHalf);
             }
         }
-        
+
         // 営業時間マーカーの描画
         const dayOfWeek = selectedDate.getDay();
         const todaySettings = salonSettings.businessHours ? salonSettings.businessHours[dayOfWeek] : null;
@@ -212,23 +213,23 @@ const bookingMain = async (auth, user) => {
             startMarker.className = 'business-hours-marker-v';
             startMarker.style.top = `${startMinutes * 2}px`;
             timelineSlotsEl.appendChild(startMarker);
-            
+
             const endMarker = document.createElement('div');
             endMarker.className = 'business-hours-marker-v';
             endMarker.style.top = `${endMinutes * 2}px`;
             timelineSlotsEl.appendChild(endMarker);
         }
         // ▲▲▲ 修正ここまで ▲▲▲
-        
+
         [...normalReservations, ...unavailableSlots].forEach(res => {
-            if (!res.startTime || !res.endTime) return; 
+            if (!res.startTime || !res.endTime) return;
             const start = res.startTime.toDate();
             const end = res.endTime.toDate();
-            
+
             const startMinutes = start.getHours() * 60 + start.getMinutes();
             const endMinutes = end.getHours() * 60 + end.getMinutes();
             const duration = endMinutes - startMinutes;
-            
+
             // ▼▼▼ 修正: 8時を0として計算 ▼▼▼
             const top = (startMinutes - (fixedStartHour * 60)) * 2;
             // ▲▲▲ 修正ここまで ▲▲▲
@@ -238,17 +239,17 @@ const bookingMain = async (auth, user) => {
             resElement.className = 'reservation-item';
             resElement.style.top = `${top}px`;
             resElement.style.height = `${height}px`;
-            if(res.status === 'unavailable') {
+            if (res.status === 'unavailable') {
                 resElement.classList.add('unavailable');
             }
             if (res.status === 'completed') {
                 resElement.classList.add('completed');
             }
 
-            const menuNames = res.selectedMenus && Array.isArray(res.selectedMenus) 
-                ? res.selectedMenus.map(m => m.name).join(', ') 
+            const menuNames = res.selectedMenus && Array.isArray(res.selectedMenus)
+                ? res.selectedMenus.map(m => m.name).join(', ')
                 : (res.status === 'unavailable' ? '予約不可' : 'メニュー情報なし');
-            
+
             // ▼▼▼ 修正: 顧客情報を検索し、アイコンを追加 ▼▼▼
             const customer = customers.find(c => c.id === res.customerId);
             const lineIcon = customer && customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
@@ -258,11 +259,12 @@ const bookingMain = async (auth, user) => {
                 <strong>${lineIcon}<span class="reservation-item-name">${res.customerName || ''}</span>${noteIcon}</strong>
                 <small>${start.getHours()}:${String(start.getMinutes()).padStart(2, '0')} - ${end.getHours()}:${String(end.getMinutes()).padStart(2, '0')}</small>
                 <small class="menu-names">${menuNames}</small>
+                ${res.adminNotes ? `<small class="admin-notes-preview" style="display:block; color:var(--primary-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📝 ${res.adminNotes}</small>` : ''}
             `;
             // ▲▲▲ 修正ここまで ▲▲▲
 
             resElement.addEventListener('click', (e) => {
-                e.stopPropagation(); 
+                e.stopPropagation();
                 openDetailModal(res);
             });
             timelineSlotsEl.appendChild(resElement);
@@ -282,7 +284,7 @@ const bookingMain = async (auth, user) => {
             consultationCard.style.display = 'none';
         }
     };
-    
+
     const openDetailModal = (booking) => {
         editingBooking = booking;
         const detailModalTitle = document.getElementById('detail-modal-title');
@@ -290,6 +292,8 @@ const bookingMain = async (auth, user) => {
         const unavailableActions = document.getElementById('unavailable-booking-actions');
         const requestsWrapper = document.getElementById('detail-requests-wrapper');
         const requestsEl = document.getElementById('detail-requests');
+        const adminNotesWrapper = document.getElementById('detail-admin-notes-wrapper');
+        const adminNotesEl = document.getElementById('detail-admin-notes');
 
         if (booking.status === 'unavailable') {
             detailModalTitle.textContent = '予約不可設定';
@@ -303,24 +307,31 @@ const bookingMain = async (auth, user) => {
             const start = booking.startTime.toDate();
             const end = booking.endTime.toDate();
 
-            if(booking.isConsultation) {
+            if (booking.isConsultation) {
                 document.getElementById('detail-datetime').textContent = '時間未定（相談中）';
             } else {
-                document.getElementById('detail-datetime').textContent = 
-                `${start.toLocaleString('ja-JP', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`;
+                document.getElementById('detail-datetime').textContent =
+                    `${start.toLocaleString('ja-JP', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`;
             }
 
-            if(booking.userRequests) {
+            if (booking.userRequests) {
                 requestsEl.textContent = booking.userRequests;
                 requestsWrapper.style.display = 'block';
             } else {
                 requestsWrapper.style.display = 'none';
             }
 
+            if (booking.adminNotes) {
+                adminNotesEl.textContent = booking.adminNotes;
+                adminNotesWrapper.style.display = 'block';
+            } else {
+                adminNotesWrapper.style.display = 'none';
+            }
+
             document.getElementById('detail-menus').textContent = booking.selectedMenus?.map(m => m.name).join(', ') || 'N/A';
             if (normalActions) normalActions.style.display = 'grid';
             if (unavailableActions) unavailableActions.style.display = 'none';
-            
+
             const posLink = document.getElementById('detail-pos-link');
             if (booking.status === 'completed') {
                 posLink.style.display = 'none';
@@ -348,7 +359,7 @@ const bookingMain = async (auth, user) => {
         // ▲▲▲ 修正ここまで ▲▲▲
         openModal(actionModal);
     };
-    
+
     // ★★★ 予約不可モーダルを開く関数 ★★★
     const openUnavailableModal = (time) => {
         unavailableForm.reset();
@@ -360,17 +371,17 @@ const bookingMain = async (auth, user) => {
         startDate.setHours(h, m, 0, 0);
         const endDate = new Date(startDate.getTime() + 30 * 60000);
         const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
-        
+
         // 終了時刻が22:00を超える場合は22:00に設定
         if (endDate.getHours() > fixedEndHour || (endDate.getHours() === fixedEndHour && endDate.getMinutes() > 0)) {
-             unavailableEndTimeSelect.value = `${String(fixedEndHour).padStart(2, '0')}:00`;
+            unavailableEndTimeSelect.value = `${String(fixedEndHour).padStart(2, '0')}:00`;
         } else {
             unavailableEndTimeSelect.value = endTime;
         }
 
         openModal(unavailableModal);
     };
-    
+
     // ★★★ 予約不可を保存する関数 ★★★
     const saveUnavailable = async (e) => {
         e.preventDefault();
@@ -401,7 +412,7 @@ const bookingMain = async (auth, user) => {
             createdAt: serverTimestamp(),
             createdBy: 'admin'
         };
-        
+
         try {
             await addDoc(collection(db, "reservations"), data);
             closeModal(unavailableModal);
@@ -410,7 +421,7 @@ const bookingMain = async (auth, user) => {
             alert("予約不可設定の追加に失敗しました。");
         }
     };
-    
+
     // ★★★ 終了時刻を自動計算する関数 ★★★
     const calculateEndTime = () => {
         const selectedMenuCheckboxes = menuAccordionContainer.querySelectorAll('input:checked');
@@ -420,24 +431,24 @@ const bookingMain = async (auth, user) => {
         }).filter(Boolean); // filter(Boolean) で undefined を除外
 
         const totalDuration = selectedMenus.reduce((sum, menu) => sum + menu.duration, 0);
-        
+
         const startTimeStr = startTimeSelect.value;
         if (!startTimeStr) return;
 
-        const [startH, startM] = startTimeStr.split(':').map(Number);
+        const [startH, startM] = startTimeSelect.value.split(':').map(Number);
         const startDate = new Date(selectedDate);
         startDate.setHours(startH, startM, 0, 0);
-        
+
         const endDate = new Date(startDate.getTime() + totalDuration * 60000);
-        
+
         // 30分単位で切り上げ
         const endMinutesTotal = endDate.getHours() * 60 + endDate.getMinutes();
         const roundedEndMinutes = Math.ceil(endMinutesTotal / 30) * 30;
         const endH = Math.floor(roundedEndMinutes / 60);
         const endM = roundedEndMinutes % 60;
-        
+
         const endTimeStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-        
+
         // 終了時刻が22:00を超える場合は22:00に設定
         if (endH > fixedEndHour || (endH === fixedEndHour && endM > 0)) {
             endTimeSelect.value = `${String(fixedEndHour).padStart(2, '0')}:00`;
@@ -455,7 +466,8 @@ const bookingMain = async (auth, user) => {
         deleteBtn.style.display = 'none';
         newCustomerFields.style.display = 'none';
         newCustomerKanaInput.required = false;
-        
+        adminNotesInput.value = '';
+
         menuAccordionContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
 
         // populateTimeSelects(); // loadInitialDataForModalsで実行済みにする
@@ -469,21 +481,23 @@ const bookingMain = async (auth, user) => {
         } else {
             editingBooking = timeOrBooking;
             editModalTitle.textContent = '予約編集';
-            
+
             customerInput.value = editingBooking.customerName;
             customerInput.disabled = true;
-            
-            if(editingBooking.selectedMenus) {
+
+            if (editingBooking.selectedMenus) {
                 editingBooking.selectedMenus.forEach(menu => {
                     const checkbox = menuAccordionContainer.querySelector(`input[value="${menu.id}"]`);
                     if (checkbox) checkbox.checked = true;
                 });
             }
-            
+
+            adminNotesInput.value = editingBooking.adminNotes || '';
+
             const start = editingBooking.startTime.toDate();
             const end = editingBooking.endTime.toDate();
             startTimeSelect.value = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
-            
+
             // 終了時刻を30分単位に丸める
             const endMinutesTotal = end.getHours() * 60 + end.getMinutes();
             const roundedEndMinutes = Math.ceil(endMinutesTotal / 30) * 30;
@@ -494,12 +508,12 @@ const bookingMain = async (auth, user) => {
             if (endTimeSelect.querySelector(`option[value="${endTimeStr}"]`)) {
                 endTimeSelect.value = endTimeStr;
             } else {
-                 endTimeSelect.value = endTimeSelect.options[endTimeSelect.options.length - 1].value;
+                endTimeSelect.value = endTimeSelect.options[endTimeSelect.options.length - 1].value;
             }
-            
+
             deleteBtn.style.display = 'inline-block';
         }
-        
+
         startTimeSelect.disabled = false;
         endTimeSelect.disabled = false;
 
@@ -520,12 +534,12 @@ const bookingMain = async (auth, user) => {
 
     const saveBooking = async (e) => {
         e.preventDefault();
-        
+
         let customerId;
         let customerName = customerInput.value.trim();
 
         const existingCustomer = customers.find(c => c.name === customerName);
-        
+
         if (existingCustomer) {
             customerId = existingCustomer.id;
         } else {
@@ -547,7 +561,7 @@ const bookingMain = async (auth, user) => {
                 };
                 const docRef = await addDoc(collection(db, "users"), newCustomerData);
                 customerId = docRef.id;
-                
+
                 customers.push({ id: customerId, ...newCustomerData });
                 customerDatalist.innerHTML = customers.map(c => `<option value="${c.name}"></option>`).join('');
 
@@ -557,7 +571,7 @@ const bookingMain = async (auth, user) => {
                 return;
             }
         }
-        
+
         if (!customerName) {
             alert('顧客名を入力してください。');
             return;
@@ -582,7 +596,9 @@ const bookingMain = async (auth, user) => {
         const [endH, endM] = endTimeSelect.value.split(':').map(Number);
         const endTime = new Date(selectedDate);
         endTime.setHours(endH, endM, 0, 0);
-        
+
+        const adminNotes = adminNotesInput.value.trim();
+
         const data = {
             customerId: customerId,
             customerName: customerName,
@@ -592,9 +608,10 @@ const bookingMain = async (auth, user) => {
             status: 'confirmed',
             isConsultation: false,
             createdAt: serverTimestamp(),
-            createdBy: 'admin'
+            createdBy: 'admin',
+            adminNotes: adminNotes
         };
-        
+
         try {
             if (editingBooking) {
                 await setDoc(doc(db, "reservations", editingBooking.id), data, { merge: true });
@@ -602,32 +619,32 @@ const bookingMain = async (auth, user) => {
                 await addDoc(collection(db, "reservations"), data);
             }
             closeModal(editModal);
-        } catch(error) {
+        } catch (error) {
             console.error("予約の保存に失敗:", error);
             alert("予約の保存に失敗しました。");
         }
     };
-    
+
     const deleteBooking = async () => {
         if (editingBooking && confirm('この予約または予約不可設定を削除しますか？')) {
             try {
                 await deleteDoc(doc(db, "reservations", editingBooking.id));
                 closeModal(editModal);
                 closeModal(detailModal);
-            } catch(error) {
+            } catch (error) {
                 console.error("予約の削除に失敗:", error);
                 alert("予約の削除に失敗しました。");
             }
         }
     };
-    
+
     const listenToReservations = () => {
         if (unsubscribeReservations) unsubscribeReservations();
         const startOfDay = new Date(selectedDate);
-        const endOfDay = new Date(selectedDate); 
+        const endOfDay = new Date(selectedDate);
         endOfDay.setHours(23, 59, 59, 999);
 
-        const q = query(collection(db, "reservations"), 
+        const q = query(collection(db, "reservations"),
             where("startTime", ">=", Timestamp.fromDate(startOfDay)),
             where("startTime", "<=", Timestamp.fromDate(endOfDay)),
             orderBy("startTime")
@@ -637,7 +654,7 @@ const bookingMain = async (auth, user) => {
             renderTimeline(reservations);
         });
     };
-    
+
     const loadDailyMemo = async () => {
         const dateId = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
         const memoDocRef = doc(db, "daily_memos", dateId);
@@ -645,7 +662,7 @@ const bookingMain = async (auth, user) => {
             const docSnap = await getDoc(memoDocRef);
             dailyMemoEl.value = docSnap.exists() ? docSnap.data().content : "";
         } catch (error) {
-             console.error("メモの読み込みエラー:", error);
+            console.error("メモの読み込みエラー:", error);
         }
     };
 
@@ -664,12 +681,12 @@ const bookingMain = async (auth, user) => {
 
     const loadInitialDataForModals = async () => {
         const customersSnapshot = await getDocs(query(collection(db, 'users'), orderBy('kana')));
-        customers = customersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data()}));
+        customers = customersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         customerDatalist.innerHTML = customers.map(c => `<option value="${c.name}"></option>`).join('');
-        
+
         const categoriesSnapshot = await getDocs(query(collection(db, 'service_categories'), orderBy('order')));
         const menusSnapshot = await getDocs(query(collectionGroup(db, 'menus'), orderBy('order')));
-        
+
         const allMenus = menusSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
@@ -698,13 +715,13 @@ const bookingMain = async (auth, user) => {
             `;
             menuAccordionContainer.appendChild(accordion);
         });
-        
+
         // ★★★ 編集モーダルのイベントリスナーをここに追加 ★★★
         menuAccordionContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
             checkbox.addEventListener('change', calculateEndTime);
         });
         startTimeSelect.addEventListener('change', calculateEndTime);
-        
+
         // ★★★ 時刻プルダウンの生成をここに移動 ★★★
         populateTimeSelects();
     };
@@ -728,27 +745,27 @@ const bookingMain = async (auth, user) => {
         }
     };
     // ▲▲▲ 修正ここまで ▲▲▲
-    
+
     // --- Initial Execution & Event Listeners Setup ---
     await loadSalonSettings();
     await loadInitialDataForModals(); // 時刻プルダウンの生成も含む
     await renderCalendar();
     listenToReservations();
     loadDailyMemo();
-    
-    prevMonthBtn.addEventListener('click', () => { 
-        currentDate.setMonth(currentDate.getMonth() - 1); 
-        renderCalendar(); 
+
+    prevMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
     });
-    nextMonthBtn.addEventListener('click', () => { 
-        currentDate.setMonth(currentDate.getMonth() + 1); 
-        renderCalendar(); 
+    nextMonthBtn.addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
     });
     bookingForm.addEventListener('submit', saveBooking);
     deleteBtn.addEventListener('click', deleteBooking);
     // ★★★ 予約不可フォームの保存イベント ★★★
     unavailableForm.addEventListener('submit', saveUnavailable);
-    
+
     document.getElementById('detail-edit-btn').addEventListener('click', () => {
         closeModal(detailModal);
         openEditModal(editingBooking);
@@ -767,19 +784,19 @@ const bookingMain = async (auth, user) => {
 
     timelineSlotsEl.addEventListener('click', (e) => {
         if (!e.target.classList.contains('timeline-slots')) return;
-        
+
         const rect = e.target.getBoundingClientRect();
         const y = e.clientY - rect.top;
-        
+
         // ▼▼▼ 修正: 8時を0として計算 ▼▼▼
         const totalMinutes = (y / 2) + (fixedStartHour * 60);
         const hour = Math.floor(totalMinutes / 60);
         // ▲▲▲ 修正ここまで ▲▲▲
         const minute = Math.round((totalMinutes % 60) / 30) * 30;
-        
+
         let finalHour = hour;
         let finalMinute = minute;
-        
+
         // 分が60になった場合、時間を繰り上げる
         if (finalMinute === 60) {
             finalHour += 1;
@@ -792,7 +809,7 @@ const bookingMain = async (auth, user) => {
             finalMinute = 0;
         }
 
-        const time = `${String(finalHour).padStart(2,'0')}:${String(finalMinute).padStart(2,'0')}`;
+        const time = `${String(finalHour).padStart(2, '0')}:${String(finalMinute).padStart(2, '0')}`;
         openActionModal(time);
     });
 };
