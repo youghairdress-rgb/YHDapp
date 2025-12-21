@@ -453,7 +453,7 @@ const customersMain = async (auth, user) => {
                     openCustomerModal(customer);
                     paramsHandled = true;
                     customerInfoPlaceholder.style.display = 'none';
-                    customerListContainer.innerHTML = ''; // リストをクリア
+                    renderCustomers([customer]); // リストに該当顧客を表示
                 }
             } else if (customerSearchInput.value && !paramsHandled) {
                 // 予約ページなどから顧客名付きでリダイレクトされた場合

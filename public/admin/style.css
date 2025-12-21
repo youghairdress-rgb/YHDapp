@@ -1,4 +1,4 @@
-/* 基本設定と変数 */
+﻿/* 基本設定と変数 */
 :root {
     --primary-color: #0ABAB5;
     /* ティファニーブルー */
@@ -1521,7 +1521,7 @@ main {
 
 /* ▲▲▲ 修正ここまで ▲▲▲ */
 
-/* ������ �ǉ�: �o�ߓ����\���X�^�C�� ������ */
+/* ▼▼▼ 追加: 経過日数表示用スタイル ▼▼▼ */
 .days-elapsed {
     font-size: 0.85rem;
     color: var(--light-text-color);
@@ -1541,4 +1541,4 @@ main {
 .days-warning-red {
     color: #e74c3c !important;
 }
-/* ������ �ǉ������܂� ������ */
+/* ▲▲▲ 追加ここまで ▲▲▲ */
