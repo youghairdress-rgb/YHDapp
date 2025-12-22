@@ -1542,3 +1542,35 @@ main {
     color: #e74c3c !important;
 }
 /* ▲▲▲ 追加ここまで ▲▲▲ */
+/* ▼▼▼ 追加: 半月ごとの集計表示用スタイル ▼▼▼ */
+.half-month-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--light-text-color);
+}
+/* ▲▲▲ 追加ここまで ▲▲▲ */
+/* ▼▼▼ 追加: 来店回数バッジのスタイル ▼▼▼ */
+.visit-count-badge {
+    background-color: var(--secondary-color);
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+    font-weight: bold;
+}
+/* ▲▲▲ 追加ここまで ▲▲▲ */
+
+/* ▼▼▼ 修正: 来店回数バッジのスタイル（ティファニーブルー） ▼▼▼ */
+.visit-count-badge {
+    background-color: #0ABAB5; /* Tiffany Blue */
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 5px;
+    font-weight: bold;
+}
+/* ▲▲▲ 修正ここまで ▲▲▲ */

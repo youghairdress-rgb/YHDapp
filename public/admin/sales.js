@@ -88,6 +88,28 @@ const salesMain = async (auth, user) => {
 
         goalProgressText.textContent = `${percentage}% 達成 (¥${currentSales.toLocaleString()} / ¥${goal.toLocaleString()})`;
         goalProgressBar.style.width = `${percentage}%`;
+
+        // ▼▼▼ 追加: 半月ごとの集計 ▼▼▼
+        let firstHalfTotal = 0;
+        let secondHalfTotal = 0;
+
+        sales.forEach(sale => {
+            if (!sale.reservationTime) return;
+            const date = sale.reservationTime.toDate().getDate();
+            const amount = sale.total || 0;
+
+            if (date <= 15) {
+                firstHalfTotal += amount;
+            } else {
+                secondHalfTotal += amount;
+            }
+        });
+
+        const firstHalfEl = document.getElementById('first-half-stats');
+        const secondHalfEl = document.getElementById('second-half-stats');
+        if (firstHalfEl) firstHalfEl.textContent = `1日〜15日: ¥${firstHalfTotal.toLocaleString()}`;
+        if (secondHalfEl) secondHalfEl.textContent = `16日〜末日: ¥${secondHalfTotal.toLocaleString()}`;
+        // ▲▲▲ 追加ここまで ▲▲▲
     };
 
     const getMonthlySalesForLastSixMonths = async () => {

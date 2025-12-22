@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales</title>
-        <link rel="icon" href="../img/YHDlogo2.png" type="image/png">
+    <link rel="icon" href="../img/YHDlogo2.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <!-- Chart.jsの読み込み -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
     <div id="app-container">
         <header>
@@ -40,6 +42,12 @@
                     <div class="progress-bar-container">
                         <div id="goal-progress-bar" class="progress-bar"></div>
                     </div>
+                    <!-- ▼▼▼ 追加: 半月ごとの集計表示 ▼▼▼ -->
+                    <div id="half-month-stats" class="half-month-stats">
+                        <span id="first-half-stats">1日〜15日: ¥0</span>
+                        <span id="second-half-stats">16日〜末日: ¥0</span>
+                    </div>
+                    <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
                 </div>
             </div>
 
@@ -63,7 +71,7 @@
                     </table>
                 </div>
             </div>
-            
+
             <div class="card">
                 <h2 class="card-subtitle">会計履歴</h2>
                 <div class="history-controls">
@@ -112,4 +120,5 @@
     <script type="module" src="./admin-auth.js"></script>
     <script type="module" src="./sales.js"></script>
 </body>
+
 </html>

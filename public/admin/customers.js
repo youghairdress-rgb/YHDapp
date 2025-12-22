@@ -394,7 +394,10 @@ const customersMain = async (auth, user) => {
                 <div class="customer-card-header">
                     ${lineIcon}
                     <span class="customer-card-name">${customer.name}</span>
-                    ${generateElapsedDaysHtml(customer.lastVisit)} <!-- 追加: 経過日数表示 -->
+                    <!-- ▼▼▼ 追加: 来店回数バッジ ▼▼▼ -->
+                    ${customer.visitCount ? `<span class="visit-count-badge">${customer.visitCount}回</span>` : ''}
+                    <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+                    ${generateElapsedDaysHtml(customer.lastVisit)} 
                     ${noteIcon}
                 </div>
                 <div class="customer-card-actions">

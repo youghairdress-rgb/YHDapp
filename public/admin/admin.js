@@ -88,7 +88,7 @@ const adminMain = async (auth, user) => {
     const renderTimeline = (reservations) => {
         timelineContainer.innerHTML = '';
 
-        // ▼▼▼ 追加: グリッド線の描画 (時間軸と正確に合わせるためJSで生成) ▼▼▼
+        // ▼▼▼ 追加: グリッド線の描画 ▼▼▼
         const totalHours = fixedEndHour - fixedStartHour;
         for (let i = 0; i <= totalHours; i++) {
             const left = (i / totalHours) * 100;
@@ -101,7 +101,6 @@ const adminMain = async (auth, user) => {
 
         const dayOfWeek = today.getDay();
         const todaySettings = salonSettings.businessHours ? salonSettings.businessHours[dayOfWeek] : null;
-
         const totalMinutesInView = (fixedEndHour - fixedStartHour) * 60;
 
         // 営業時間マーカーの描画
@@ -126,43 +125,113 @@ const adminMain = async (auth, user) => {
             timelineContainer.appendChild(endMarker);
         }
 
-        reservations.forEach(booking => {
-            if (!booking.startTime || !booking.endTime) return;
-            if (booking.isConsultation) return;
+        // ▼▼▼ 修正: 重複レイアウト計算 ▼▼▼
+        const sortedReservations = reservations
+            .filter(r => r.startTime && r.endTime && !r.isConsultation)
+            .sort((a, b) => a.startTime.toDate() - b.startTime.toDate());
 
-            const start = booking.startTime.toDate();
-            const end = booking.endTime.toDate();
+        // レイアウト計算用の変数
+        const clusters = [];
+        let currentCluster = [];
+        let clusterEndTime = 0;
 
-            const startMinutes = (start.getHours() * 60 + start.getMinutes()) - (fixedStartHour * 60);
-            const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+        sortedReservations.forEach(res => {
+            const start = res.startTime.toDate().getTime();
+            const end = res.endTime.toDate().getTime();
 
-            const left = (startMinutes / totalMinutesInView) * 100;
-            const width = (durationMinutes / totalMinutesInView) * 100;
-
-            if (left < 0 || width <= 0) return;
-
-            const item = document.createElement('div');
-            item.className = 'timeline-item';
-            if (booking.status === 'unavailable') item.classList.add('unavailable');
-            if (booking.status === 'completed') item.classList.add('completed');
-            item.style.left = `${left}%`;
-            item.style.width = `${width}%`;
-            const customerName = booking.status === 'unavailable' ? '予約不可' : (booking.customerName || '顧客');
-
-            const customer = customers.find(c => c.id === booking.customerId);
-            const lineIcon = customer && customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
-            const noteIcon = customer && customer.notes ? '<i class="fa-solid fa-triangle-exclamation note-icon"></i>' : '';
-
-            const adminNotesHtml = booking.adminNotes ? `<small class="admin-notes-preview" style="display:block; color:var(--primary-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.7rem;">📝 ${booking.adminNotes}</small>` : '';
-
-            item.innerHTML = `${lineIcon}<span class="timeline-item-name">${customerName}</span>${noteIcon}${adminNotesHtml}`;
-
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openDetailModal(booking);
-            });
-            timelineContainer.appendChild(item);
+            if (currentCluster.length === 0) {
+                currentCluster.push(res);
+                clusterEndTime = end;
+            } else {
+                if (start < clusterEndTime) {
+                    currentCluster.push(res);
+                    if (end > clusterEndTime) clusterEndTime = end;
+                } else {
+                    clusters.push(currentCluster);
+                    currentCluster = [res];
+                    clusterEndTime = end;
+                }
+            }
         });
+        if (currentCluster.length > 0) clusters.push(currentCluster);
+
+        clusters.forEach(cluster => {
+            const lanes = [];
+            cluster.forEach(res => {
+                const start = res.startTime.toDate().getTime();
+                const end = res.endTime.toDate().getTime();
+                let laneIndex = 0;
+                while (true) {
+                    if (!lanes[laneIndex]) {
+                        lanes[laneIndex] = end;
+                        res.lane = laneIndex;
+                        break;
+                    } else {
+                        if (start >= lanes[laneIndex]) {
+                            lanes[laneIndex] = end;
+                            res.lane = laneIndex;
+                            break;
+                        } else {
+                            laneIndex++;
+                        }
+                    }
+                }
+            });
+
+            const maxLanes = lanes.length;
+            cluster.forEach(res => {
+                const start = res.startTime.toDate();
+                const end = res.endTime.toDate();
+
+                const startMinutes = (start.getHours() * 60 + start.getMinutes()) - (fixedStartHour * 60);
+                const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+
+                const leftBase = (startMinutes / totalMinutesInView) * 100;
+                const widthBase = (durationMinutes / totalMinutesInView) * 100;
+
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                if (res.status === 'unavailable') item.classList.add('unavailable');
+                if (res.status === 'completed') item.classList.add('completed');
+
+                // 重複時のスタイル適用
+                // 高さ(top)と高さ(height)を調整して並べる (index.htmlは横軸が時間なので、縦に並べる)
+                // しかしadmin.js (index.html) のタイムラインは横軸が時間、縦軸は1行のみ。
+                // なので、重複時は「高さ」を分割して積み重ねるのが適切。
+
+                item.style.left = `${leftBase}%`;
+                item.style.width = `${widthBase}%`;
+
+                // 縦幅と位置の調整
+                const heightPercent = 100 / maxLanes;
+                const topPercent = res.lane * heightPercent;
+
+                item.style.height = `${heightPercent}%`;
+                item.style.top = `${topPercent}%`;
+
+                const customerName = res.status === 'unavailable' ? '予約不可' : (res.customerName || '顧客');
+                const customer = customers.find(c => c.id === res.customerId);
+                const lineIcon = customer && customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
+                const noteIcon = customer && customer.notes ? '<i class="fa-solid fa-triangle-exclamation note-icon"></i>' : '';
+                const adminNotesHtml = res.adminNotes ? `<small class="admin-notes-preview" style="display:block; color:var(--primary-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.7rem;">📝 ${res.adminNotes}</small>` : '';
+
+                // 幅が狭いときの表示調整
+                if (heightPercent < 50) {
+                    item.style.fontSize = '0.7rem';
+                    item.style.padding = '2px';
+                    // アイコン類を省略するなど
+                }
+
+                item.innerHTML = `${lineIcon}<span class="timeline-item-name">${customerName}</span>${noteIcon}${adminNotesHtml}`;
+
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openDetailModal(res);
+                });
+                timelineContainer.appendChild(item);
+            });
+        });
+        // ▲▲▲ 修正ここまで ▲▲▲
     };
 
     const populateTimeSelects = () => {

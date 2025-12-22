@@ -221,54 +221,127 @@ const bookingMain = async (auth, user) => {
         }
         // ▲▲▲ 修正ここまで ▲▲▲
 
-        [...normalReservations, ...unavailableSlots].forEach(res => {
-            if (!res.startTime || !res.endTime) return;
-            const start = res.startTime.toDate();
-            const end = res.endTime.toDate();
+        // ▼▼▼ 修正: 重複レイアウト計算 ▼▼▼
+        const sortedReservations = [...normalReservations, ...unavailableSlots]
+            .sort((a, b) => a.startTime.toDate() - b.startTime.toDate());
 
-            const startMinutes = start.getHours() * 60 + start.getMinutes();
-            const endMinutes = end.getHours() * 60 + end.getMinutes();
-            const duration = endMinutes - startMinutes;
+        // レイアウト計算用の変数
+        const clusters = [];
+        let currentCluster = [];
+        let clusterEndTime = 0;
 
-            // ▼▼▼ 修正: 8時を0として計算 ▼▼▼
-            const top = (startMinutes - (fixedStartHour * 60)) * 2;
-            // ▲▲▲ 修正ここまで ▲▲▲
-            const height = duration * 2;
+        sortedReservations.forEach(res => {
+            const start = res.startTime.toDate().getTime();
+            const end = res.endTime.toDate().getTime();
 
-            const resElement = document.createElement('div');
-            resElement.className = 'reservation-item';
-            resElement.style.top = `${top}px`;
-            resElement.style.height = `${height}px`;
-            if (res.status === 'unavailable') {
-                resElement.classList.add('unavailable');
+            if (currentCluster.length === 0) {
+                currentCluster.push(res);
+                clusterEndTime = end;
+            } else {
+                if (start < clusterEndTime) {
+                    currentCluster.push(res);
+                    if (end > clusterEndTime) clusterEndTime = end;
+                } else {
+                    clusters.push(currentCluster);
+                    currentCluster = [res];
+                    clusterEndTime = end;
+                }
             }
-            if (res.status === 'completed') {
-                resElement.classList.add('completed');
-            }
-
-            const menuNames = res.selectedMenus && Array.isArray(res.selectedMenus)
-                ? res.selectedMenus.map(m => m.name).join(', ')
-                : (res.status === 'unavailable' ? '予約不可' : 'メニュー情報なし');
-
-            // ▼▼▼ 修正: 顧客情報を検索し、アイコンを追加 ▼▼▼
-            const customer = customers.find(c => c.id === res.customerId);
-            const lineIcon = customer && customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
-            const noteIcon = customer && customer.notes ? '<i class="fa-solid fa-triangle-exclamation note-icon"></i>' : '';
-
-            resElement.innerHTML = `
-                <strong>${lineIcon}<span class="reservation-item-name">${res.customerName || ''}</span>${noteIcon}</strong>
-                <small>${start.getHours()}:${String(start.getMinutes()).padStart(2, '0')} - ${end.getHours()}:${String(end.getMinutes()).padStart(2, '0')}</small>
-                <small class="menu-names">${menuNames}</small>
-                ${res.adminNotes ? `<small class="admin-notes-preview" style="display:block; color:var(--primary-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📝 ${res.adminNotes}</small>` : ''}
-            `;
-            // ▲▲▲ 修正ここまで ▲▲▲
-
-            resElement.addEventListener('click', (e) => {
-                e.stopPropagation();
-                openDetailModal(res);
-            });
-            timelineSlotsEl.appendChild(resElement);
         });
+        if (currentCluster.length > 0) clusters.push(currentCluster);
+
+        clusters.forEach(cluster => {
+            const lanes = [];
+            cluster.forEach(res => {
+                const start = res.startTime.toDate().getTime();
+                const end = res.endTime.toDate().getTime();
+                let laneIndex = 0;
+                while (true) {
+                    if (!lanes[laneIndex]) {
+                        lanes[laneIndex] = end;
+                        res.lane = laneIndex;
+                        break;
+                    } else {
+                        if (start >= lanes[laneIndex]) {
+                            lanes[laneIndex] = end;
+                            res.lane = laneIndex;
+                            break;
+                        } else {
+                            laneIndex++;
+                        }
+                    }
+                }
+            });
+
+            const maxLanes = lanes.length;
+
+            cluster.forEach(res => {
+                const start = res.startTime.toDate();
+                const end = res.endTime.toDate();
+
+                const startMinutes = start.getHours() * 60 + start.getMinutes();
+                const endMinutes = end.getHours() * 60 + end.getMinutes();
+                const duration = endMinutes - startMinutes;
+
+                // 8時を0として計算
+                const top = (startMinutes - (fixedStartHour * 60)) * 2;
+                const height = duration * 2;
+
+                const resElement = document.createElement('div');
+                resElement.className = 'reservation-item';
+                resElement.style.top = `${top}px`;
+                resElement.style.height = `${height}px`;
+
+                // booking.htmlは縦軸が時間、横軸が列なので、幅を分割する
+                const widthPercent = 100 / maxLanes;
+                const leftPercent = res.lane * widthPercent;
+
+                resElement.style.width = `${widthPercent}%`;
+                resElement.style.left = `${leftPercent}%`;
+                resElement.style.right = 'auto'; // CSSのright: 10pxを無効化
+
+                // スタイル調整: 重なっている場合はボーダーなどで区切りを見やすく
+                if (maxLanes > 1) {
+                    resElement.style.borderLeft = '1px solid white';
+                    resElement.style.borderRight = '1px solid white';
+                }
+
+                if (res.status === 'unavailable') {
+                    resElement.classList.add('unavailable');
+                }
+                if (res.status === 'completed') {
+                    resElement.classList.add('completed');
+                }
+
+                const menuNames = res.selectedMenus && Array.isArray(res.selectedMenus)
+                    ? res.selectedMenus.map(m => m.name).join(', ')
+                    : (res.status === 'unavailable' ? '予約不可' : 'メニュー情報なし');
+
+                const customer = customers.find(c => c.id === res.customerId);
+                const lineIcon = customer && customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
+                const noteIcon = customer && customer.notes ? '<i class="fa-solid fa-triangle-exclamation note-icon"></i>' : '';
+
+                let innerHtml = `<strong>${lineIcon}<span class="reservation-item-name">${res.customerName || ''}</span>${noteIcon}</strong>`;
+
+                // 幅が狭い・高さが低い場合は簡略表示
+                if (maxLanes <= 2 && height >= 40) {
+                    innerHtml += `<small>${start.getHours()}:${String(start.getMinutes()).padStart(2, '0')} - ${end.getHours()}:${String(end.getMinutes()).padStart(2, '0')}</small>`;
+                    innerHtml += `<small class="menu-names">${menuNames}</small>`;
+                    if (res.adminNotes) {
+                        innerHtml += `<small class="admin-notes-preview" style="display:block; color:var(--primary-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📝 ${res.adminNotes}</small>`;
+                    }
+                }
+
+                resElement.innerHTML = innerHtml;
+
+                resElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openDetailModal(res);
+                });
+                timelineSlotsEl.appendChild(resElement);
+            });
+        });
+        // ▲▲▲ 修正ここまで ▲▲▲
 
         if (consultationRequests.length > 0) {
             consultationList.innerHTML = '';

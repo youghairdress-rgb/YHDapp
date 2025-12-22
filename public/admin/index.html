@@ -130,6 +130,22 @@
                 </div>
 
                 <!-- 2. 空き時間クリック時のアクション選択モーダル -->
+                <div id="timeslot-action-modal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 id="timeslot-action-title"></h2>
+                        </div>
+                        <div class="modal-body" style="text-align: center;">
+                            <button id="action-add-booking" class="button-primary large-btn"><i
+                                    class="fa-solid fa-plus"></i> 予約を追加</button>
+                            <button id="action-set-unavailable" class="button-secondary large-btn"><i
+                                    class="fa-solid fa-ban"></i> 予約不可に設定</button>
+                        </div>
+                        <div class="form-actions" style="justify-content: center;">
+                            <button type="button" class="button-secondary close-modal-btn">キャンセル</button>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- 3. 予約追加/編集モーダル -->
                 <div id="booking-edit-modal" class="modal">
