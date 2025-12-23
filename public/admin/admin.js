@@ -213,7 +213,7 @@ const adminMain = async (auth, user) => {
                 const customer = customers.find(c => c.id === res.customerId);
                 const lineIcon = customer && customer.isLineUser ? '<i class="fa-brands fa-line line-icon"></i>' : '';
                 const noteIcon = customer && customer.notes ? '<i class="fa-solid fa-triangle-exclamation note-icon"></i>' : '';
-                const adminNotesHtml = res.adminNotes ? `<small class="admin-notes-preview" style="display:block; color:var(--primary-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.7rem;">📝 ${res.adminNotes}</small>` : '';
+                const adminNotesHtml = res.adminNotes ? `<small class="admin-notes-preview" style="display:block; color:var(--accent-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.7rem;">📝 ${res.adminNotes}</small>` : '';
 
                 // 幅が狭いときの表示調整
                 if (heightPercent < 50) {

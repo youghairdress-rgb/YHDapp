@@ -328,7 +328,7 @@ const bookingMain = async (auth, user) => {
                     innerHtml += `<small>${start.getHours()}:${String(start.getMinutes()).padStart(2, '0')} - ${end.getHours()}:${String(end.getMinutes()).padStart(2, '0')}</small>`;
                     innerHtml += `<small class="menu-names">${menuNames}</small>`;
                     if (res.adminNotes) {
-                        innerHtml += `<small class="admin-notes-preview" style="display:block; color:var(--primary-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📝 ${res.adminNotes}</small>`;
+                        innerHtml += `<small class="admin-notes-preview" style="display:block; color:var(--accent-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📝 ${res.adminNotes}</small>`;
                     }
                 }
 
