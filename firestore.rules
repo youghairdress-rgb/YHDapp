@@ -61,6 +61,11 @@ service cloud.firestore {
     match /diagnoses/{diagnosesId} {
         allow write: if isAdmin();
     }
+    
+    // ▼▼▼ 追加: メッセージテンプレートへの書き込み権限 (管理者のみ) ▼▼▼
+    match /messageTemplates/{templateId} {
+        allow write: if isAdmin();
+    }
   }
 }
 

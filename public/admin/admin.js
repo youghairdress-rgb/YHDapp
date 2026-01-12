@@ -425,6 +425,8 @@ const adminMain = async (auth, user) => {
         deleteBtn.style.display = 'none';
         newCustomerFields.style.display = 'none';
         newCustomerKanaInput.required = false;
+        // ★★★ 追加: 管理者メモの初期化 ★★★
+        document.getElementById('admin-notes').value = '';
 
         menuAccordionContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
 
@@ -447,6 +449,9 @@ const adminMain = async (auth, user) => {
                     if (checkbox) checkbox.checked = true;
                 });
             }
+
+            // ★★★ 追加: 管理者メモの読み込み ★★★
+            document.getElementById('admin-notes').value = editingBooking.adminNotes || '';
 
             const start = editingBooking.startTime.toDate();
             const end = editingBooking.endTime.toDate();

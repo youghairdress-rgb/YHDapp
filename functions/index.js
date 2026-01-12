@@ -28,8 +28,8 @@ exports.createFirebaseCustomToken = functions.region("asia-northeast1").https.on
         }
         const allowedChannelIds = channelIdsString.split(',').map(id => id.trim()).filter(id => id);
         if (allowedChannelIds.length === 0) {
-             console.error("LINE_CHANNEL_IDS is empty or invalid.");
-             return res.status(500).send("Server configuration error: LINE Channel IDs are invalid.");
+            console.error("LINE_CHANNEL_IDS is empty or invalid.");
+            return res.status(500).send("Server configuration error: LINE Channel IDs are invalid.");
         }
         // ★ 修正ここまで
 
@@ -199,7 +199,7 @@ exports.mergeUserData = functions.region("asia-northeast1").https.onCall(async (
 
         // 2. 新しい顧客ドキュメント(new)を作成または更新
         const newUserRef = db.doc(`users/${newUserId}`);
-        
+
         // フォームからの最新情報とLINEプロフィール、既存のメモ情報をマージ
         const mergedData = {
             ...oldUserData, // 既存のメモ(memo, notes)を引き継ぐ
@@ -210,7 +210,7 @@ exports.mergeUserData = functions.region("asia-northeast1").https.onCall(async (
             createdAt: oldUserData.createdAt || admin.firestore.FieldValue.serverTimestamp(), // 作成日を引き継ぐ
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         };
-        
+
         batch.set(newUserRef, mergedData, { merge: true });
 
         // 3. 既存の関連データを新しいIDに付け替える
@@ -227,11 +227,11 @@ exports.mergeUserData = functions.region("asia-northeast1").https.onCall(async (
         reservationsSnapshot.forEach(doc => {
             batch.update(doc.ref, { customerId: newUserId });
         });
-        
+
         // (C) ギャラリー (users/{oldUserId}/gallery)
         const oldGalleryQuery = db.collection(`users/${oldUserId}/gallery`);
         const oldGallerySnapshot = await oldGalleryQuery.get();
-        
+
         oldGallerySnapshot.forEach(doc => {
             const newGalleryRef = db.doc(`users/${newUserId}/gallery/${doc.id}`);
             batch.set(newGalleryRef, doc.data());
@@ -251,4 +251,206 @@ exports.mergeUserData = functions.region("asia-northeast1").https.onCall(async (
         throw new functions.https.HttpsError("internal", "データの統合処理中にエラーが発生しました。", error.message);
     }
 });
+// ▲▲▲ 新規追加ここまで ▲▲▲
+
+
+// ▼▼▼ 新規追加: LINEプッシュメッセージ送信関数 (管理者等の手動送信) ▼▼▼
+exports.sendPushMessage = functions.region("asia-northeast1").https.onCall(async (data, context) => {
+    // 1. 認証チェック
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "この操作には認証が必要です。");
+    }
+    // 必要であればここで admin クレームのチェックを行ってください
+    // if (!context.auth.token.admin) {
+    //     throw new functions.https.HttpsError("permission-denied", "管理者権限が必要です。");
+    // }
+
+    const { customerId, text } = data;
+
+    // 2. バリデーション
+    if (!customerId || !text) {
+        throw new functions.https.HttpsError("invalid-argument", "顧客IDとメッセージ本文は必須です。");
+    }
+
+    const db = admin.firestore();
+
+    try {
+        // 3. 顧客データの取得 (LINE ID確認)
+        const userDoc = await db.doc(`users/${customerId}`).get();
+        if (!userDoc.exists) {
+            throw new functions.https.HttpsError("not-found", "顧客データが見つかりません。");
+        }
+        const userData = userDoc.data();
+        const lineUserId = userData.lineUserId;
+
+        if (!lineUserId) {
+            throw new functions.https.HttpsError("failed-precondition", "この顧客はLINE連携していません。");
+        }
+
+        // 4. LINE Messaging API (Push) の実行
+        const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
+        if (!channelAccessToken) {
+            throw new functions.https.HttpsError("failed-precondition", "LINEチャネルアクセストークンが設定されていません。");
+        }
+
+        await axios.post("https://api.line.me/v2/bot/message/push", {
+            to: lineUserId,
+            messages: [{ type: "text", text: text }],
+        }, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${channelAccessToken}`
+            },
+        });
+
+        // 5. 送信ログの保存
+        await db.collection(`users/${customerId}/messageLogs`).add({
+            title: "手動送信",
+            body: text,
+            triggerType: "manual",
+            sentAt: admin.firestore.FieldValue.serverTimestamp(),
+            sentBy: context.auth.uid // 送信者ID（管理者）
+        });
+
+        return { success: true, message: "送信しました。" };
+
+    } catch (error) {
+        console.error("sendPushMessage Error:", error);
+        if (error instanceof functions.https.HttpsError) {
+            throw error;
+        }
+        // axiosエラーの場合
+        if (error.response) {
+            console.error("LINE API Error:", JSON.stringify(error.response.data));
+            throw new functions.https.HttpsError("internal", "LINEメッセージ送信に失敗しました。", error.response.data);
+        }
+        throw new functions.https.HttpsError("internal", "内部エラーが発生しました。");
+    }
+});
+// ▲▲▲ 新規追加ここまで ▲▲▲
+
+
+// ▼▼▼ 新規追加: 会計後の自動メッセージ送信 (毎日20:00実行) ▼▼▼
+exports.sendAfterPaymentMessages = functions.region("asia-northeast1").pubsub
+    .schedule("0 20 * * *")
+    .timeZone("Asia/Tokyo")
+    .onRun(async (context) => {
+        const db = admin.firestore();
+        const now = new Date();
+        const today20pm = new Date(now);
+        today20pm.setHours(20, 0, 0, 0);
+
+        // 実行時間が20:00前後であることを想定
+        // 対象期間:
+        // 当日20:00実行の場合、対象は「前日の20:00:00」～「当日の19:59:59」
+        // これにより、例えば当日21:00の会計は「翌日の20:00」に送信対象となる
+
+        const endPeriod = new Date(today20pm);
+        // 少し余裕を持たせるか、厳密にするか。ここでは厳密に。
+        // endPeriod は「当日の20:00」 (これを含まない)
+
+        const startPeriod = new Date(endPeriod);
+        startPeriod.setDate(startPeriod.getDate() - 1);
+        // startPeriod は「前日の20:00」 (これを含む)
+
+        console.log(`Starting sendAfterPaymentMessages. Target period: ${startPeriod.toISOString()} ~ ${endPeriod.toISOString()}`);
+
+        try {
+            // 1. "payment_after" トリガーのテンプレートを取得
+            const templatesSnap = await db.collection("messageTemplates")
+                .where("triggerType", "==", "payment_after")
+                .get();
+
+            if (templatesSnap.empty) {
+                console.log("No 'payment_after' templates found.");
+                return null;
+            }
+
+            const templates = templatesSnap.docs.map(doc => doc.data());
+
+            // 2. 対象期間内の売上 (sales) を取得
+            // createdAt (会計日時) でフィルタリング
+            const salesSnap = await db.collection("sales")
+                .where("createdAt", ">=", admin.firestore.Timestamp.fromDate(startPeriod))
+                .where("createdAt", "<", admin.firestore.Timestamp.fromDate(endPeriod))
+                .get();
+
+            if (salesSnap.empty) {
+                console.log("No sales found in the target period.");
+                return null;
+            }
+
+            console.log(`Found ${salesSnap.size} sales records.`);
+
+            const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
+            if (!channelAccessToken) {
+                console.error("LINE_CHANNEL_ACCESS_TOKEN is not set.");
+                return null;
+            }
+
+            // 3. 各売上に対してメール送信
+            for (const saleDoc of salesSnap.docs) {
+                const sale = saleDoc.data();
+                const customerId = sale.customerId;
+
+                if (!customerId) continue;
+
+                // 顧客情報の取得 (LINE IDが必要)
+                const userDoc = await db.collection("users").doc(customerId).get();
+                if (!userDoc.exists) continue;
+
+                const userData = userDoc.data();
+                const lineUserId = userData.lineUserId;
+
+                if (!lineUserId) continue; // LINE連携していないユーザーはスキップ
+
+                // 各テンプレートを送信
+                for (const template of templates) {
+                    let messageText = template.body;
+
+                    // プレースホルダーの置換
+                    const customerName = userData.name || "お客様";
+                    const visitDate = sale.createdAt.toDate().toLocaleDateString('ja-JP');
+
+                    const menuNames = sale.menus ? sale.menus.map(m => m.name).join('、') : '施術';
+
+                    messageText = messageText
+                        .replace(/{顧客名}/g, customerName)
+                        .replace(/{来店日}/g, visitDate)
+                        .replace(/{メニュー}/g, menuNames);
+
+                    try {
+                        await axios.post("https://api.line.me/v2/bot/message/push", {
+                            to: lineUserId,
+                            messages: [{ type: "text", text: messageText }],
+                        }, {
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization": `Bearer ${channelAccessToken}`
+                            },
+                        });
+
+                        // ログ保存
+                        await db.collection(`users/${customerId}/messageLogs`).add({
+                            title: template.title,
+                            body: messageText,
+                            triggerType: "payment_after",
+                            sentAt: admin.firestore.FieldValue.serverTimestamp(),
+                            sentBy: "system_auto"
+                        });
+
+                        console.log(`Message sent to ${customerId} (${lineUserId}) for template: ${template.title}`);
+
+                    } catch (error) {
+                        console.error(`Failed to send message to ${customerId}:`, error.message);
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.error("Error in sendAfterPaymentMessages:", error);
+        }
+
+        return null;
+    });
 // ▲▲▲ 新規追加ここまで ▲▲▲

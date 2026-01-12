@@ -63,6 +63,47 @@
                         style="width: 100%;">顧客データを再集計</button>
                     <div id="recalc-status" style="margin-top: 10px; font-size: 0.9rem;"></div>
                 </div>
+
+                <div class="card">
+                    <h2 class="card-subtitle">メッセージテンプレート設定</h2>
+                    <p class="description-text">LINE送信用のメッセージテンプレートを作成します。</p>
+
+                    <div class="form-group">
+                        <label for="template-title">テンプレート名</label>
+                        <input type="text" id="template-title" class="input-field" placeholder="例: バースデーメッセージ">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="template-trigger">自動送信トリガー</label>
+                        <select id="template-trigger" class="input-field">
+                            <option value="manual">手動送信のみ</option>
+                            <option value="payment_after">会計処理後 (20:00送信)</option>
+                            <option value="birthday_month">誕生月の1日 (9:00)</option>
+                            <option value="visit_cycle">来店周期リマインド</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="trigger-value-container" style="display: none;">
+                        <label for="template-trigger-value">設定値 (日数)</label>
+                        <input type="number" id="template-trigger-value" class="input-field" placeholder="例: 90">
+                        <span class="note-text">※前回来店からの経過日数</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="template-body">本文</label>
+                        <textarea id="template-body" class="input-field" rows="5"
+                            placeholder="こんにちは、{顧客名}様..."></textarea>
+                        <span class="note-text">使用可能プレースホルダー: {顧客名}, {来店日}, {メニュー}</span>
+                    </div>
+
+                    <button type="button" id="add-template-btn" class="button-secondary"
+                        style="margin-bottom: 1rem;">テンプレートを追加</button>
+
+                    <h3 class="card-subtitle-small">作成済みテンプレート一覧</h3>
+                    <ul id="template-list" class="simple-list">
+                        <!-- JSで描画 -->
+                    </ul>
+                </div>
                 <button type="submit" class="button-primary" style="width: 100%;">設定を保存</button>
             </form>
         </main>

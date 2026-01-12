@@ -590,6 +590,7 @@ main {
     justify-content: center;
     overflow-x: auto;
     padding: 0.5rem 0;
+    width: 100%;
 }
 
 .initial-nav button {
@@ -1541,6 +1542,7 @@ main {
 .days-warning-red {
     color: #e74c3c !important;
 }
+
 /* ▲▲▲ 追加ここまで ▲▲▲ */
 /* ▼▼▼ 追加: 半月ごとの集計表示用スタイル ▼▼▼ */
 .half-month-stats {
@@ -1550,6 +1552,7 @@ main {
     font-size: 0.9rem;
     color: var(--light-text-color);
 }
+
 /* ▲▲▲ 追加ここまで ▲▲▲ */
 /* ▼▼▼ 追加: 来店回数バッジのスタイル ▼▼▼ */
 .visit-count-badge {
@@ -1561,11 +1564,13 @@ main {
     margin-left: 5px;
     font-weight: bold;
 }
+
 /* ▲▲▲ 追加ここまで ▲▲▲ */
 
 /* ▼▼▼ 修正: 来店回数バッジのスタイル（ティファニーブルー） ▼▼▼ */
 .visit-count-badge {
-    background-color: #0ABAB5; /* Tiffany Blue */
+    background-color: #0ABAB5;
+    /* Tiffany Blue */
     color: white;
     font-size: 0.75rem;
     padding: 2px 6px;
@@ -1573,4 +1578,5 @@ main {
     margin-left: 5px;
     font-weight: bold;
 }
+
 /* ▲▲▲ 修正ここまで ▲▲▲ */

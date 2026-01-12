@@ -15,6 +15,11 @@ service firebase.storage {
       // 読み書き: 顧客本人 または 管理者
       allow read, write: if request.auth.uid == userId || isAdmin();
     }
+    
+    // Diagnosis temporary uploads
+    match /uploads/{userId}/{allPaths=**} {
+      allow read, write: if request.auth.uid == userId || isAdmin();
+    }
     // ★★★ 修正ここまで ★★★
 
     // --- (参考) 古いルールパス ---

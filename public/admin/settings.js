@@ -1,6 +1,6 @@
 import { runAdminPage } from './admin-auth.js';
 import { db } from './firebase-init.js';
-import { doc, getDoc, setDoc, collection, getDocs, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, getDocs, updateDoc, Timestamp, addDoc, orderBy, deleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const settingsMain = async (auth, user) => {
     // DOM Elements
@@ -239,6 +239,131 @@ const settingsMain = async (auth, user) => {
     form.addEventListener('submit', saveSettings);
     // イベント追加
     document.getElementById('recalc-customer-data-btn').addEventListener('click', recalculateCustomerData);
+
+
+    // ▼▼▼ 追加: メッセージテンプレート管理機能 ▼▼▼
+    const templateTitleInput = document.getElementById('template-title');
+    const templateTriggerSelect = document.getElementById('template-trigger');
+    const templateTriggerValueInput = document.getElementById('template-trigger-value');
+    const triggerValueContainer = document.getElementById('trigger-value-container');
+    const templateBodyInput = document.getElementById('template-body');
+    const addTemplateBtn = document.getElementById('add-template-btn');
+    const templateList = document.getElementById('template-list');
+
+    // トリガー選択変更時のUI制御
+    templateTriggerSelect.addEventListener('change', () => {
+        const val = templateTriggerSelect.value;
+        if (val === 'visit_cycle') {
+            triggerValueContainer.style.display = 'block';
+        } else {
+            triggerValueContainer.style.display = 'none';
+        }
+    });
+
+    // テンプレート一覧の取得と表示
+    const loadTemplates = async () => {
+        templateList.innerHTML = '<div class="spinner-small"></div>';
+        try {
+            const q = query(collection(db, "messageTemplates"), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
+
+            templateList.innerHTML = '';
+            if (snapshot.empty) {
+                templateList.innerHTML = '<li>テンプレートはありません。</li>';
+                return;
+            }
+
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                const li = document.createElement('li');
+                li.className = 'list-item-row';
+
+                let triggerInfo = '';
+                switch (data.triggerType) {
+                    case 'payment_after': triggerInfo = '<span class="tag">会計後(20:00)</span>'; break;
+                    case 'birthday_month': triggerInfo = '<span class="tag">誕生月</span>'; break;
+                    case 'visit_cycle': triggerInfo = `<span class="tag">来店後${data.triggerValue}日</span>`; break;
+                    default: triggerInfo = '<span class="tag tag-gray">手動</span>';
+                }
+
+                li.innerHTML = `
+                    <div class="list-item-content">
+                        <strong>${data.title}</strong>
+                        <div>${triggerInfo}</div>
+                    </div>
+                `;
+
+                const delBtn = document.createElement('button');
+                delBtn.textContent = '削除';
+                delBtn.className = 'delete-btn-small';
+                delBtn.addEventListener('click', async () => {
+                    if (confirm(`テンプレート「${data.title}」を削除しますか？`)) {
+                        await deleteDoc(doc(db, "messageTemplates", docSnap.id));
+                        loadTemplates();
+                    }
+                });
+
+                li.appendChild(delBtn);
+                templateList.appendChild(li);
+            });
+
+        } catch (error) {
+            console.error("Templates loading error:", error);
+            templateList.innerHTML = '<li>読み込みに失敗しました。</li>';
+        }
+    };
+
+    // テンプレート追加処理
+    addTemplateBtn.addEventListener('click', async () => {
+        const title = templateTitleInput.value.trim();
+        const body = templateBodyInput.value.trim();
+        const triggerType = templateTriggerSelect.value;
+        let triggerValue = null;
+
+        if (!title || !body) {
+            alert('テンプレート名と本文は必須です。');
+            return;
+        }
+
+        if (triggerType === 'visit_cycle') {
+            triggerValue = parseInt(templateTriggerValueInput.value);
+            if (!triggerValue || triggerValue <= 0) {
+                alert('来店周期の日数を正しく入力してください。');
+                return;
+            }
+        }
+
+        addTemplateBtn.disabled = true;
+        try {
+            await addDoc(collection(db, "messageTemplates"), {
+                title: title,
+                body: body,
+                triggerType: triggerType,
+                triggerValue: triggerValue,
+                createdAt: serverTimestamp()
+            });
+
+            // フォームリセット
+            templateTitleInput.value = '';
+            templateBodyInput.value = '';
+            templateTriggerSelect.value = 'manual';
+            templateTriggerValueInput.value = '';
+            triggerValueContainer.style.display = 'none';
+
+            alert('テンプレートを保存しました。');
+            loadTemplates();
+
+        } catch (error) {
+            console.error("Template save error:", error);
+            alert('保存に失敗しました。');
+        } finally {
+            addTemplateBtn.disabled = false;
+        }
+    });
+
+    // 初期読み込み
+    loadTemplates();
+    // ▲▲▲ 追加ここまで ▲▲▲
 
     // --- Initial calls ---
     await loadSettings();

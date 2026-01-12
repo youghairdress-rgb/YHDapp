@@ -1,10 +1,11 @@
 import { runAdminPage } from './admin-auth.js';
-import { db, storage } from './firebase-init.js';
+import { db, storage, functions } from './firebase-init.js';
 import {
     collection, onSnapshot, addDoc, doc, setDoc, deleteDoc,
-    query, orderBy, serverTimestamp, getDocs, where, updateDoc
+    query, orderBy, serverTimestamp, getDocs, where, updateDoc, limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 const customersMain = async (auth, user) => {
     // DOM Elements
@@ -36,6 +37,18 @@ const customersMain = async (auth, user) => {
     const viewerImg = document.getElementById('image-viewer-content');
     const closeViewerBtn = document.getElementById('close-viewer-btn');
     const galleryUploadingOverlay = document.getElementById('gallery-uploading-overlay');
+    // 追加: 基本情報タブ内の履歴表示用
+    const basicInfoMsgLogs = document.getElementById('basic-info-msg-logs');
+
+    // Message Modal Elements
+    const messageModal = document.getElementById('message-modal');
+    const closeMsgModalBtn = document.getElementById('close-msg-modal-btn');
+    const triggerBirthdayToggle = document.getElementById('trigger-birthday-toggle');
+    const triggerCycleToggle = document.getElementById('trigger-cycle-toggle');
+    const msgTemplateSelect = document.getElementById('msg-template-select');
+    const msgBodyInput = document.getElementById('msg-body');
+    const msgHistoryList = document.getElementById('msg-history-list');
+    const sendMsgBtn = document.getElementById('send-msg-btn');
 
 
     // State
@@ -46,6 +59,8 @@ const customersMain = async (auth, user) => {
     let targetCustomerId = null;
     let paramsHandled = false;
     // ▲▲▲ 修正ここまで ▲▲▲
+    let currentMsgCustomer = null;
+    let messageTemplates = [];
 
     // ▼▼▼ 修正: checkUrlParamsを修正 ▼▼▼
     const checkUrlParams = () => {
@@ -119,12 +134,16 @@ const customersMain = async (auth, user) => {
             customerLineIdInput.value = customer.lineDisplayName || '';
             customerPhoneInput.value = customer.phone || '';
             customerNotesInput.value = customer.notes || '';
+            customerNotesInput.value = customer.notes || '';
             customerMemoInput.value = customer.memo || '';
+            // 履歴読み込み
+            renderBasicInfoMsgLogs(customer.id);
         } else {
             editingCustomerId = null;
             modalTitle.textContent = '新規顧客追加';
             visitHistoryList.innerHTML = '<p>まだ来店履歴はありません。</p>';
             galleryContent.querySelector('#gallery-grid').innerHTML = '<p>まだ写真がありません。</p>';
+            basicInfoMsgLogs.innerHTML = '<p>新規登録のため履歴はありません。</p>';
         }
 
         document.body.classList.add('modal-open');
@@ -307,6 +326,198 @@ const customersMain = async (auth, user) => {
         }
     };
 
+    // ▼▼▼ 追加: メッセージ機能ロジック ▼▼▼
+    const openMessageModal = async (customer) => {
+        currentMsgCustomer = customer;
+        messageModal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+
+        // UIリセット
+        msgBodyInput.value = '';
+        msgHistoryList.innerHTML = '<li class="spinner-small"></li>';
+
+        // LINE連携チェック
+        if (!customer.isLineUser || !customer.lineUserId) {
+            alert('注意: この顧客はLINE連携が完了していないか、LINE IDが不明のためメッセージを送信できない可能性があります。');
+            sendMsgBtn.disabled = true;
+        } else {
+            sendMsgBtn.disabled = false;
+        }
+
+        // トリガー設定の読み込み
+        triggerBirthdayToggle.checked = customer.triggerSettings?.birthday_enabled ?? false;
+        triggerCycleToggle.checked = customer.triggerSettings?.cycle_alert_enabled ?? false;
+
+        // テンプレート読み込み
+        try {
+            const q = query(collection(db, "messageTemplates"), orderBy("createdAt", "desc"));
+            const snapshot = await getDocs(q);
+            messageTemplates = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            msgTemplateSelect.innerHTML = '<option value="">(テンプレートを選択)</option>';
+            messageTemplates.forEach(tmpl => {
+                const opt = document.createElement('option');
+                opt.value = tmpl.id;
+                opt.textContent = tmpl.title;
+                msgTemplateSelect.appendChild(opt);
+            });
+        } catch (e) {
+            console.error("Templates load error", e);
+        }
+
+        // 送信履歴読み込み
+        loadMessageLogs(customer.id);
+    };
+
+    const loadMessageLogs = async (customerId) => {
+        try {
+            const q = query(collection(db, `users/${customerId}/messageLogs`), orderBy("sentAt", "desc"));
+            const snapshot = await getDocs(q);
+
+            msgHistoryList.innerHTML = '';
+            if (snapshot.empty) {
+                msgHistoryList.innerHTML = '<li>履歴なし</li>';
+                return;
+            }
+            snapshot.forEach(doc => {
+                const log = doc.data();
+                const li = document.createElement('li');
+                const dateStr = log.sentAt ? log.sentAt.toDate().toLocaleString('ja-JP') : '不明な日時';
+                li.textContent = `${dateStr} - ${log.title || '手動送信'}`;
+                msgHistoryList.appendChild(li);
+            });
+
+        } catch (e) {
+            console.error("Logs load error", e);
+            msgHistoryList.innerHTML = '<li>履歴読み込み失敗</li>';
+        }
+    };
+
+    const closeMessageModal = () => {
+        messageModal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        currentMsgCustomer = null;
+    };
+
+    // テンプレート選択時
+    msgTemplateSelect.addEventListener('change', () => {
+        const tmplId = msgTemplateSelect.value;
+        if (!tmplId) return;
+
+        const tmpl = messageTemplates.find(t => t.id === tmplId);
+        if (tmpl && currentMsgCustomer) {
+            let body = tmpl.body;
+            // プレースホルダー置換
+            body = body.replace(/{顧客名}/g, currentMsgCustomer.name || '');
+            // 来店日などは現在時刻ベースで仮置き（必要なら前回来店日等）
+            body = body.replace(/{来店日}/g, new Date().toLocaleDateString('ja-JP'));
+
+            msgBodyInput.value = body;
+        }
+    });
+
+    // トリガー設定変更時
+    const updateTriggerSettings = async () => {
+        if (!currentMsgCustomer) return;
+
+        const settings = {
+            birthday_enabled: triggerBirthdayToggle.checked,
+            cycle_alert_enabled: triggerCycleToggle.checked
+        };
+
+        try {
+            await setDoc(doc(db, "users", currentMsgCustomer.id), {
+                triggerSettings: settings
+            }, { merge: true });
+            // ローカルデータ更新（再読込無しで反映するため）
+            currentMsgCustomer.triggerSettings = settings;
+        } catch (e) {
+            console.error("Trigger update error", e);
+            alert("設定の保存に失敗しました。");
+        }
+    };
+    triggerBirthdayToggle.addEventListener('change', updateTriggerSettings);
+    triggerCycleToggle.addEventListener('change', updateTriggerSettings);
+
+    // 送信処理
+    sendMsgBtn.addEventListener('click', async () => {
+        if (!currentMsgCustomer) return;
+        const body = msgBodyInput.value.trim();
+        if (!body) {
+            alert("メッセージ本文を入力してください。");
+            return;
+        }
+
+        if (!confirm("このメッセージをLINEで送信しますか？")) return;
+
+        sendMsgBtn.disabled = true;
+        sendMsgBtn.textContent = "送信中...";
+
+        try {
+            const sendPushMessage = httpsCallable(functions, 'sendPushMessage');
+            await sendPushMessage({
+                customerId: currentMsgCustomer.id,
+                text: body
+            });
+
+            alert("送信しました。");
+            msgBodyInput.value = '';
+            loadMessageLogs(currentMsgCustomer.id);
+            // 基本情報の履歴も更新（もし現在同じ顧客を開いているなら）
+            if (editingCustomerId === currentMsgCustomer.id) {
+                renderBasicInfoMsgLogs(currentMsgCustomer.id);
+            }
+            // ▼▼▼ 追加: 送信成功後にモーダルを閉じる ▼▼▼
+            closeMessageModal();
+
+        } catch (error) {
+            console.error("Message send error", error);
+            alert("送信に失敗しました。\n" + (error.message || ""));
+        } finally {
+            sendMsgBtn.disabled = false;
+            sendMsgBtn.innerHTML = '<i class="fa-regular fa-paper-plane"></i> 送信';
+        }
+    });
+
+    closeMsgModalBtn.addEventListener('click', closeMessageModal);
+
+    // ▼▼▼ 追加: 基本情報タブに表示する履歴取得関数 ▼▼▼
+    const renderBasicInfoMsgLogs = async (customerId) => {
+        basicInfoMsgLogs.innerHTML = '<div class="spinner-small"></div>';
+        try {
+            // 最新5件のみ取得
+            const q = query(collection(db, `users/${customerId}/messageLogs`), orderBy("sentAt", "desc"), limit(5));
+            const snapshot = await getDocs(q);
+
+            basicInfoMsgLogs.innerHTML = '';
+            if (snapshot.empty) {
+                basicInfoMsgLogs.innerHTML = '<p style="color:#888;">送信履歴はありません。</p>';
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const log = doc.data();
+                const div = document.createElement('div');
+                div.style.borderBottom = '1px solid #eee';
+                div.style.padding = '4px 0';
+
+                const dateStr = log.sentAt ? log.sentAt.toDate().toLocaleString('ja-JP') : '不明な日時';
+                const typeLabel = log.triggerType === 'manual' ? '[手動]' : '[自動]';
+
+                div.innerHTML = `
+                    <div style="font-weight:bold; font-size:0.85rem;">${dateStr} <span style="font-weight:normal;">${typeLabel}</span></div>
+                    <div style="font-size:0.85rem;">${log.title || '件名なし'}</div>
+                `;
+                basicInfoMsgLogs.appendChild(div);
+            });
+
+        } catch (e) {
+            console.error("Basic info logs load error", e);
+            basicInfoMsgLogs.innerHTML = '<p>履歴の読み込みに失敗しました。</p>';
+        }
+    };
+    // ▲▲▲ 追加ここまで ▲▲▲
+
     const handleTakePhoto = () => {
         photoUploadInput.setAttribute('capture', 'environment');
         photoUploadInput.click();
@@ -403,6 +614,8 @@ const customersMain = async (auth, user) => {
                 <div class="customer-card-actions">
                     <button class="icon-button camera-btn" title="写真"><i class="fa-solid fa-camera"></i></button>
                     
+                    <button class="icon-button msg-btn" title="LINEメッセージ"><i class="fa-regular fa-envelope"></i></button>
+
                     <a href="${counselingLiffUrl}" class="icon-button" title="AIカウンセリング" target="_blank"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
                     
                     <a href="./pos.html?customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
@@ -417,6 +630,11 @@ const customersMain = async (auth, user) => {
                 e.stopPropagation();
                 editingCustomerId = customer.id;
                 handleTakePhoto();
+            });
+            // メッセージボタン
+            card.querySelector('.msg-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                openMessageModal(customer);
             });
             customerListContainer.appendChild(card);
         });
