@@ -4,7 +4,7 @@ import {
     collection, onSnapshot, addDoc, doc, setDoc, deleteDoc,
     query, orderBy, serverTimestamp, getDocs, where, updateDoc, limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { ref, uploadBytes, getDownloadURL, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 const customersMain = async (auth, user) => {
@@ -283,9 +283,61 @@ const customersMain = async (auth, user) => {
         }
     };
 
+    // ▼▼▼ 追加: ストレージの予約写真を同期する関数 ▼▼▼
+    const syncBookingPhotos = async (customerId) => {
+        try {
+            const listRef = ref(storage, `uploads/${customerId}`);
+            const res = await listAll(listRef);
+
+            // ターゲットとなる画像ファイルをフィルタリング
+            const targetItems = res.items.filter(itemRef =>
+                itemRef.name.startsWith('item-front-photo-') && itemRef.name.endsWith('-image.jpg')
+            );
+
+            if (targetItems.length === 0) return;
+
+            // 既存のギャラリー情報を取得して重複チェック
+            const galleryRef = collection(db, `users/${customerId}/gallery`);
+            const snapshot = await getDocs(galleryRef);
+            const existingPaths = new Set();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.originalPath) existingPaths.add(data.originalPath);
+                // 念のためURLでもチェックできるようにしておく（古いデータにはoriginalPathがないかもしれないが、今回は新規追加分が対象）
+            });
+
+            // 未登録のファイルをFirestoreに追加
+            for (const itemRef of targetItems) {
+                const fullPath = itemRef.fullPath;
+                if (!existingPaths.has(fullPath)) {
+                    // ダウンロードURLとメタデータを取得
+                    const url = await getDownloadURL(itemRef);
+                    const metadata = await getMetadata(itemRef);
+
+                    await addDoc(galleryRef, {
+                        url: url,
+                        createdAt: metadata.timeCreated ? new Date(metadata.timeCreated) : serverTimestamp(),
+                        originalPath: fullPath,
+                        isBookingPhoto: true
+                    });
+                    console.log(`Synced photo: ${fullPath}`);
+                }
+            }
+        } catch (error) {
+            console.error("予約写真の同期中にエラーが発生:", error);
+            // 同期エラーはギャラリー表示自体を止めないようにcatchしてログのみ
+        }
+    };
+    // ▲▲▲ 追加ここまで ▲▲▲
+
     const fetchGallery = async (customerId) => {
         const galleryGrid = galleryContent.querySelector('#gallery-grid');
         galleryGrid.innerHTML = '<div class="spinner"></div>';
+
+        // ▼▼▼ 同期処理を実行 ▼▼▼
+        await syncBookingPhotos(customerId);
+        // ▲▲▲ 追加ここまで ▲▲▲
+
         try {
             const q = query(collection(db, `users/${customerId}/gallery`), orderBy("createdAt", "desc"));
             const snapshot = await getDocs(q);
@@ -618,7 +670,9 @@ const customersMain = async (auth, user) => {
 
                     <a href="${counselingLiffUrl}" class="icon-button" title="AIカウンセリング" target="_blank"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
                     
-                    <a href="./pos.html?customerId=${customer.id}&customerName=${encodeURIComponent(customer.name)}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
+                    <a href="../ai-matching/index.html?customerId=${customer.id}&customerName=${encodedName}" class="icon-button" title="AIヘアスタイル診断" target="_blank"><i class="fa-solid fa-scissors"></i></a>
+
+                    <a href="./pos.html?customerId=${customer.id}&customerName=${encodedName}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
                     <button class="icon-button delete-btn" title="削除"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;

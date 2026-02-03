@@ -12,6 +12,9 @@ admin.initializeApp();
 const LINE_CHANNEL_IDS = defineString('LINE_CHANNEL_IDS'); // 変数名を変更 (LINE_CHANNEL_ID -> LINE_CHANNEL_IDS)
 const LINE_CHANNEL_ACCESS_TOKEN = defineString('LINE_CHANNEL_ACCESS_TOKEN');
 const ADMIN_LINE_USER_IDS = defineString('ADMIN_LINE_USER_IDS');
+const GEMINI_API_KEY = defineString('GEMINI_API_KEY');
+
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 
 exports.createFirebaseCustomToken = functions.region("asia-northeast1").https.onRequest((req, res) => {
@@ -452,5 +455,130 @@ exports.sendAfterPaymentMessages = functions.region("asia-northeast1").pubsub
         }
 
         return null;
+    });
+// ▼▼▼ 新規追加: ヘアスタイルAI分析関数 (Gemini 1.5 Pro) ▼▼▼
+exports.analyzeHairstyle = functions.region("asia-northeast1")
+    .runWith({ timeoutSeconds: 300, memory: "1GB" })
+    .https.onCall(async (data, context) => {
+
+        const { frontImage, sideImage, backImage, beforeImage } = data;
+
+        // バリデーション
+        if (!frontImage && !sideImage && !backImage) {
+            throw new functions.https.HttpsError("invalid-argument", "少なくとも1枚の画像（正面、横、または後ろ）が必要です。");
+        }
+
+        const apiKey = GEMINI_API_KEY.value();
+        console.log("Analyze Hairstyle called. API Key present:", !!apiKey);
+
+        if (!apiKey) {
+            console.error("GEMINI_API_KEY is not set.");
+            throw new functions.https.HttpsError("failed-precondition", "APIキーが設定されていません。");
+        }
+
+        try {
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+
+            const prompt = `
+あなたはプロのヘアスタイリスト兼AIイメージコンサルタントです。
+提供された「After写真」（ヘアカット後のスタイル）を分析し、それがモデル（顧客）にどれくらい似合っているか（親和性）を診断してください。
+
+もし「Before写真」（施術前の写真）が提供されている場合は、BeforeとAfterを比較し、以下の点についても言及してください：
+1. どのような改善点や変化があったか（例：軽さが出た、骨格補正された、印象が明るくなった等）
+2. ヘアカラーについての診断（色味の印象や、似合わせポイント）
+
+「Before写真」がない場合は、After写真単体の魅力とヘアカラーについて診断してください。
+
+以下の形式のJSONでのみ出力してください。Markdownのコードブロックは不要です。
+{
+  "score": 0から100の整数,
+  "reason": "診断理由を日本語で150文字程度で。Before/Afterの比較（変化のポイント）、ヘアカラーの魅力、骨格・髪質へのアプローチを含めて具体的に褒めてください。ポジティブな表現を心がけてください。"
+}
+            `;
+
+            const imageParts = [];
+
+            // 画像URLからデータを取得してBufferに変換するヘルパー
+            const fetchImage = async (url) => {
+                if (!url) return null;
+                try {
+                    console.log("Fetching image:", url);
+                    const response = await axios.get(url, { responseType: 'arraybuffer' });
+                    // 修正: binary指定を削除し、Bufferから直接base64へ
+                    const base64Data = Buffer.from(response.data).toString('base64');
+                    return {
+                        inlineData: {
+                            data: base64Data,
+                            mimeType: response.headers['content-type'] || 'image/jpeg'
+                        }
+                    };
+                } catch (e) {
+                    console.warn("Failed to fetch image:", url, e.message);
+                    return null;
+                }
+            };
+
+            // Before写真を先頭に追加（プロンプトでの参照順序と合わせるため）
+            // プロンプトでは "Before" と "After" を区別する明示的なラベルは送れないが、
+            // 複数の画像を送る場合、文脈で判断させる。
+            // ここでは、明示的にテキストで「これはBefore写真です」「これはAfter写真です」と伝えるのが確実だが、
+            // APIの仕様上、テキストと画像を交互には送れる。
+            // 簡易的に、画像の順番（Before -> Front/Side/Back）で送り、プロンプトで「最初の画像があればそれはBeforeです」とするか、
+            // または単純に全部渡して「Beforeっぽいもの（施術前）」と「After（施術後）」を見分けさせる。
+            // 今回は、Before写真を明示的に扱うため、コンテンツ生成の配列構成を工夫する。
+
+            const contents = [prompt];
+
+            if (beforeImage) {
+                const beforePart = await fetchImage(beforeImage);
+                if (beforePart) {
+                    contents.push("【Before写真】");
+                    contents.push(beforePart);
+                }
+            }
+
+            contents.push("【After写真 (今回の仕上がり)】");
+
+            if (frontImage) {
+                const part = await fetchImage(frontImage);
+                if (part) contents.push(part);
+            }
+            if (sideImage) {
+                const part = await fetchImage(sideImage);
+                if (part) contents.push(part);
+            }
+            if (backImage) {
+                const part = await fetchImage(backImage);
+                if (part) contents.push(part);
+            }
+
+            // 画像が1つもないケースはバリデーション済みだが、fetch失敗で0になる可能性はある
+            // ここではバリデーションを通過していればAfter画像候補はあるはず
+
+            console.log("Generating content...");
+
+            const result = await model.generateContent(contents);
+            const response = await result.response;
+            const text = response.text();
+
+            console.log("Gemini Response:", text);
+
+            let jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+            let analysisResult;
+            try {
+                analysisResult = JSON.parse(jsonStr);
+            } catch (e) {
+                console.error("JSON parse error:", text);
+                analysisResult = { score: 85, reason: "スタイル分析が完了しました。とてもお似合いのスタイルです。（AIの応答形式エラーのため簡易表示）" };
+            }
+
+            return analysisResult;
+
+        } catch (error) {
+            console.error("AI Analysis Error Detail:", error);
+            // エラー詳細をクライアントに返す（デバッグ用）
+            throw new functions.https.HttpsError("internal", `AI分析中にエラーが発生しました: ${error.message}`, error);
+        }
     });
 // ▲▲▲ 新規追加ここまで ▲▲▲

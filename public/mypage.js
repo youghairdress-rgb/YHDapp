@@ -1,7 +1,7 @@
 // ▼▼▼ 修正: storage と addDoc をインポート ▼▼▼
 import { db, initializeLiffAndAuth, storage } from './admin/firebase-init.js';
 import { doc, getDoc, setDoc, collection, query, where, orderBy, getDocs, serverTimestamp, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { ref, uploadBytes, getDownloadURL, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 // ▲▲▲ 修正ここまで ▲▲▲
 
 // --- DOM Helper Functions ---
@@ -50,7 +50,7 @@ const main = async () => {
     try {
         showLoading("LIFFを初期化中...");
         const { user, profile } = await initializeLiffAndAuth("2008029428-VljQlRjZ");
-        
+
         // ▼▼▼ 修正: currentUserId にセット ▼▼▼
         currentUserId = profile.userId;
         // ▲▲▲ 修正ここまで ▲▲▲
@@ -141,7 +141,7 @@ const uploadAndSavePhoto = async (file) => {
 
         // ギャラリータブが現在アクティブでなくても、データを再読み込みする
         await fetchGallery(currentUserId);
-        
+
         // ギャラリータブを強制的に開く
         document.querySelector('.tab-button[data-tab="gallery"]').click();
         alert("写真をアップロードしました。");
@@ -178,7 +178,7 @@ const fetchReservationHistory = async (userId) => {
             const sale = { id: doc.id, ...doc.data() };
             const date = sale.createdAt.toDate().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
             const menus = sale.menus.map(m => m.name).join(', ');
-            
+
             html += `
                 <div class="reservation-history-item">
                     <p><strong>来店日:</strong> ${date}</p>
@@ -224,9 +224,59 @@ const fetchReservationHistory = async (userId) => {
     }
 };
 
+// ▼▼▼ 追加: ストレージの予約写真を同期する関数 ▼▼▼
+const syncBookingPhotos = async (userId) => {
+    try {
+        const listRef = ref(storage, `uploads/${userId}`);
+        const res = await listAll(listRef);
+
+        // ターゲットとなる画像ファイルをフィルタリング
+        const targetItems = res.items.filter(itemRef =>
+            itemRef.name.startsWith('item-front-photo-') && itemRef.name.endsWith('-image.jpg')
+        );
+
+        if (targetItems.length === 0) return;
+
+        // 既存のギャラリー情報を取得して重複チェック
+        const galleryRef = collection(db, `users/${userId}/gallery`);
+        const snapshot = await getDocs(galleryRef);
+        const existingPaths = new Set();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.originalPath) existingPaths.add(data.originalPath);
+        });
+
+        // 未登録のファイルをFirestoreに追加
+        for (const itemRef of targetItems) {
+            const fullPath = itemRef.fullPath;
+            if (!existingPaths.has(fullPath)) {
+                // ダウンロードURLとメタデータを取得
+                const url = await getDownloadURL(itemRef);
+                const metadata = await getMetadata(itemRef);
+
+                await addDoc(galleryRef, {
+                    url: url,
+                    createdAt: metadata.timeCreated ? new Date(metadata.timeCreated) : serverTimestamp(),
+                    originalPath: fullPath,
+                    isBookingPhoto: true
+                });
+                // console.log(`Synced photo: ${fullPath}`);
+            }
+        }
+    } catch (error) {
+        console.error("予約写真の同期中にエラー:", error);
+    }
+};
+// ▲▲▲ 追加ここまで ▲▲▲
+
 const fetchGallery = async (userId) => {
     const galleryContainer = document.getElementById('gallery-container');
     galleryContainer.innerHTML = '<div class="spinner"></div>';
+
+    // ▼▼▼ 同期処理を実行 ▼▼▼
+    await syncBookingPhotos(userId);
+    // ▲▲▲ 追加ここまで ▲▲▲
+
     try {
         const q = query(collection(db, `users/${userId}/gallery`), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
@@ -234,7 +284,7 @@ const fetchGallery = async (userId) => {
             galleryContainer.innerHTML = '<p>まだ写真がありません。</p>';
             return;
         }
-        
+
         const photosByDate = {};
         snapshot.forEach(doc => {
             const photo = { id: doc.id, ...doc.data() };

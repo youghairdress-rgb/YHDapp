@@ -20,6 +20,17 @@ service firebase.storage {
     match /uploads/{userId}/{allPaths=**} {
       allow read, write: if request.auth.uid == userId || isAdmin();
     }
+    
+    // AI Analysis Image Uploads (Temporary/Demo)
+    match /ai-analysis/{allPaths=**} {
+      allow read, write: if true;
+    }
+    match /ai-matching-uploads/{allPaths=**} {
+      allow read, write: if true;
+    }
+    match /ai-matching-results/{allPaths=**} {
+      allow read, write: if true;
+    }
     // ★★★ 修正ここまで ★★★
 
     // --- (参考) 古いルールパス ---
