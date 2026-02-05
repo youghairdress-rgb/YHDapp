@@ -57,6 +57,7 @@ const adminMain = async (auth, user) => {
 
     // AI Action Elements
     const detailCameraBtn = document.getElementById('detail-camera-btn');
+    const detailMobileUploadLink = document.getElementById('detail-mobile-upload-link'); // Added
     const detailCounselingLink = document.getElementById('detail-counseling-link');
     const detailMatchingLink = document.getElementById('detail-matching-link');
     const photoUploadInput = document.getElementById('photo-upload-input');
@@ -319,6 +320,14 @@ const adminMain = async (auth, user) => {
 
             // AI Action Links Logic
             const dxLiffId = "2008345232-zq4A3Vg3";
+
+            // Image Material Upload Link
+            if (detailMobileUploadLink) {
+                detailMobileUploadLink.href = `https://yhd-dx.web.app/mobile_upload.html?customerId=${booking.customerId}`;
+            } else {
+                console.warn("detailMobileUploadLink element not found");
+            }
+
             if (detailCounselingLink) {
                 detailCounselingLink.href = `https://liff.line.me/${dxLiffId}?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
             } else {
