@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POS</title>
-        <link rel="icon" href="../img/YHDlogo2.png" type="image/png">
+    <link rel="icon" href="../img/YHDlogo2.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
+
 <body>
     <div id="app-container">
         <header>
@@ -34,7 +36,8 @@
                         <div class="form-group">
                             <label for="customer-input">お客様</label>
                             <!-- ▼▼▼ 修正 ▼▼▼ -->
-                            <input type="text" id="customer-input" list="customer-datalist" class="input-field" placeholder="名前を入力または選択" inputmode="kana">
+                            <input type="text" id="customer-input" list="customer-datalist" class="input-field"
+                                placeholder="名前を入力または選択" inputmode="kana">
                             <!-- ▲▲▲ 修正 ▲▲▲ -->
                             <datalist id="customer-datalist"></datalist>
                         </div>
@@ -43,7 +46,8 @@
                         <ul id="selected-menu-list">
                             <!-- 選択されたメニューがここに表示されます -->
                         </ul>
-                        <button id="add-menu-modal-btn" class="button-secondary" style="width: 100%;"><i class="fa-solid fa-plus"></i> メニュー/商品を追加</button>
+                        <button id="add-menu-modal-btn" class="button-secondary" style="width: 100%;"><i
+                                class="fa-solid fa-plus"></i> メニュー/商品を追加</button>
                     </div>
                 </div>
 
@@ -65,9 +69,9 @@
                                     </select>
                                 </div>
                             </div>
-                             <div class="price-row">
+                            <div class="price-row">
                                 <span>レングス調整額</span>
-                               <select id="length-fee" class="input-field">
+                                <select id="length-fee" class="input-field">
                                     <option value="0">+ ¥0</option>
                                     <option value="500">+ ¥500</option>
                                     <option value="1000">+ ¥1,000</option>
@@ -108,15 +112,39 @@
                             <h4>お支払い方法</h4>
                             <!-- ▼▼▼ 支払い方法のボタンを修正 ▼▼▼ -->
                             <div class="payment-options">
-                                <button class="payment-btn" data-method="現金"><i class="fa-solid fa-money-bill-wave"></i> 現金</button>
-                                <button class="payment-btn" data-method="カード"><i class="fa-solid fa-credit-card"></i> カード</button>
-                                <button class="payment-btn" data-method="PayPay"><i class="fa-brands fa-paypal"></i> PayPay</button>
-                                <button class="payment-btn" data-method="auPAY"><i class="fa-solid fa-mobile-screen-button"></i> auPAY</button>
-                                <button class="payment-btn" data-method="d払い"><i class="fa-solid fa-mobile-screen-button"></i> d払い</button>
-                                <button class="payment-btn" data-method="メルペイ"><i class="fa-solid fa-mobile-screen-button"></i> メルペイ</button>
+                                <button class="payment-btn" data-method="現金"><i class="fa-solid fa-money-bill-wave"></i>
+                                    現金</button>
+                                <button class="payment-btn" data-method="カード"><i class="fa-solid fa-credit-card"></i>
+                                    カード</button>
+                                <button class="payment-btn" data-method="PayPay"><i class="fa-brands fa-paypal"></i>
+                                    PayPay</button>
+                                <button class="payment-btn" data-method="auPAY"><i
+                                        class="fa-solid fa-mobile-screen-button"></i> auPAY</button>
+                                <button class="payment-btn" data-method="d払い"><i
+                                        class="fa-solid fa-mobile-screen-button"></i> d払い</button>
+                                <button class="payment-btn" data-method="メルペイ"><i
+                                        class="fa-solid fa-mobile-screen-button"></i> メルペイ</button>
                             </div>
                             <!-- ▲▲▲ 修正ここまで ▲▲▲ -->
                         </div>
+
+                        <!-- ▼▼▼ 追加: 現金払い用の入力項目（初期非表示） ▼▼▼ -->
+                        <div id="cash-payment-fields" class="price-details"
+                            style="display: none; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <div class="price-row">
+                                <span>預り金</span>
+                                <div class="discount-input-group">
+                                    <input type="number" id="amount-received" class="input-field" placeholder="0">
+                                    <span>円</span>
+                                </div>
+                            </div>
+                            <div class="price-row">
+                                <span>おつり</span>
+                                <span id="change-due" style="font-size: 1.25rem; font-weight: bold;">¥0</span>
+                            </div>
+                        </div>
+                        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
                         <button id="complete-sale-btn" class="button-primary" disabled>
                             <i class="fa-solid fa-check"></i> 会計完了
                         </button>
@@ -157,5 +185,5 @@
     <script type="module" src="./admin-auth.js"></script>
     <script type="module" src="./pos.js"></script>
 </body>
-</html>
 
+</html>

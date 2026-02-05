@@ -267,6 +267,77 @@ const syncBookingPhotos = async (userId) => {
         console.error("予約写真の同期中にエラー:", error);
     }
 };
+
+// ▼▼▼ 追加: AI診断用写真(Uploads)の同期 ▼▼▼
+const syncAiMatchingPhotos = async (userId) => {
+    try {
+        const listRef = ref(storage, `ai-matching-uploads/${userId}`);
+        const res = await listAll(listRef);
+        // AI診断画像は {type}_{timestamp}.jpg 形式
+        const targetItems = res.items.filter(itemRef => itemRef.name.match(/^(front|side|back)_\d+\.jpg$/));
+
+        if (targetItems.length === 0) return;
+
+        const galleryRef = collection(db, `users/${userId}/gallery`);
+        const snapshot = await getDocs(galleryRef);
+        const existingPaths = new Set();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.originalPath) existingPaths.add(data.originalPath);
+        });
+
+        for (const itemRef of targetItems) {
+            if (!existingPaths.has(itemRef.fullPath)) {
+                const url = await getDownloadURL(itemRef);
+                const metadata = await getMetadata(itemRef);
+                await addDoc(galleryRef, {
+                    url: url,
+                    createdAt: metadata.timeCreated ? new Date(metadata.timeCreated) : serverTimestamp(),
+                    originalPath: itemRef.fullPath, // 重複チェック用
+                    type: 'ai-matching_upload' // 区別用
+                });
+            }
+        }
+    } catch (error) {
+        console.error("AI診断写真の同期エラー:", error);
+    }
+};
+
+// ▼▼▼ 追加: AI診断結果(Results)の同期 ▼▼▼
+const syncAiMatchingResults = async (userId) => {
+    try {
+        const listRef = ref(storage, `ai-matching-results/${userId}`);
+        const res = await listAll(listRef);
+        // 結果画像は result_{timestamp}.jpg 形式
+        const targetItems = res.items.filter(itemRef => itemRef.name.startsWith('result_'));
+
+        if (targetItems.length === 0) return;
+
+        const galleryRef = collection(db, `users/${userId}/gallery`);
+        const snapshot = await getDocs(galleryRef);
+        const existingPaths = new Set();
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.originalPath) existingPaths.add(data.originalPath);
+        });
+
+        for (const itemRef of targetItems) {
+            if (!existingPaths.has(itemRef.fullPath)) {
+                const url = await getDownloadURL(itemRef);
+                const metadata = await getMetadata(itemRef);
+                await addDoc(galleryRef, {
+                    url: url,
+                    createdAt: metadata.timeCreated ? new Date(metadata.timeCreated) : serverTimestamp(),
+                    originalPath: itemRef.fullPath,
+                    type: 'ai-matching_result',
+                    isResultImage: true
+                });
+            }
+        }
+    } catch (error) {
+        console.error("AI診断結果の同期エラー:", error);
+    }
+};
 // ▲▲▲ 追加ここまで ▲▲▲
 
 const fetchGallery = async (userId) => {
@@ -274,7 +345,12 @@ const fetchGallery = async (userId) => {
     galleryContainer.innerHTML = '<div class="spinner"></div>';
 
     // ▼▼▼ 同期処理を実行 ▼▼▼
-    await syncBookingPhotos(userId);
+    // ▼▼▼ 同期処理を実行 ▼▼▼
+    await Promise.all([
+        syncBookingPhotos(userId),
+        syncAiMatchingPhotos(userId),
+        syncAiMatchingResults(userId)
+    ]);
     // ▲▲▲ 追加ここまで ▲▲▲
 
     try {

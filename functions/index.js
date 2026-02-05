@@ -541,16 +541,34 @@ exports.analyzeHairstyle = functions.region("asia-northeast1")
             contents.push("【After写真 (今回の仕上がり)】");
 
             if (frontImage) {
+                console.log("Processing Front Image...");
                 const part = await fetchImage(frontImage);
-                if (part) contents.push(part);
+                if (part) {
+                    console.log("Front Image fetch success. Data length:", part.inlineData.data.length);
+                    contents.push(part);
+                } else {
+                    console.warn("Front Image fetch FAILED.");
+                }
             }
             if (sideImage) {
+                console.log("Processing Side Image...");
                 const part = await fetchImage(sideImage);
-                if (part) contents.push(part);
+                if (part) {
+                    console.log("Side Image fetch success. Data length:", part.inlineData.data.length);
+                    contents.push(part);
+                } else {
+                    console.warn("Side Image fetch FAILED.");
+                }
             }
             if (backImage) {
+                console.log("Processing Back Image...");
                 const part = await fetchImage(backImage);
-                if (part) contents.push(part);
+                if (part) {
+                    console.log("Back Image fetch success. Data length:", part.inlineData.data.length);
+                    contents.push(part);
+                } else {
+                    console.warn("Back Image fetch FAILED.");
+                }
             }
 
             // 画像が1つもないケースはバリデーション済みだが、fetch失敗で0になる可能性はある

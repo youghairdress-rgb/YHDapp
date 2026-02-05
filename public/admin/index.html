@@ -27,18 +27,7 @@
         </nav>
         <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
 
-        <!-- ▼▼▼ 日計表示カード (新規追加) ▼▼▼ -->
-        <div class="card daily-stats-card">
-            <div class="stat-item">
-                <span class="stat-label">本日の売上</span>
-                <span id="daily-sales-total" class="stat-value">¥0</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">客数</span>
-                <span id="daily-sales-count" class="stat-value">0人</span>
-            </div>
-        </div>
-        <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
+
 
         <main id="content-container" style="display: none;">
 
@@ -66,6 +55,19 @@
                         <button id="save-memo-btn" class="button-primary" style="margin-top: 0.5rem;">メモを保存</button>
                     </div>
                 </div>
+
+                <!-- ▼▼▼ 日計表示カード (移動) ▼▼▼ -->
+                <div class="card daily-stats-card">
+                    <div class="stat-item">
+                        <span class="stat-label">本日の売上</span>
+                        <span id="daily-sales-total" class="stat-value">¥0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">客数</span>
+                        <span id="daily-sales-count" class="stat-value">0人</span>
+                    </div>
+                </div>
+                <!-- ▲▲▲ 移動ここまで ▲▲▲ -->
                 <!-- </div> (ネストされていたものを解除) -->
                 <!-- ▼▼▼ 削除: dashboard-sidebar を削除 ▼▼▼ -->
                 <!-- 
@@ -110,6 +112,18 @@
                             </div>
                         </div>
                         <div id="normal-booking-actions" class="modal-footer grid-buttons">
+                            <!-- ▼▼▼ 追加: AIアクションボタン (横並び) ▼▼▼ -->
+                            <div class="ai-actions-row"
+                                style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 10px;">
+                                <button class="icon-button camera-btn" id="detail-camera-btn" title="写真"><i
+                                        class="fa-solid fa-camera"></i></button>
+                                <a href="#" target="_blank" class="icon-button" id="detail-counseling-link"
+                                    title="AIカウンセリング"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
+                                <a href="#" target="_blank" class="icon-button" id="detail-matching-link"
+                                    title="AIヘアスタイル診断"><i class="fa-solid fa-scissors"></i></a>
+                            </div>
+                            <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
                             <a href="#" id="detail-pos-link" class="button-primary"><i
                                     class="fa-solid fa-cash-register"></i> 会計へ進む</a>
                             <button id="detail-edit-btn" class="button-secondary"><i
@@ -253,6 +267,12 @@
             <script type="module" src="./firebase-init.js"></script>
             <script type="module" src="./admin-auth.js"></script>
             <script type="module" src="./admin.js"></script>
+            <script type="module" src="./firebase-init.js"></script>
+            <script type="module" src="./admin-auth.js"></script>
+            <script type="module" src="./admin.js"></script>
+
+            <!-- ▼▼▼ 追加: 写真アップロード用隠し入力 ▼▼▼ -->
+            <input type="file" id="photo-upload-input" accept="image/*" style="display: none;">
 </body>
 
 </html>

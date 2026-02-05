@@ -1,9 +1,10 @@
 import { runAdminPage } from './admin-auth.js';
-import { db } from './firebase-init.js';
+import { db, storage } from './firebase-init.js';
 import {
     collection, onSnapshot, query, where, Timestamp, doc, getDoc, setDoc,
     addDoc, deleteDoc, orderBy, getDocs, collectionGroup, serverTimestamp, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const adminMain = async (auth, user) => {
     // --- State ---
@@ -53,6 +54,13 @@ const adminMain = async (auth, user) => {
     // Admin Notes Elements
     const adminNotesWrapper = document.getElementById('detail-admin-notes-wrapper');
     const adminNotesEl = document.getElementById('detail-admin-notes');
+
+    // AI Action Elements
+    const detailCameraBtn = document.getElementById('detail-camera-btn');
+    const detailCounselingLink = document.getElementById('detail-counseling-link');
+    const detailMatchingLink = document.getElementById('detail-matching-link');
+    const photoUploadInput = document.getElementById('photo-upload-input');
+    const galleryUploadingOverlay = document.getElementById('gallery-uploading-overlay'); // index.htmlに無い場合は無視されるか追加が必要 (今回はなしで進める)
 
     const openModal = (modal) => {
         document.body.classList.add('modal-open');
@@ -308,6 +316,19 @@ const adminMain = async (auth, user) => {
 
             const customerNameEncoded = encodeURIComponent(booking.customerName);
             document.getElementById('detail-customer-link').href = `./customers.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+
+            // AI Action Links Logic
+            const dxLiffId = "2008345232-zq4A3Vg3";
+            if (detailCounselingLink) {
+                detailCounselingLink.href = `https://liff.line.me/${dxLiffId}?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+            } else {
+                console.warn("detailCounselingLink element not found");
+            }
+            if (detailMatchingLink) {
+                detailMatchingLink.href = `../ai-matching/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+            } else {
+                console.warn("detailMatchingLink element not found");
+            }
         }
         openModal(detailModal);
     };
@@ -789,6 +810,67 @@ const adminMain = async (auth, user) => {
     await loadInitialData();
     listenToBookings();
     loadMemo();
+    // --- Camera & Photo Upload Logic ---
+    const handleTakePhoto = () => {
+        if (!photoUploadInput) return;
+        photoUploadInput.setAttribute('capture', 'environment');
+        photoUploadInput.click();
+    };
+
+    const uploadAndSavePhoto = async (file) => {
+        if (!editingBooking || !editingBooking.customerId || !file) return;
+
+        // 簡易ローディング (ボタンのテキスト変更などで対応しても良いが、今回はシンプルに)
+        if (detailCameraBtn) {
+            detailCameraBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            detailCameraBtn.disabled = true;
+        }
+
+        try {
+            const timestamp = Date.now();
+            const storageRef = ref(storage, `users/${editingBooking.customerId}/gallery/${timestamp}-${file.name}`);
+
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            await addDoc(collection(db, `users/${editingBooking.customerId}/gallery`), {
+                url: downloadURL,
+                createdAt: serverTimestamp(),
+                isBookingPhoto: true, // 予約画面から撮った写真としてマーク
+                bookingId: editingBooking.id
+            });
+
+            alert("写真を保存しました");
+
+        } catch (error) {
+            console.error("写真のアップロードに失敗:", error);
+            alert("写真のアップロードに失敗しました。");
+        } finally {
+            if (detailCameraBtn) {
+                detailCameraBtn.innerHTML = '<i class="fa-solid fa-camera"></i>';
+                detailCameraBtn.disabled = false;
+            }
+            // inputをリセット
+            photoUploadInput.value = '';
+        }
+    };
+
+    // イベントリスナー設定
+    if (detailCameraBtn) {
+        detailCameraBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleTakePhoto();
+        });
+    }
+
+    if (photoUploadInput) {
+        photoUploadInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                uploadAndSavePhoto(e.target.files[0]);
+            }
+        });
+    }
+
     listenToDailySales();
 };
 

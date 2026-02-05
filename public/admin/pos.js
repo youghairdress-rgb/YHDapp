@@ -37,6 +37,11 @@ const posMain = async (auth, user) => {
     const pointDiscountInput = document.getElementById('point-discount');
     const totalEl = document.getElementById('total');
 
+    // Cash Payment Elements
+    const cashPaymentFields = document.getElementById('cash-payment-fields');
+    const amountReceivedInput = document.getElementById('amount-received');
+    const changeDueEl = document.getElementById('change-due');
+
     // Action elements
     const paymentBtns = document.querySelectorAll('.payment-btn');
     const completeSaleBtn = document.getElementById('complete-sale-btn');
@@ -155,13 +160,56 @@ const posMain = async (auth, user) => {
         taxAmountEl.textContent = `¥${taxAmount.toLocaleString()}`;
         totalEl.textContent = `¥${total.toLocaleString()}`;
 
+        // 追加: おつり計算
+        calculateChange(total);
+
         validateForm();
     };
 
     const validateForm = () => {
         const customerName = customerInput.value.trim();
-        const isValid = customerName && selectedMenus.length > 0 && paymentMethod;
+        let isValid = customerName && selectedMenus.length > 0 && paymentMethod;
+
+        if (isValid && paymentMethod === '現金') {
+            // 現金の場合は預り金が合計以上であること
+            const subtotal = selectedMenus.reduce((sum, menu) => sum + menu.price, 0);
+            const discountValue = parseFloat(discountValueInput.value) || 0;
+            const discountType = discountTypeSelect.value;
+            const lengthFee = parseInt(lengthFeeSelect.value) || 0;
+            const pointDiscount = parseFloat(pointDiscountInput.value) || 0;
+
+            // 再計算 (冗長だが確実性のため)
+            let discountAmount = (discountType === 'yen') ? discountValue : Math.round(subtotal * (discountValue / 100));
+            const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
+            const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
+            const total = taxExclusiveTotal + taxAmount - pointDiscount;
+
+            const received = parseInt(amountReceivedInput.value) || 0;
+            if (received < total) {
+                isValid = false;
+            }
+        }
+
         completeSaleBtn.disabled = !isValid;
+    };
+
+    // 追加: おつり計算ロジック
+    const calculateChange = (currentTotal) => {
+        if (paymentMethod !== '現金') return;
+
+        const received = parseInt(amountReceivedInput.value) || 0;
+        const change = received - currentTotal;
+
+        if (change >= 0) {
+            changeDueEl.textContent = `¥${change.toLocaleString()}`;
+            changeDueEl.style.color = 'var(--text-color)';
+        } else {
+            changeDueEl.textContent = `不足 ¥${Math.abs(change).toLocaleString()}`;
+            changeDueEl.style.color = 'var(--danger-color)';
+        }
+
+        // validateFormも呼ぶ必要があるが、calculateTotalsから呼ばれている場合は無限ループに注意
+        // 入力イベントから呼ばれる場合は validateForm() を呼ぶ
     };
 
     const completeSale = async () => {
@@ -197,7 +245,9 @@ const posMain = async (auth, user) => {
             paymentMethod: paymentMethod,
             createdAt: now,
             bookingId: sourceBookingId,
-            reservationTime: sourceBookingData ? sourceBookingData.startTime : now
+            reservationTime: sourceBookingData ? sourceBookingData.startTime : now,
+            amountReceived: (paymentMethod === '現金') ? (parseInt(amountReceivedInput.value) || 0) : null,
+            changeDue: (paymentMethod === '現金') ? (parseInt(amountReceivedInput.value) || 0) - total : null
         };
 
         // ▼▼▼ 修正: 編集中の場合、`createdAt` と `reservationTime` を上書きしない ▼▼▼
@@ -279,6 +329,9 @@ const posMain = async (auth, user) => {
         lengthFeeSelect.value = '0';
         pointDiscountInput.value = '0';
         paymentMethod = null;
+        if (cashPaymentFields) cashPaymentFields.style.display = 'none';
+        if (amountReceivedInput) amountReceivedInput.value = '';
+        if (changeDueEl) changeDueEl.textContent = '¥0';
         editingSaleId = null;
         sourceBookingId = null;
         sourceBookingData = null;
@@ -316,6 +369,15 @@ const posMain = async (auth, user) => {
                     discountTypeSelect.value = sale.discountType || 'yen';
                     lengthFeeSelect.value = sale.lengthFee || 0;
                     pointDiscountInput.value = sale.pointDiscount || 0;
+
+                    // 追加: 現金項目の復元
+                    if (sale.paymentMethod === '現金') {
+                        amountReceivedInput.value = sale.amountReceived || 0;
+                        cashPaymentFields.style.display = 'block';
+                        // おつりは再計算される
+                    } else {
+                        cashPaymentFields.style.display = 'none';
+                    }
 
                     paymentMethod = sale.paymentMethod;
                     if (paymentMethod) {
@@ -381,6 +443,14 @@ const posMain = async (auth, user) => {
         el.addEventListener('input', calculateTotals);
     });
 
+    // 追加: 預り金の入力イベント
+    if (amountReceivedInput) {
+        amountReceivedInput.addEventListener('input', () => {
+            calculateTotals();
+            // validateFormはcalculateTotals内で呼ばれる
+        });
+    }
+
     customerInput.addEventListener('input', validateForm);
 
     paymentBtns.forEach(btn => {
@@ -388,6 +458,15 @@ const posMain = async (auth, user) => {
             paymentBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             paymentMethod = btn.dataset.method;
+
+            // 追加: 現金の場合のみフィールド表示
+            if (paymentMethod === '現金') {
+                cashPaymentFields.style.display = 'block';
+            } else {
+                cashPaymentFields.style.display = 'none';
+            }
+
+            calculateTotals(); // おつり再計算のため
             validateForm();
         });
     });

@@ -1,7 +1,7 @@
 // Firebase Imports
 import { db, storage, functions } from '../admin/firebase-init.js';
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { ref, uploadString, getDownloadURL, listAll } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ref, uploadString, getDownloadURL, listAll, uploadBytes } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 // ... (省略) ...
@@ -58,26 +58,31 @@ async function displayResult(data) {
         if (latestBookingPhotoUrl) {
             beforeImgElem.src = latestBookingPhotoUrl;
         } else {
-            // 予約写真がない場合は、今回撮影したFront写真(もしあれば)を使う、あるいはプレースホルダー
-            if (appState.photos.front) {
-                beforeImgElem.src = appState.photos.front;
+            // 予約写真がない場合は、今回撮影(または取得)したFront写真を使う
+            const fallbackSrc = appState.photos.front || appState.uploadedUrls.front;
+            if (fallbackSrc) {
+                beforeImgElem.src = fallbackSrc;
             }
         }
 
-        // After画像: 今回撮影したFront写真
+        // After画像: 今回撮影(または取得)したFront写真
         const afterImgElem = document.getElementById('result-after-img');
-        if (appState.photos.front) {
-            afterImgElem.src = appState.photos.front;
+        const frontSrc = appState.photos.front || appState.uploadedUrls.front;
+
+        if (frontSrc) {
+            afterImgElem.src = frontSrc;
         } else {
-            // Frontがない場合はSide等で代用 (通常ありえないが)
-            const altSrc = appState.photos.side || appState.photos.back;
+            // Frontがない場合はSide等で代用
+            const altSrc = appState.photos.side || appState.photos.back || appState.uploadedUrls.side || appState.uploadedUrls.back;
             if (altSrc) afterImgElem.src = altSrc;
         }
 
         // ボタン状態リセット（戻ってきたとき用）
-        const analyzeBtn = document.getElementById('header-analyze-btn');
-        analyzeBtn.disabled = false;
-        analyzeBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> 診断する';
+        const diagnoseBtn = document.getElementById('header-diagnose-btn');
+        if (diagnoseBtn) {
+            diagnoseBtn.disabled = false;
+            diagnoseBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> 診断開始';
+        }
 
     }, 300);
 }
@@ -145,7 +150,13 @@ function updateTitleWithName(name) {
 }
 // moduleとして読み込まれるため、グローバル関数をwindowに割り当てる
 window.triggerCamera = (type) => {
-    document.getElementById(`input-${type}`).click();
+    console.log("Triggering camera for:", type);
+    const input = document.getElementById(`input-${type}`);
+    if (input) {
+        input.click();
+    } else {
+        console.error("Input element not found for:", type);
+    }
 };
 
 window.handleFileSelect = (event, type) => {
@@ -171,35 +182,36 @@ window.handleFileSelect = (event, type) => {
     reader.readAsDataURL(file);
 };
 
+
+
 // ヘッダーボタン切り替えヘルパー
 function updateHeaderButtons(screen) {
-    const analyzeBtn = document.getElementById('header-analyze-btn');
+    const inputActions = document.getElementById('header-input-actions');
     const resultActions = document.getElementById('header-result-actions');
 
     if (screen === 'input') {
-        analyzeBtn.style.display = 'flex';
+        inputActions.style.display = 'flex';
         resultActions.style.display = 'none';
     } else {
-        analyzeBtn.style.display = 'none';
+        inputActions.style.display = 'none';
         resultActions.style.display = 'flex';
     }
 }
 
-// 診断開始
-window.startAnalysis = async () => {
+// 1. 写真保存のみ実行
+window.savePhotos = async () => {
     // 少なくとも1枚の画像が必要
     if (!appState.photos.front && !appState.photos.side && !appState.photos.back) {
-        alert("診断するには、少なくとも1枚の写真（正面推奨）を撮影または選択してください。");
+        alert("保存するには、少なくとも1枚の写真（正面推奨）を撮影または選択してください。");
         return;
     }
 
-    const analyzeBtn = document.getElementById('header-analyze-btn');
-    const originalBtnText = analyzeBtn.innerHTML;
-    analyzeBtn.disabled = true;
-    analyzeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; // スペース節約のためテキスト削除
+    const saveBtn = document.getElementById('header-save-photo-btn');
+    const originalBtnText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> アップロード中';
 
     try {
-        // 1. 画像のアップロード & ギャラリー保存
         const uploadPromises = [];
         ['front', 'side', 'back'].forEach(type => {
             if (appState.photos[type]) {
@@ -212,29 +224,110 @@ window.startAnalysis = async () => {
 
         await Promise.all(uploadPromises);
 
-        // 2. Cloud Functions呼び出し
+        alert("写真の保存が完了しました。\n続けて「診断開始」ボタンを押すとAI分析を行えます。");
+
+    } catch (error) {
+        console.error("Upload failed:", error);
+        alert(`保存中にエラーが発生しました: ${error.message}`);
+    } finally {
+        saveBtn.innerHTML = originalBtnText;
+        saveBtn.disabled = false;
+    }
+};
+
+// 2. 診断開始 (最新の保存画像を読み込んで分析)
+window.startDiagnosis = async () => {
+    if (!appState.customerId) {
+        alert("顧客IDが見つかりません。管理画面からアクセスし直してください。");
+        return;
+    }
+
+    const diagnoseBtn = document.getElementById('header-diagnose-btn');
+    const originalBtnText = diagnoseBtn.innerHTML;
+    diagnoseBtn.disabled = true;
+    diagnoseBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 準備中...';
+
+    try {
+        // Storageから最新画像を探す
+        const latestImages = await fetchLatestImages(appState.customerId);
+
+        if (!latestImages.front && !latestImages.side && !latestImages.back) {
+            throw new Error("保存された画像が見つかりません。先に「保存する」を実行してください。");
+        }
+
+        // 分析開始
+        diagnoseBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 分析中...';
+
         const analyzeHairstyle = httpsCallable(functions, 'analyzeHairstyle');
 
         // Before画像(=最新の予約写真)を取得
         const latestBookingPhotoUrl = await fetchLatestBeforeImage(appState.customerId);
 
-        const result = await analyzeHairstyle({
-            frontImage: appState.uploadedUrls.front,
-            sideImage: appState.uploadedUrls.side,
-            backImage: appState.uploadedUrls.back,
-            beforeImage: latestBookingPhotoUrl // 追加: Before画像を渡す
-        });
+        const inputData = {
+            frontImage: latestImages.front,
+            sideImage: latestImages.side,
+            backImage: latestImages.back,
+            beforeImage: latestBookingPhotoUrl
+        };
+        console.log("Sending to AI:", inputData); // デバッグ用ログ
+
+        const result = await analyzeHairstyle(inputData);
+
+        // 結果表示用ステート更新 (再利用のため)
+        appState.uploadedUrls = latestImages;
 
         const analysisData = result.data;
         displayResult(analysisData);
 
     } catch (error) {
-        console.error("Analysis failed:", error);
-        alert(`AI分析中にエラーが発生しました: ${error.message}`);
-        analyzeBtn.innerHTML = originalBtnText;
-        analyzeBtn.disabled = false;
+        console.error("Diagnosis failed:", error);
+        alert(`診断中にエラーが発生しました: ${error.message}`);
+    } finally {
+        diagnoseBtn.innerHTML = originalBtnText;
+        diagnoseBtn.disabled = false;
     }
 };
+
+// ヘルパー: Storageから最新画像URLを取得
+async function fetchLatestImages(customerId) {
+    // const storage = getStorage(); // storage is already imported globally
+    const folderPath = `ai-matching-uploads/${customerId}`; // 顧客の専用フォルダ
+    const folderRef = ref(storage, folderPath);
+
+    try {
+        const res = await listAll(folderRef);
+        // 名前でソート (timestampが含まれているので降順にすれば最新が先頭に来るはず)
+        // 形式: {type}_{timestamp}.jpg
+
+        const sortedItems = res.items.sort((a, b) => {
+            return b.name.localeCompare(a.name); // 降順
+        });
+
+        const latest = { front: null, side: null, back: null };
+
+        for (const item of sortedItems) {
+            // それぞれのタイプで最新が見つかったらセット
+            if (!latest.front && item.name.startsWith('front')) {
+                latest.front = await getDownloadURL(item);
+            }
+            if (!latest.side && item.name.startsWith('side')) {
+                latest.side = await getDownloadURL(item);
+            }
+            if (!latest.back && item.name.startsWith('back')) {
+                latest.back = await getDownloadURL(item);
+            }
+
+            // 全て見つかったら終了
+            if (latest.front && latest.side && latest.back) break;
+        }
+
+        return latest;
+
+    } catch (e) {
+        console.warn("Error fetching latest images:", e);
+        return { front: null, side: null, back: null };
+    }
+}
 
 // ヘルパー: 画像アップロード & ギャラリー同期
 async function processImage(type, dataUrl) {
@@ -312,21 +405,21 @@ window.saveResultImage = async () => {
         }
 
         const storageRef = ref(storage, storagePath);
-        await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js").then(async ({ uploadBytes }) => {
-            await uploadBytes(storageRef, blob);
-        });
+        await uploadBytes(storageRef, blob);
         const downloadUrl = await getDownloadURL(storageRef);
 
         // ギャラリーに追加 (認証ユーザーのみ)
         if (appState.customerId) {
-            await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js").then(async ({ collection, addDoc, serverTimestamp }) => {
+            try {
                 await addDoc(collection(db, `users/${appState.customerId}/gallery`), {
                     url: downloadUrl,
                     createdAt: serverTimestamp(),
                     type: 'ai-matching-result',
                     isResultImage: true
                 });
-            });
+            } catch (e) {
+                console.error("Gallery sync failed:", e);
+            }
         }
 
         alert("画像を保存しました！");

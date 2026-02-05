@@ -70,38 +70,35 @@ body {
     }
 }
 
-/* --- 1. 入力画面レイアウト --- */
+/* --- 1. 入力画面レイアウト (Mobile First: 縦並び) --- */
 .photo-columns {
     display: flex;
+    flex-direction: column;
+    /* デフォルトは縦並び (スマホ用) */
     justify-content: center;
-    gap: 1vw;
-    /* ギャップを少し縮小 */
+    align-items: center;
+    gap: 1.5rem;
     flex: 1;
-    /* height: 100%;  <-- 削除 */
     min-height: 480px;
-    /* 画像エリア確保のため高さを少し増やす */
-    padding-bottom: 5px;
-    /* flex-wrap: wrap; <-- 削除 (3列並びを維持) */
+    padding-bottom: 20px;
 }
 
 .photo-column {
-    flex: 1;
-    /* min-width: 250px; <-- 削除 (収まりきるように縮小許可) */
-    max-width: 32vw;
-    /* 最大幅制限 (PCなど) */
-    width: 30vw;
-    /* 幅指定 */
+    flex: 0 0 auto;
+    width: 80%;
+    /* スマホでは幅広に */
+    max-width: 320px;
+    aspect-ratio: 3/4;
+    /* 縦長 */
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     backdrop-filter: blur(10px);
     border-radius: 12px;
-    /* 少し小さく */
     box-shadow: var(--shadow-soft);
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 0.5rem;
-    /* パディング縮小 */
     transition: transform 0.2s;
 }
 
@@ -341,7 +338,197 @@ body {
     color: white;
     padding: 3px 10px;
     font-size: 1rem;
+
     border-radius: 4px;
+}
+
+/* --- iPad / タブレット向け最適化 (iPad Air 2: 768px - 1024px) --- */
+@media screen and (min-width: 768px) {
+
+    /* 全体の文字サイズを少し大きく */
+    body {
+        font-size: 16px;
+    }
+
+    .app-container {
+        padding: 20px 40px;
+        /* 余白を広げる */
+    }
+
+    /* ヘッダー */
+    /* ヘッダー */
+    .app-title {
+        font-size: 1.2rem;
+        /* スマホデフォルト */
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 60vw;
+    }
+
+    .header-btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1.1rem;
+    }
+
+    /* Page 1: 写真カラム */
+    .photo-columns {
+        gap: 2vw;
+    }
+
+    .column-title {
+        font-size: 1.3rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .photo-column {
+        padding: 1rem;
+    }
+
+    .photo-placeholder i {
+        font-size: 4rem;
+        /* アイコン大きく */
+    }
+
+    .photo-placeholder::after {
+        font-size: 1rem;
+    }
+
+    /* Page 2: 結果画面 */
+    .result-info-panel {
+        padding: 2.5rem;
+        /* パディング増やす */
+    }
+
+    .score-value {
+        font-size: 5rem;
+        /* スコア大きく */
+    }
+
+    .score-value .percent {
+        font-size: 2.5rem;
+    }
+
+    .score-label {
+        font-size: 1.2rem;
+    }
+
+    .reason-text {
+        font-size: 1.15rem;
+        /* 読みやすく */
+        line-height: 1.7;
+    }
+
+    /* 画像パネルの比率調整 (iPad縦持ちでも見やすく) */
+    .result-layout {
+        gap: 3vw;
+    }
+}
+
+/* --- PC / 横画面モニター / iPad Pro Landscape 向け最適化 (1024px以上) --- */
+@media screen and (min-width: 1024px) {
+    body {
+        overflow: hidden;
+        /* スクロール禁止 */
+    }
+
+    .app-container {
+        max-width: none;
+        width: 100vw;
+        height: 100vh;
+        padding: 20px 40px;
+        box-sizing: border-box;
+    }
+
+    /* Page 1: 写真カラム - PC/iPad横は横並び */
+    .photo-columns {
+        flex-direction: row;
+        /* 横並びに戻す */
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        height: auto;
+        min-height: 80vh;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .photo-column {
+        flex: 1;
+        width: auto;
+        max-width: 350px;
+        height: auto;
+        aspect-ratio: 9/16;
+        max-height: none;
+    }
+
+    /* Page 2: 結果画面 - 画像最大化レイアウト */
+    /* Page 2: 結果画面 - 画像最大化レイアウト */
+    .result-layout {
+        width: 100%;
+        height: calc(100dvh - 90px);
+        /* 100dvhでアドレスバー分も考慮 */
+        max-width: 1800px;
+        margin: 0 auto;
+        gap: 2rem;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: nowrap;
+        overflow: hidden;
+        /* はみ出し防止 */
+    }
+
+    .result-info-panel {
+        flex: 1;
+        width: auto;
+        max-width: none;
+        height: auto;
+        max-height: 95%;
+        /* 上下に少し余裕 */
+        overflow-y: auto;
+        padding: 3rem;
+    }
+
+    .score-value {
+        font-size: 6rem;
+    }
+
+    .result-image-panel {
+        flex: 1;
+        width: auto;
+        height: 100%;
+        /* 親(result-layout)の高さに合わせる */
+        max-width: none;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0;
+    }
+
+    .after-image-container {
+        width: 100%;
+        height: 100%;
+        /* 高さ100%で親にフィット */
+        /* aspect-ratio固定を削除し、画像の形に合わせる(contain) */
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        position: relative;
+        background-color: #000;
+        /* 余白は黒埋め */
+    }
+
+    .after-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        /* 画像全体を必ず表示 */
+    }
 }
 
 /* --- スナップショット用（保存時の高画質化） --- */

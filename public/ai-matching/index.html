@@ -17,15 +17,21 @@
     <div class="app-container">
         <header class="main-header">
             <div class="header-left">
-                <a href="../admin/index.html" class="home-btn"><i class="fa-solid fa-house"></i></a>
+                <!-- Home button removed -->
                 <h1 class="app-title">YHD AI Matching</h1>
             </div>
 
             <div class="header-actions">
                 <!-- ページ1用ボタン -->
-                <button id="header-analyze-btn" class="header-btn primary-btn" onclick="startAnalysis()">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> 診断する
-                </button>
+                <!-- ページ1用ボタン -->
+                <div id="header-input-actions" style="display: flex; gap: 10px;">
+                    <button id="header-save-photo-btn" class="header-btn secondary-btn" onclick="savePhotos()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> 保存する
+                    </button>
+                    <button id="header-diagnose-btn" class="header-btn primary-btn" onclick="startDiagnosis()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 診断開始
+                    </button>
+                </div>
 
                 <!-- ページ2用ボタン -->
                 <div id="header-result-actions" style="display: none; gap: 10px;">
