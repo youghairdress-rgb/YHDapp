@@ -323,7 +323,7 @@ const adminMain = async (auth, user) => {
 
             // Image Material Upload Link
             if (detailMobileUploadLink) {
-                detailMobileUploadLink.href = `https://yhd-dx.web.app/mobile_upload.html?customerId=${booking.customerId}`;
+                detailMobileUploadLink.href = `https://yhd-dx.web.app/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
             } else {
                 console.warn("detailMobileUploadLink element not found");
             }
