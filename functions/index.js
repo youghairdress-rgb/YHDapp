@@ -600,3 +600,73 @@ exports.analyzeHairstyle = functions.region("asia-northeast1")
         }
     });
 // ▲▲▲ 新規追加ここまで ▲▲▲
+
+// ▼▼▼ 新規追加: ユーザーによる画像アップロード時の管理者通知 ▼▼▼
+exports.notifyAdminOnPhotoUpload = functions.region("asia-northeast1").firestore
+    .document("users/{userId}/gallery/{photoId}")
+    .onCreate(async (snap, context) => {
+        const newData = snap.data();
+        const userId = context.params.userId;
+
+        // 1. 同期による自動追加（isSyncedPhoto: true）は通知対象外
+        if (newData.isSyncedPhoto === true) {
+            console.log(`Skipping notification for synced photo: ${snap.id}`);
+            return null;
+        }
+
+        // 2. アップロード者が「本人以外（＝管理者 or システム）」の場合は通知対象外
+        // context.auth がない場合（Admin SDK経由など）も対象外とする安全策
+        if (!context.auth || context.auth.uid !== userId) {
+            console.log(`Skipping notification for upload by non-owner: ${snap.id} (Auth: ${context.auth ? context.auth.uid : 'None'})`);
+            return null;
+        }
+
+        console.log(`User ${userId} uploaded a photo. Preparing notification...`);
+
+        try {
+            const db = admin.firestore();
+
+            // ユーザー名の取得
+            const userDoc = await db.collection("users").doc(userId).get();
+            const userName = userDoc.exists ? (userDoc.data().name || "名称未設定") : "不明なユーザー";
+
+            // 通知先（管理者）の取得
+            const adminIdsString = ADMIN_LINE_USER_IDS.value();
+            if (!adminIdsString) {
+                console.log("No ADMIN_LINE_USER_IDS configured.");
+                return null;
+            }
+            const adminIds = adminIdsString.split(',').map(id => id.trim()).filter(id => id);
+
+            if (adminIds.length === 0) {
+                console.log("No valid admin IDs found.");
+                return null;
+            }
+
+            const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
+            if (!channelAccessToken) {
+                console.error("LINE_CHANNEL_ACCESS_TOKEN is not configured.");
+                return null;
+            }
+
+            // メッセージ送信
+            const messageText = `ユーザー名：${userName}様から、画像のアップロードがありました`;
+
+            await axios.post("https://api.line.me/v2/bot/message/multicast", {
+                to: adminIds,
+                messages: [{ type: "text", text: messageText }],
+            }, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${channelAccessToken}`
+                },
+            });
+
+            console.log(`Notification sent to admins for user: ${userName}`);
+
+        } catch (error) {
+            console.error("Error in notifyAdminOnPhotoUpload:", error);
+        }
+        return null;
+    });
+// ▲▲▲ 新規追加ここまで ▲▲▲

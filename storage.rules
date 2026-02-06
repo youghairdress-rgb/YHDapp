@@ -31,7 +31,10 @@ service firebase.storage {
     match /ai-matching-results/{allPaths=**} {
       allow read, write: if true;
     }
-    // ★★★ 修正ここまで ★★★
+    match /guest_uploads/{allPaths=**} {
+      allow read, write: if true;
+    }
+    // ★★★ 修正ここまで ▲▲▲★★★
 
     // --- (参考) 古いルールパス ---
     // 他の機能で使われている可能性を考慮し、残しておきます

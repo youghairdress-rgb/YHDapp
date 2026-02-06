@@ -285,47 +285,91 @@ const customersMain = async (auth, user) => {
 
     // ▼▼▼ 追加: ストレージの予約写真を同期する関数 ▼▼▼
     const syncBookingPhotos = async (customerId) => {
+        console.log(`Starting sync for customer: ${customerId}`); // DEBUG
+        const syncPaths = [
+            `ai-matching-results/${customerId}`,
+            `ai-matching-uploads/${customerId}`,
+            `galleries/${customerId}`,
+            `guest_uploads/${customerId}`,
+            `uploads/${customerId}`
+        ];
+
         try {
-            const listRef = ref(storage, `uploads/${customerId}`);
-            const res = await listAll(listRef);
-
-            // ターゲットとなる画像ファイルをフィルタリング
-            const targetItems = res.items.filter(itemRef =>
-                itemRef.name.startsWith('item-front-photo-') && itemRef.name.endsWith('-image.jpg')
-            );
-
-            if (targetItems.length === 0) return;
-
             // 既存のギャラリー情報を取得して重複チェック
             const galleryRef = collection(db, `users/${customerId}/gallery`);
             const snapshot = await getDocs(galleryRef);
             const existingPaths = new Set();
+            const existingFileNames = new Set(); // 追加: ファイル名での重複チェック用
+
             snapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.originalPath) existingPaths.add(data.originalPath);
-                // 念のためURLでもチェックできるようにしておく（古いデータにはoriginalPathがないかもしれないが、今回は新規追加分が対象）
+                if (data.originalPath) {
+                    existingPaths.add(data.originalPath);
+                    const fileName = data.originalPath.split('/').pop();
+                    if (fileName) existingFileNames.add(fileName);
+                } else if (data.url) {
+                    // originalPathがない場合、URLからファイル名を推測して重複チェックに追加
+                    try {
+                        // URL形式: .../o/path%2Fto%2Ffilename?alt=...
+                        // decodeURIComponent でデコードし、最後のスラッシュ以降を取得
+                        const pathPart = data.url.split('/o/')[1].split('?')[0];
+                        const decodedPath = decodeURIComponent(pathPart);
+                        const fileName = decodedPath.split('/').pop();
+                        if (fileName) existingFileNames.add(fileName);
+                    } catch (e) {
+                        console.warn("Filename parse error:", e);
+                    }
+                }
             });
+            console.log(`Existing items: ${existingPaths.size}, Unique filenames: ${existingFileNames.size}`); // DEBUG
 
-            // 未登録のファイルをFirestoreに追加
-            for (const itemRef of targetItems) {
-                const fullPath = itemRef.fullPath;
-                if (!existingPaths.has(fullPath)) {
-                    // ダウンロードURLとメタデータを取得
-                    const url = await getDownloadURL(itemRef);
-                    const metadata = await getMetadata(itemRef);
+            for (const pathPrefix of syncPaths) {
+                console.log(`Checking path: ${pathPrefix}`); // DEBUG
+                try {
+                    const listRef = ref(storage, pathPrefix);
+                    const res = await listAll(listRef);
+                    console.log(`Found ${res.items.length} items in ${pathPrefix}`); // DEBUG
 
-                    await addDoc(galleryRef, {
-                        url: url,
-                        createdAt: metadata.timeCreated ? new Date(metadata.timeCreated) : serverTimestamp(),
-                        originalPath: fullPath,
-                        isBookingPhoto: true
-                    });
-                    console.log(`Synced photo: ${fullPath}`);
+                    for (const itemRef of res.items) {
+                        try {
+                            // メタデータを取得してContentTypeを確認（拡張子がないファイル対策）
+                            const metadata = await getMetadata(itemRef);
+                            const isImage = metadata.contentType && metadata.contentType.startsWith('image/');
+
+                            if (isImage) {
+                                const fullPath = itemRef.fullPath;
+                                const fileName = itemRef.name;
+
+                                // パスとファイル名の両方で重複チェック
+                                if (!existingPaths.has(fullPath) && !existingFileNames.has(fileName)) {
+                                    // ダウンロードURLを取得
+                                    const url = await getDownloadURL(itemRef);
+
+                                    await addDoc(galleryRef, {
+                                        url: url,
+                                        createdAt: metadata.timeCreated ? new Date(metadata.timeCreated) : serverTimestamp(),
+                                        originalPath: fullPath,
+                                        isSyncedPhoto: true
+                                    });
+                                    console.log(`Synced photo: ${fullPath}`);
+                                    existingPaths.add(fullPath);
+                                    existingFileNames.add(fileName);
+                                } else {
+                                    if (existingFileNames.has(fileName)) console.log(`Duplicate filename skipped: ${fileName}`);
+                                }
+                            } else {
+                                console.log(`Skipping non-image: ${itemRef.name} (${metadata.contentType})`);
+                            }
+                        } catch (itemError) {
+                            console.warn(`Error checking item ${itemRef.name}:`, itemError);
+                        }
+                    }
+                } catch (pathError) {
+                    console.log(`Path skipped or error (${pathPrefix}):`, pathError.code || pathError);
                 }
             }
         } catch (error) {
-            console.error("予約写真の同期中にエラーが発生:", error);
-            // 同期エラーはギャラリー表示自体を止めないようにcatchしてログのみ
+            console.error("写真の同期中にエラーが発生:", error);
         }
     };
     // ▲▲▲ 追加ここまで ▲▲▲
@@ -588,6 +632,7 @@ const customersMain = async (auth, user) => {
 
             await addDoc(collection(db, `users/${editingCustomerId}/gallery`), {
                 url: downloadURL,
+                originalPath: snapshot.ref.fullPath, // 追加: 重複チェック用
                 createdAt: serverTimestamp(),
             });
             if (customerModal.style.display === 'flex') {

@@ -118,7 +118,11 @@ const setupUploadEvents = () => {
 
 // ▼▼▼ 新規追加: 写真アップロード処理 ▼▼▼
 const uploadAndSavePhoto = async (file) => {
-    if (!currentUserId || !file) return;
+    if (!currentUserId) {
+        alert("ログイン状態が確認できません。ページを再読み込みしてください。");
+        return;
+    }
+    if (!file) return;
 
     // 1MB = 1048576 bytes
     if (file.size > 5 * 1048576) {
@@ -136,6 +140,7 @@ const uploadAndSavePhoto = async (file) => {
 
         await addDoc(collection(db, `users/${currentUserId}/gallery`), {
             url: downloadURL,
+            originalPath: snapshot.ref.fullPath, // 重複チェック用にパスを保存
             createdAt: serverTimestamp(),
         });
 
@@ -148,7 +153,16 @@ const uploadAndSavePhoto = async (file) => {
 
     } catch (error) {
         console.error("写真のアップロードに失敗:", error);
-        alert("写真のアップロードに失敗しました。");
+        // エラー詳細を表示（ユーザーが原因を特定しやすくするため）
+        let msg = "写真のアップロードに失敗しました。";
+        if (error.code === 'storage/unauthorized') {
+            msg += "\n(権限がありません。管理者にお問い合わせください)";
+        } else if (error.code === 'storage/canceled') {
+            msg += "\n(アップロードがキャンセルされました)";
+        } else if (error.message) {
+            msg += `\n(${error.message})`;
+        }
+        alert(msg);
     } finally {
         showUploadingOverlay(false);
         // 同じファイルを連続でアップロードできるように入力値をリセット
