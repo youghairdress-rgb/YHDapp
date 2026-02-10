@@ -1,20 +1,18 @@
 import { runAdminPage, showLoading, showContent, showError } from './admin-auth.js';
 import { db } from './firebase-init.js';
-// ▼▼▼ 修正: collectionGroup をインポート ▼▼▼
 import {
     collection, getDocs, doc, getDoc, addDoc, setDoc, updateDoc,
     Timestamp, query, orderBy, collectionGroup
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-// ▲▲▲ 修正ここまで ▲▲▲
 
 const posMain = async (auth, user) => {
     // --- State ---
     let customers = [];
     let menuCategories = [];
     let selectedMenus = [];
-    let editingSaleId = null; // ★★★ 編集対象のSaleIDを保持
+    let editingSaleId = null;
     let paymentMethod = null;
-    let sourceBookingId = null; // 予約情報から来た場合のIDを保持
+    let sourceBookingId = null;
     let sourceBookingData = null;
     let sourceCustomerId = null;
     let sourceCustomerName = '';
@@ -49,10 +47,92 @@ const posMain = async (auth, user) => {
 
     // --- Functions ---
     const loadInitialData = async () => {
-        // ... (省略)
+        const [customersSnapshot, categoriesSnapshot, menusSnapshot] = await Promise.all([
+            getDocs(query(collection(db, 'users'), orderBy('kana'))),
+            getDocs(query(collection(db, 'service_categories'), orderBy('order'))),
+            getDocs(query(collectionGroup(db, 'menus'), orderBy('order')))
+        ]);
+
+        // 顧客リストの処理
+        customers = customersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        customerDatalist.innerHTML = customers.map(c => `<option value="${c.name}"></option>`).join('');
+
+        // メニューとカテゴリの処理
+        const allMenus = menusSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            categoryId: doc.ref.parent.parent.id // 親カテゴリのIDを取得
+        }));
+
+        menuCategories = categoriesSnapshot.docs.map(catDoc => {
+            const category = { id: catDoc.id, ...catDoc.data() };
+            return {
+                ...category,
+                menus: allMenus.filter(menu => menu.categoryId === category.id)
+            };
+        });
+
+        menuAccordionContainer.innerHTML = '';
+        menuCategories.forEach(category => {
+            const accordion = document.createElement('details');
+            accordion.className = 'menu-category-accordion';
+
+            let menuHtml = '';
+            category.menus.forEach(menu => {
+                menuHtml += `<div class="menu-item-selectable" data-menu='${JSON.stringify(menu)}'>
+                                <span>${menu.name}</span>
+                                <span>¥${menu.price.toLocaleString()}</span>
+                             </div>`;
+            });
+
+            accordion.innerHTML = `
+                <summary class="accordion-header">${category.name}</summary>
+                <div class="accordion-content">${menuHtml}</div>
+            `;
+            menuAccordionContainer.appendChild(accordion);
+        });
+
+        menuAccordionContainer.querySelectorAll('.menu-item-selectable').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const menuData = JSON.parse(e.currentTarget.dataset.menu);
+                addMenu(menuData);
+                addMenuModal.style.display = 'none';
+            });
+        });
     };
 
-    // ... (省略)
+    const addMenu = (menu) => {
+        selectedMenus.push(menu);
+        renderSelectedMenus();
+        calculateTotals();
+    };
+
+    const removeMenu = (index) => {
+        selectedMenus.splice(index, 1);
+        renderSelectedMenus();
+        calculateTotals();
+    };
+
+    const renderSelectedMenus = () => {
+        selectedMenuList.innerHTML = '';
+        if (selectedMenus.length === 0) {
+            selectedMenuList.innerHTML = '<li class="placeholder">メニューを追加してください</li>';
+            return;
+        }
+        selectedMenus.forEach((menu, index) => {
+            const li = document.createElement('li');
+            li.className = 'selected-menu-item';
+            li.innerHTML = `
+                <span>${menu.name}</span>
+                <div class="item-actions">
+                    <span>¥${menu.price.toLocaleString()}</span>
+                    <button class="icon-button small-btn delete-btn"><i class="fa-solid fa-times"></i></button>
+                </div>
+            `;
+            li.querySelector('.delete-btn').addEventListener('click', () => removeMenu(index));
+            selectedMenuList.appendChild(li);
+        });
+    };
 
     const calculateTotals = () => {
         const subtotal = selectedMenus.reduce((sum, menu) => sum + menu.price, 0);
@@ -72,7 +152,7 @@ const posMain = async (auth, user) => {
         const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
         const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
 
-        // 修正: 差引額（deductionAmount）も引く
+        // 修正: 差引額も引く
         const total = taxExclusiveTotal + taxAmount - pointDiscount - deductionAmount;
 
         subtotalEl.textContent = `¥${subtotal.toLocaleString()}`;
@@ -80,9 +160,7 @@ const posMain = async (auth, user) => {
         taxAmountEl.textContent = `¥${taxAmount.toLocaleString()}`;
         totalEl.textContent = `¥${total.toLocaleString()}`;
 
-        // 追加: おつり計算
         calculateChange(total);
-
         validateForm();
     };
 
@@ -91,7 +169,6 @@ const posMain = async (auth, user) => {
         let isValid = customerName && selectedMenus.length > 0 && paymentMethod;
 
         if (isValid && paymentMethod === '現金') {
-            // 現金の場合は預り金が合計以上であること
             const subtotal = selectedMenus.reduce((sum, menu) => sum + menu.price, 0);
             const discountValue = parseFloat(discountValueInput.value) || 0;
             const discountType = discountTypeSelect.value;
@@ -99,7 +176,6 @@ const posMain = async (auth, user) => {
             const pointDiscount = parseFloat(pointDiscountInput.value) || 0;
             const deductionAmount = parseFloat(deductionAmountInput.value) || 0; // 追加
 
-            // 再計算 (冗長だが確実性のため)
             let discountAmount = (discountType === 'yen') ? discountValue : Math.round(subtotal * (discountValue / 100));
             const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
             const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
@@ -116,10 +192,34 @@ const posMain = async (auth, user) => {
         completeSaleBtn.disabled = !isValid;
     };
 
-    // ... (省略)
+    const calculateChange = (currentTotal) => {
+        if (paymentMethod !== '現金') return;
+
+        const received = parseInt(amountReceivedInput.value) || 0;
+        const change = received - currentTotal;
+
+        if (change >= 0) {
+            changeDueEl.textContent = `¥${change.toLocaleString()}`;
+            changeDueEl.style.color = 'var(--text-color)';
+        } else {
+            changeDueEl.textContent = `不足 ¥${Math.abs(change).toLocaleString()}`;
+            changeDueEl.style.color = 'var(--danger-color)';
+        }
+    };
 
     const completeSale = async () => {
-        // ... (省略)
+        const customerName = customerInput.value.trim();
+        const selectedCustomer = customers.find(c => c.name === customerName);
+
+        let customerId = selectedCustomer ? selectedCustomer.id : null;
+        if (!customerId && sourceCustomerId) {
+            customerId = sourceCustomerId;
+        }
+
+        const subtotal = selectedMenus.reduce((sum, menu) => sum + menu.price, 0);
+        const discountValue = parseFloat(discountValueInput.value) || 0;
+        const discountType = discountTypeSelect.value;
+        const lengthFee = parseInt(lengthFeeSelect.value) || 0;
         const pointDiscount = parseFloat(pointDiscountInput.value) || 0;
         const deductionAmount = parseFloat(deductionAmountInput.value) || 0; // 追加
 
@@ -130,7 +230,7 @@ const posMain = async (auth, user) => {
         // 修正: 差引額も引く
         const total = taxExclusiveTotal + taxAmount - pointDiscount - deductionAmount;
 
-        const now = Timestamp.now(); // 会計日時
+        const now = Timestamp.now();
 
         const saleData = {
             customerId: customerId,
@@ -144,49 +244,191 @@ const posMain = async (auth, user) => {
             deductionAmount: deductionAmount, // 追加: DBに保存
             total: total,
             paymentMethod: paymentMethod,
-            // ... (省略)
+            createdAt: now,
+            bookingId: sourceBookingId,
+            reservationTime: sourceBookingData ? sourceBookingData.startTime : now,
+            amountReceived: (paymentMethod === '現金') ? (parseInt(amountReceivedInput.value) || 0) : null,
+            changeDue: (paymentMethod === '現金') ? (parseInt(amountReceivedInput.value) || 0) - total : null
         };
 
-        // ... (省略)
+        if (editingSaleId) {
+            try {
+                const originalSaleDoc = await getDoc(doc(db, 'sales', editingSaleId));
+                if (originalSaleDoc.exists()) {
+                    const originalData = originalSaleDoc.data();
+                    saleData.createdAt = originalData.createdAt || now;
+                    saleData.reservationTime = originalData.reservationTime || (sourceBookingData ? sourceBookingData.startTime : now);
+                }
+            } catch (e) {
+                console.warn("元の会計情報の読み込みに失敗:", e);
+            }
+        }
+
+        try {
+            completeSaleBtn.disabled = true;
+            completeSaleBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 処理中...';
+
+            if (editingSaleId) {
+                await setDoc(doc(db, 'sales', editingSaleId), saleData);
+            } else {
+                await addDoc(collection(db, 'sales'), saleData);
+                if (sourceBookingId) {
+                    const bookingRef = doc(db, "reservations", sourceBookingId);
+                    await setDoc(bookingRef, { status: 'completed' }, { merge: true });
+                }
+            }
+
+            if (customerId) {
+                const userRef = doc(db, "users", customerId);
+                await updateDoc(userRef, {
+                    lastVisit: saleData.reservationTime
+                });
+
+                const customerNameEncoded = encodeURIComponent(customerName);
+                if (editingSaleId) {
+                    alert('会計情報を更新しました。売上分析ページに戻ります。');
+                    window.location.href = './sales.html';
+                } else {
+                    window.location.href = `./customers.html?customerId=${customerId}&customerName=${customerNameEncoded}`;
+                }
+            } else {
+                if (editingSaleId) {
+                    alert('会計情報を更新しました。売上分析ページに戻ります。');
+                    window.location.href = './sales.html';
+                } else {
+                    alert('会計が完了しました。顧客管理ページに戻ります。');
+                    window.location.href = './customers.html';
+                }
+            }
+
+        } catch (error) {
+            console.error("会計処理に失敗:", error);
+            alert("会計処理に失敗しました。");
+            completeSaleBtn.disabled = false;
+            completeSaleBtn.innerHTML = '<i class="fa-solid fa-check"></i> 会計完了';
+            validateForm();
+        }
     };
 
     const resetForm = () => {
-        // ... (省略)
+        customerInput.value = '';
+        selectedMenus = [];
+        discountValueInput.value = '0';
+        discountTypeSelect.value = 'yen';
+        lengthFeeSelect.value = '0';
         pointDiscountInput.value = '0';
         deductionAmountInput.value = '0'; // 追加
-        // ... (省略)
+        paymentMethod = null;
+        if (cashPaymentFields) cashPaymentFields.style.display = 'none';
+        if (amountReceivedInput) amountReceivedInput.value = '';
+        if (changeDueEl) changeDueEl.textContent = '¥0';
+        editingSaleId = null;
+        sourceBookingId = null;
+        sourceBookingData = null;
+        sourceCustomerId = null;
+        sourceCustomerName = '';
+
+        paymentBtns.forEach(btn => btn.classList.remove('active'));
+        renderSelectedMenus();
+        calculateTotals();
     };
 
     const checkUrlParams = async () => {
-        // ... (省略)
-        if (saleId) {
-            // ... (省略)
-            if (saleDoc.exists()) {
-                const sale = saleDoc.data();
+        const params = new URLSearchParams(window.location.search);
+        sourceBookingId = params.get('bookingId');
+        sourceCustomerId = params.get('customerId');
+        sourceCustomerName = params.get('customerName');
+        const saleId = params.get('saleId');
 
-                // ... (省略)
-                lengthFeeSelect.value = sale.lengthFee || 0;
-                pointDiscountInput.value = sale.pointDiscount || 0;
-                deductionAmountInput.value = sale.deductionAmount || 0; // 追加: 復元
-                // ... (省略)
+        if (saleId) {
+            editingSaleId = saleId;
+            showLoading("会計履歴を読み込み中...");
+            try {
+                const saleDoc = await getDoc(doc(db, "sales", saleId));
+                if (saleDoc.exists()) {
+                    const sale = saleDoc.data();
+
+                    customerInput.value = sale.customerName;
+                    selectedMenus = sale.menus || [];
+                    sourceCustomerId = sale.customerId;
+                    sourceBookingId = sale.bookingId;
+
+                    discountValueInput.value = sale.discountValue || 0;
+                    discountTypeSelect.value = sale.discountType || 'yen';
+                    lengthFeeSelect.value = sale.lengthFee || 0;
+                    pointDiscountInput.value = sale.pointDiscount || 0;
+                    deductionAmountInput.value = sale.deductionAmount || 0; // 追加: 復元
+
+                    if (sale.paymentMethod === '現金') {
+                        amountReceivedInput.value = sale.amountReceived || 0;
+                        cashPaymentFields.style.display = 'block';
+                    } else {
+                        cashPaymentFields.style.display = 'none';
+                    }
+
+                    paymentMethod = sale.paymentMethod;
+                    if (paymentMethod) {
+                        paymentBtns.forEach(btn => {
+                            btn.classList.toggle('active', btn.dataset.method === paymentMethod);
+                        });
+                    }
+
+                    if (sourceBookingId) {
+                        const bookingDoc = await getDoc(doc(db, "reservations", sourceBookingId));
+                        if (bookingDoc.exists()) {
+                            sourceBookingData = bookingDoc.data();
+                        }
+                    }
+
+                    renderSelectedMenus();
+                    calculateTotals();
+                } else {
+                    showError("該当する会計履歴が見つかりません。");
+                }
+            } catch (error) {
+                showError("会計履歴の読み込みに失敗しました。");
+            } finally {
+                showContent();
             }
-            // ... (省略)
+        } else if (sourceBookingId) {
+            showLoading("予約情報を読み込み中...");
+            try {
+                const bookingDoc = await getDoc(doc(db, "reservations", sourceBookingId));
+                if (bookingDoc.exists()) {
+                    const booking = bookingDoc.data();
+                    sourceBookingData = booking;
+                    customerInput.value = booking.customerName;
+                    selectedMenus = booking.selectedMenus || [];
+                    sourceCustomerId = booking.customerId;
+                    renderSelectedMenus();
+                    calculateTotals();
+                }
+            } catch (error) {
+                showError("予約情報の読み込みに失敗しました。");
+            } finally {
+                showContent();
+            }
+        } else if (sourceCustomerId && sourceCustomerName) {
+            customerInput.value = sourceCustomerName;
+            renderSelectedMenus();
+            calculateTotals();
+            showContent();
+        } else {
+            showContent();
         }
-        // ... (省略)
     };
 
     // --- Event Listeners ---
-    // ... (省略)
+    addMenuModalBtn.addEventListener('click', () => addMenuModal.style.display = 'flex');
+    addMenuModal.querySelector('.close-modal-btn').addEventListener('click', () => addMenuModal.style.display = 'none');
 
     [discountValueInput, discountTypeSelect, lengthFeeSelect, pointDiscountInput, deductionAmountInput].forEach(el => {
         el.addEventListener('input', calculateTotals);
     });
 
-    // 追加: 預り金の入力イベント
     if (amountReceivedInput) {
         amountReceivedInput.addEventListener('input', () => {
             calculateTotals();
-            // validateFormはcalculateTotals内で呼ばれる
         });
     }
 
@@ -198,14 +440,13 @@ const posMain = async (auth, user) => {
             btn.classList.add('active');
             paymentMethod = btn.dataset.method;
 
-            // 追加: 現金の場合のみフィールド表示
             if (paymentMethod === '現金') {
                 cashPaymentFields.style.display = 'block';
             } else {
                 cashPaymentFields.style.display = 'none';
             }
 
-            calculateTotals(); // おつり再計算のため
+            calculateTotals();
             validateForm();
         });
     });
@@ -215,9 +456,7 @@ const posMain = async (auth, user) => {
     // --- Initial Load ---
     showLoading("会計ページを準備中...");
     await loadInitialData();
-    // ▼▼▼ 修正: ページ読み込み時の関数呼び出しを変更 ▼▼▼
     await checkUrlParams();
-    // ▲▲▲ 修正ここまで ▲▲▲
 };
 
 runAdminPage(posMain);
