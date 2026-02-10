@@ -881,6 +881,23 @@ const adminMain = async (auth, user) => {
     }
 
     listenToDailySales();
+
+    // ▼▼▼ 追加: 日計表示トグル機能 ▼▼▼
+    const toggleDailyStatsBtn = document.getElementById('toggle-daily-stats-btn');
+    const dailyStatsContainer = document.getElementById('daily-stats-container');
+
+    if (toggleDailyStatsBtn && dailyStatsContainer) {
+        toggleDailyStatsBtn.addEventListener('click', () => {
+            if (dailyStatsContainer.style.display === 'none') {
+                dailyStatsContainer.style.display = 'grid'; // CSSで grid 定義されているため
+                toggleDailyStatsBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i> 本日の売上を非表示';
+            } else {
+                dailyStatsContainer.style.display = 'none';
+                toggleDailyStatsBtn.innerHTML = '<i class="fa-solid fa-eye"></i> 本日の売上を表示';
+            }
+        });
+    }
+    // ▲▲▲ 追加ここまで ▲▲▲
 };
 
 runAdminPage(adminMain);

@@ -57,7 +57,12 @@
                 </div>
 
                 <!-- ▼▼▼ 日計表示カード (移動) ▼▼▼ -->
-                <div class="card daily-stats-card">
+                <!-- ▼▼▼ 変更: 日計表示トグルボタンと非表示コンテナ ▼▼▼ -->
+                <button id="toggle-daily-stats-btn" class="button-secondary" style="width: 100%; margin-bottom: 1rem;">
+                    <i class="fa-solid fa-eye"></i> 本日の売上を表示
+                </button>
+
+                <div id="daily-stats-container" class="card daily-stats-card" style="display: none;">
                     <div class="stat-item">
                         <span class="stat-label">本日の売上</span>
                         <span id="daily-sales-total" class="stat-value">¥0</span>
@@ -67,6 +72,7 @@
                         <span id="daily-sales-count" class="stat-value">0人</span>
                     </div>
                 </div>
+                <!-- ▲▲▲ 変更ここまで ▲▲▲ -->
                 <!-- ▲▲▲ 移動ここまで ▲▲▲ -->
                 <!-- </div> (ネストされていたものを解除) -->
                 <!-- ▼▼▼ 削除: dashboard-sidebar を削除 ▼▼▼ -->
