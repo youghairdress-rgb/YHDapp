@@ -140,7 +140,7 @@ const posMain = async (auth, user) => {
         const discountType = discountTypeSelect.value;
         const lengthFee = parseInt(lengthFeeSelect.value) || 0;
         const pointDiscount = parseFloat(pointDiscountInput.value) || 0;
-        const deductionAmount = parseFloat(deductionAmountInput.value) || 0; // 追加
+        const deductionAmount = parseFloat(deductionAmountInput.value) || 0;
 
         let discountAmount = 0;
         if (discountType === 'yen') {
@@ -152,15 +152,15 @@ const posMain = async (auth, user) => {
         const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
         const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
 
-        // 修正: 差引額も引く
-        const total = taxExclusiveTotal + taxAmount - pointDiscount - deductionAmount;
+        // 修正: 差引額のみ引く（ポイントは支払い手段として扱うため合計には含める）
+        const total = taxExclusiveTotal + taxAmount - deductionAmount;
 
         subtotalEl.textContent = `¥${subtotal.toLocaleString()}`;
         taxExclusiveTotalEl.textContent = `¥${taxExclusiveTotal.toLocaleString()}`;
         taxAmountEl.textContent = `¥${taxAmount.toLocaleString()}`;
         totalEl.textContent = `¥${total.toLocaleString()}`;
 
-        calculateChange(total);
+        calculateChange(total, pointDiscount); // ポイント額を渡す
         validateForm();
     };
 
@@ -174,17 +174,22 @@ const posMain = async (auth, user) => {
             const discountType = discountTypeSelect.value;
             const lengthFee = parseInt(lengthFeeSelect.value) || 0;
             const pointDiscount = parseFloat(pointDiscountInput.value) || 0;
-            const deductionAmount = parseFloat(deductionAmountInput.value) || 0; // 追加
+            const deductionAmount = parseFloat(deductionAmountInput.value) || 0;
 
             let discountAmount = (discountType === 'yen') ? discountValue : Math.round(subtotal * (discountValue / 100));
             const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
             const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
 
-            // 修正: 差引額も引く
-            const total = taxExclusiveTotal + taxAmount - pointDiscount - deductionAmount;
+            // 合計（ポイント込み）
+            const total = taxExclusiveTotal + taxAmount - deductionAmount;
+
+            // 請求額（ポイント分を引いた金額）
+            const paymentDue = total - pointDiscount;
 
             const received = parseInt(amountReceivedInput.value) || 0;
-            if (received < total) {
+
+            // 預り金が請求額以上であるか確認
+            if (received < paymentDue) {
                 isValid = false;
             }
         }
@@ -192,11 +197,13 @@ const posMain = async (auth, user) => {
         completeSaleBtn.disabled = !isValid;
     };
 
-    const calculateChange = (currentTotal) => {
+    const calculateChange = (currentTotal, currentPoints = 0) => {
         if (paymentMethod !== '現金') return;
 
         const received = parseInt(amountReceivedInput.value) || 0;
-        const change = received - currentTotal;
+
+        // おつり = (預り金 + ポイント) - 合計
+        const change = (received + currentPoints) - currentTotal;
 
         if (change >= 0) {
             changeDueEl.textContent = `¥${change.toLocaleString()}`;
@@ -221,14 +228,14 @@ const posMain = async (auth, user) => {
         const discountType = discountTypeSelect.value;
         const lengthFee = parseInt(lengthFeeSelect.value) || 0;
         const pointDiscount = parseFloat(pointDiscountInput.value) || 0;
-        const deductionAmount = parseFloat(deductionAmountInput.value) || 0; // 追加
+        const deductionAmount = parseFloat(deductionAmountInput.value) || 0;
 
         let discountAmount = (discountType === 'yen') ? discountValue : Math.round(subtotal * (discountValue / 100));
         const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
         const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
 
-        // 修正: 差引額も引く
-        const total = taxExclusiveTotal + taxAmount - pointDiscount - deductionAmount;
+        // 修正: 差引額のみ引く（ポイントは合計に含む）
+        const total = taxExclusiveTotal + taxAmount - deductionAmount;
 
         const now = Timestamp.now();
 
@@ -241,14 +248,15 @@ const posMain = async (auth, user) => {
             discountType: discountType,
             lengthFee: lengthFee,
             pointDiscount: pointDiscount,
-            deductionAmount: deductionAmount, // 追加: DBに保存
+            deductionAmount: deductionAmount,
             total: total,
             paymentMethod: paymentMethod,
             createdAt: now,
             bookingId: sourceBookingId,
             reservationTime: sourceBookingData ? sourceBookingData.startTime : now,
             amountReceived: (paymentMethod === '現金') ? (parseInt(amountReceivedInput.value) || 0) : null,
-            changeDue: (paymentMethod === '現金') ? (parseInt(amountReceivedInput.value) || 0) - total : null
+            // おつり = (預り金 + ポイント) - 合計
+            changeDue: (paymentMethod === '現金') ? ((parseInt(amountReceivedInput.value) || 0) + pointDiscount - total) : null
         };
 
         if (editingSaleId) {
@@ -317,7 +325,7 @@ const posMain = async (auth, user) => {
         discountTypeSelect.value = 'yen';
         lengthFeeSelect.value = '0';
         pointDiscountInput.value = '0';
-        deductionAmountInput.value = '0'; // 追加
+        deductionAmountInput.value = '0';
         paymentMethod = null;
         if (cashPaymentFields) cashPaymentFields.style.display = 'none';
         if (amountReceivedInput) amountReceivedInput.value = '';
@@ -357,7 +365,7 @@ const posMain = async (auth, user) => {
                     discountTypeSelect.value = sale.discountType || 'yen';
                     lengthFeeSelect.value = sale.lengthFee || 0;
                     pointDiscountInput.value = sale.pointDiscount || 0;
-                    deductionAmountInput.value = sale.deductionAmount || 0; // 追加: 復元
+                    deductionAmountInput.value = sale.deductionAmount || 0;
 
                     if (sale.paymentMethod === '現金') {
                         amountReceivedInput.value = sale.amountReceived || 0;
@@ -423,7 +431,10 @@ const posMain = async (auth, user) => {
     addMenuModal.querySelector('.close-modal-btn').addEventListener('click', () => addMenuModal.style.display = 'none');
 
     [discountValueInput, discountTypeSelect, lengthFeeSelect, pointDiscountInput, deductionAmountInput].forEach(el => {
-        el.addEventListener('input', calculateTotals);
+        el.addEventListener('input', () => {
+            // ポイント計算などでポイント引数が変わるかもしれないので、ラッパーで呼ぶ
+            calculateTotals();
+        });
     });
 
     if (amountReceivedInput) {
