@@ -1,0 +1,3749 @@
+/* 基本設定 (Moved to base.css) */
+/* :root variables available via base.css */
+/* body styles available via base.css */
+
+/* --- フェーズ管理 (全フェーズ共通: フルスクリーン固定, スクロールなし) --- */
+.phase-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0s 0.3s;
+    box-sizing: border-box;
+    background-color: var(--bg-color);
+    z-index: 50;
+}
+
+/* ... existing styles ... */
+
+/* --- Phase 6 Layout (Style Selection Grid) --- */
+.phase6-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    height: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+    .phase6-layout-grid {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+.p6-col-style,
+.p6-col-color,
+.p6-col-action {
+    background-color: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+}
+
+.scroll-y {
+    overflow-y: auto;
+    flex: 1;
+    max-height: 60vh;
+    /* scrollable content area */
+    padding-right: 5px;
+    /* space for scrollbar */
+}
+
+/* --- Phase 7 Layout (Refinement / Canvas) --- */
+#phase7-adjustment-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    align-items: flex-start;
+    max-width: 100% !important;
+    /* インラインスタイルを上書き */
+    padding: 30px !important;
+    /* User Requirement: Image on the Right */
+    flex-direction: row-reverse;
+}
+
+/* Make sure the image preview takes order last visually if not reversed? 
+   row-reverse puts the FIRST child (Image) on the RIGHT.
+   So Image (DOM 1st) -> Right. Controls (DOM 2nd) -> Left.
+   Correct.
+*/
+
+/* PC View & Mobile Landscape: Side-by-Side */
+/* FORCE 2-column on any landscape-ish width (iPhone SE landscape is ~667px, but let's be safe at 400px+) */
+@media (min-width: 400px) and (orientation: landscape),
+(min-width: 600px) {
+    .split-container {
+        display: flex;
+        flex-direction: row;
+        /* FORCE row */
+        flex-wrap: nowrap;
+        /* FORCE no wrapping */
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    /* Increase gap for Tablets/PC */
+    @media (min-width: 768px) {
+        .split-container {
+            gap: 30px;
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .split-container {
+            gap: 50px;
+        }
+    }
+
+    .split-column-left,
+    .split-column-right {
+        flex: 1;
+        min-width: 0;
+        /* Crucial: allows flex items to shrink below content size if needed */
+        width: 50%;
+        /* Helper hint */
+    }
+}
+
+
+/* Adjust Phase 6 item widths for smaller landscape */
+/* These apply GLOBALLY (outside media query) so they have a base min-width */
+.image-preview-wrapper {
+    flex: 1;
+    min-width: 200px;
+    /* Lowered even further to fit nested flex layouts */
+}
+
+.adjustment-controls {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* --- Result & Proposal Grid (Multi-column) --- */
+.result-section,
+.proposal-section {
+    max-width: 100%;
+}
+
+.proposal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.upload-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.upload-item {
+    margin-bottom: 0;
+}
+
+/* Center Titles & Buttons */
+.form-title,
+.result-title,
+.proposal-title,
+.refinement-title {
+    text-align: center;
+    justify-content: center;
+    /* For flex titles */
+}
+
+/* Main Buttons container centering */
+#phase4 button,
+#phase5 button {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* ... existing styles ... */
+.phase-container.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease-in-out, visibility 0s 0s;
+    padding: 20px;
+}
+
+/* カードスタイル */
+.card {
+    background-color: var(--card-bg);
+    padding: 35px 20px;
+    border-radius: 24px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* --- Phase 1 Styles (Glamorous & Centered) --- */
+#phase1 {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdfa 50%, #fff 100%);
+    z-index: 100;
+}
+
+.phase1-content {
+    text-align: center;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+    box-sizing: border-box;
+    /* Avoid padding causing overflow */
+    animation: fadeInUp 1s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* Center vertically in the content box */
+}
+
+/* Wrapper for text elements to enable switching layout direction */
+.phase1-text-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.logo {
+    width: 230px;
+    /* User Request: 230px */
+    height: 230px;
+    border-radius: 50%;
+    margin: 0 auto 30px auto;
+    display: block;
+    object-fit: cover;
+    border: 6px solid #fff;
+    /* Thicker border */
+    box-shadow: 0 10px 40px rgba(45, 212, 191, 0.4);
+    /* Glowing shadow */
+    animation: pulseLogo 3s infinite ease-in-out;
+}
+
+.logo-text-1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 96px;
+    /* User Request: 3x (~32px -> 96px) */
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--primary-color-dark);
+    /* Fallback color */
+    margin: 0;
+    background: -webkit-linear-gradient(45deg, #0f766e, #2dd4bf);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 5px 20px rgba(45, 212, 191, 0.3);
+    /* Shadow might conflict with transparent text in some browsers */
+    line-height: 1.1;
+    max-width: 100%;
+    /* Prevent overflow */
+}
+
+.logo-text-2 {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 48px;
+    /* User Request: 2x (~24px -> 48px) */
+    font-weight: 700;
+    color: #334155;
+    margin: 20px 0 40px 0;
+    letter-spacing: 1px;
+}
+
+.description {
+    color: #64748b;
+    line-height: 1.8;
+    margin-bottom: 60px;
+    font-size: 18px;
+    /* Slight increase */
+    font-weight: 500;
+    text-align: center;
+    /* Explicit Center */
+    width: 100%;
+}
+
+.user-greeting {
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--primary-color);
+    font-size: 24px;
+    font-weight: 700;
+    margin: 10px 0 20px 0;
+    text-align: center;
+}
+
+.start-btn-final {
+    padding: 30px 80px;
+    font-size: 32px;
+    letter-spacing: 1px;
+    box-shadow: 0 10px 30px rgba(45, 212, 191, 0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: 50px;
+    width: auto;
+    min-width: 300px;
+    /* Ensure not full width by default */
+}
+
+.start-btn-final:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(45, 212, 191, 0.6);
+}
+
+@keyframes floatUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseLogo {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 10px 40px rgba(45, 212, 191, 0.4);
+    }
+
+    50% {
+        transform: scale(1.03);
+        box-shadow: 0 15px 50px rgba(45, 212, 191, 0.6);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 10px 40px rgba(45, 212, 191, 0.4);
+    }
+}
+
+/* --- Landscape Optimization (Universal) --- */
+/* Apply Vertical Stack Layout to ALL Landscape screens (PC & Tablet) */
+@media (orientation: landscape) {
+
+    /* Main Container: Explicitly Center Everything */
+    .phase1-content {
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        /* CRITICAL: Prevent Stretching */
+        gap: 1vh !important;
+        /* Reduced gap */
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        padding: 1vh 0 !important;
+        /* Minimal padding */
+        transform: none !important;
+        margin: 0 !important;
+    }
+
+    /* Logo: Reduced from 45vh to 35vh */
+    .logo {
+        height: 35vh !important;
+        width: 35vh !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin: 0 0 1vh 0 !important;
+        /* Small bottom margin */
+        border: 0.5vh solid #fff !important;
+    }
+
+    .phase1-text-group {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        /* Center children */
+        width: 100% !important;
+        gap: 0.5vh !important;
+    }
+
+    /* Title: Reduced from 18vh to 14vh */
+    .logo-text-1 {
+        font-size: 14vh !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        width: auto !important;
+    }
+
+    /* Subtitle: Reduced from 7vh to 6vh */
+    .logo-text-2 {
+        font-size: 6vh !important;
+        margin: 0.5vh 0 !important;
+    }
+
+    /* Description: Adjusted margin and size */
+    .description {
+        text-align: center !important;
+        font-size: 2.5vh !important;
+        margin: 0.5vh 0 2vh 0 !important;
+        /* Reduced bottom margin significantly */
+        line-height: 1.4 !important;
+        max-width: 90% !important;
+    }
+
+    /* Button: Adjusted padding and font size */
+    .start-btn-final {
+        width: auto !important;
+        /* Do not stretch */
+        align-self: center !important;
+        /* Double safety */
+        padding: 2vh 8vh !important;
+        /* Reduced padding */
+        font-size: 4vh !important;
+        border-radius: 10vh !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        max-width: 90% !important;
+    }
+}
+
+/* --- Vertical Monitor Optimization (1080x1920) --- */
+/* Target strictly vertical screens typical of digital signage */
+@media (orientation: portrait) {
+
+    .phase1-content {
+        justify-content: center !important;
+        gap: 2vh !important;
+        padding: 5vh 20px !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+    }
+
+    /* Logo: Reduced for better fit */
+    .logo {
+        width: 25vh !important;
+        height: 25vh !important;
+        margin-bottom: 2vh !important;
+        border: 0.8vh solid #fff !important;
+        box-shadow: 0 1vh 5vh rgba(45, 212, 191, 0.4) !important;
+    }
+
+    /* Title: Balanced size */
+    .logo-text-1 {
+        font-size: 7vh !important;
+        margin-bottom: 0.5vh !important;
+    }
+
+    /* Subtitle */
+    .logo-text-2 {
+        font-size: 3vh !important;
+        margin: 0.5vh 0 1vh 0 !important;
+    }
+
+    /* Greeting: Vertical Layout */
+    .user-greeting {
+        font-size: 3.5vh !important;
+        margin: 1vh 0 2vh 0 !important;
+        font-weight: 700;
+        color: var(--primary-color);
+        font-family: 'Noto Sans JP', sans-serif;
+    }
+
+    /* Button */
+    /* Button */
+    .start-btn-final {
+        font-size: 2.5vh !important;
+        padding: 2vh 6vh !important;
+        border-radius: 10vh !important;
+        width: 80% !important;
+        /* Increased from 65% */
+        max-width: 550px !important;
+        /* Increased max-width */
+        margin-bottom: 5vh !important;
+        white-space: nowrap !important;
+        /* Prevent wrap */
+    }
+
+    .description {
+        font-size: 1.8vh !important;
+        margin-bottom: 3vh !important;
+        max-width: 90% !important;
+        line-height: 1.5 !important;
+    }
+
+    /* --- Phase 2: Profile Input (Vertical) --- */
+    #phase2 .card {
+        padding: 2vh 5vw !important;
+        width: 90% !important;
+        max-width: none !important;
+        border-radius: 2vh !important;
+        margin: 0 auto !important;
+        /* Center horizontally */
+    }
+
+    #phase2 .form-title {
+        font-size: 2.5vh !important;
+        /* Keep title size */
+        margin-bottom: 2vh !important;
+        text-align: center !important;
+    }
+
+    #phase2 .form-group {
+        margin-bottom: 1.5vh !important;
+        /* Reduced margin */
+    }
+
+    #phase2 .form-group label {
+        font-size: 1.6vh !important;
+        /* Reduced from 1.8vh */
+        margin-bottom: 0.8vh !important;
+    }
+
+    #phase2 .form-control {
+        font-size: 1.8vh !important;
+        /* Reduced from 2vh */
+        padding: 1.2vh !important;
+        border-radius: 1.2vh !important;
+    }
+
+    /* Gender Selection */
+    #phase2 .gender-selection {
+        padding: 0.5vh !important;
+        border-radius: 1.2vh !important;
+    }
+
+    #phase2 .gender-selection label {
+        font-size: 1.8vh !important;
+        /* Reduced from 2vh */
+        padding: 1.2vh 0 !important;
+    }
+
+    /* Voice Button Removed */
+
+    /* Inspiration Upload - Horizontal Alignment */
+    #phase2 .inspiration-upload-container {
+        padding: 2vh 2vh !important;
+        border-radius: 2vh !important;
+        display: flex !important;
+        flex-direction: row !important;
+        /* Horizontal */
+        align-items: center !important;
+        justify-content: center !important;
+        /* Center content to reduce gap */
+        gap: 3vh !important;
+        /* Control spacing between image and text */
+        text-align: right !important;
+        /* Right align text */
+        min-height: 18vh !important;
+        /* Increased min-height to accommodate larger image */
+        box-sizing: border-box !important;
+    }
+
+    #phase2 .inspiration-preview-area {
+        width: 12vh !important;
+        /* Increased Width */
+        height: 16vh !important;
+        /* Increased Height (3:4 aspect ratio) */
+        background-color: #f0f0f0 !important;
+        border: 2px dashed #ccc !important;
+        border-radius: 1.5vh !important;
+        margin-right: 0 !important;
+        /* handled by gap */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        /* Strictly contain the image */
+        flex-shrink: 0 !important;
+        /* ABSOLUTELY DO NOT SHRINK */
+        position: relative !important;
+    }
+
+    #phase2 #inspiration-image-preview {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        display: block !important;
+        /* Image itself doesn't need border/bg now */
+        background-color: transparent !important;
+        border: none !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    /* Wrapper for Text and Button to group them on the right */
+    #phase2 .inspiration-upload-text {
+        flex-grow: 0 !important;
+        /* Don't expand unnecessarily */
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        /* Align to right */
+        margin-right: 0 !important;
+        width: auto !important;
+        /* Let content dictate width */
+    }
+
+    #phase2 #inspiration-upload-title {
+        font-size: 1.8vh !important;
+        display: block !important;
+    }
+
+    #phase2 #inspiration-upload-status {
+        font-size: 1.4vh !important;
+        display: block !important;
+    }
+
+    #phase2 .btn-outline {
+        font-size: 1.6vh !important;
+        padding: 0.8vh 2vh !important;
+        border-radius: 5vh !important;
+        margin-left: 0 !important;
+        /* Inside flex group if needed, or separate */
+    }
+
+    /* Next Button */
+    #next-to-upload-btn {
+        font-size: 2.2vh !important;
+        /* Reduced from 2.8vh */
+        padding: 2vh !important;
+        margin-top: 3vh !important;
+        /* Reduced from 5vh */
+        border-radius: 5vh !important;
+        width: 100% !important;
+    }
+}
+
+/* --- Form Styles --- */
+.form-title {
+    font-size: 24px;
+    color: var(--dark-color);
+    margin-bottom: 35px;
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--dark-color);
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 16px;
+    box-sizing: border-box;
+    background-color: #f9fafb;
+    color: var(--text-color);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.2);
+}
+
+.form-control[readonly] {
+    background-color: #f3f4f6;
+    color: var(--text-color-light);
+    cursor: not-allowed;
+}
+
+/* --- Phase 2 Landscape Optimization (Two Columns) --- */
+
+
+/* --- Inspiration Upload Styles (Phase 2) --- */
+.inspiration-upload-container {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: #f9fafb;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inspiration-upload-container:hover {
+    border-color: #d1d5db;
+}
+
+/* アイコンまたはプレビュー画像 */
+#inspiration-image-preview {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    margin-right: 15px;
+    flex-shrink: 0;
+    object-fit: cover;
+    background-color: #eef2ff;
+    color: #4f46e5;
+    font-size: 24px;
+    line-height: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 画像が読み込まれていない時 (壊れた画像アイコンを非表示) */
+#inspiration-image-preview:not([src]) {
+    content: '📷';
+    font-size: 24px;
+    color: #4f46e5;
+}
+
+/* 画像が読み込まれた時 */
+#inspiration-image-preview[src] {
+    content: '';
+}
+
+.inspiration-upload-text {
+    flex-grow: 1;
+    text-align: left;
+}
+
+#inspiration-upload-title {
+    display: block;
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 15px;
+    margin-bottom: 2px;
+}
+
+#inspiration-upload-status {
+    font-size: 13px;
+    color: var(--text-color-light);
+}
+
+/* 削除ボタン */
+.btn-delete {
+    background-color: transparent;
+    color: #ef4444;
+    /* 赤色 */
+    border: none;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 10px;
+    display: none;
+    /* デフォルト非表示 */
+}
+
+.btn-delete:hover {
+    background-color: #fee2e2;
+}
+
+/* 性別選択 */
+.gender-selection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 6px;
+    background-color: #f9fafb;
+}
+
+.gender-selection input[type="radio"] {
+    display: none;
+}
+
+.gender-selection label {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    margin: 0 3px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    color: var(--text-color-light);
+}
+
+.gender-selection input[type="radio"]:checked+label {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(45, 212, 191, 0.3);
+}
+
+/* --- Phase 3 Upload Styles --- */
+.upload-list {
+    margin-top: 15px;
+    margin-bottom: 35px;
+}
+
+.upload-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 12px 15px;
+    background-color: #f9fafb;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+}
+
+.upload-icon {
+    width: 44px;
+    height: 44px;
+    background-color: #eef2ff;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+    color: #4f46e5;
+    font-size: 24px;
+    line-height: 1;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.upload-icon.completed {
+    background-color: var(--primary-color-lighter);
+    color: var(--primary-color-dark);
+}
+
+.upload-text {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.upload-text strong {
+    display: block;
+    font-weight: 600;
+    color: var(--dark-color);
+    font-size: 15px;
+    margin-bottom: 2px;
+}
+
+.upload-text span {
+    font-size: 13px;
+    color: var(--text-color-light);
+}
+
+/* ボタン共通スタイル */
+button {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
+}
+
+.btn-outline {
+    background-color: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-outline:hover:not(:disabled) {
+    background-color: var(--primary-color-lighter);
+    transform: translateY(-1px);
+}
+
+.btn-outline:active:not(:disabled) {
+    transform: translateY(0px);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: default;
+}
+
+.btn-success:disabled {
+    opacity: 1;
+    cursor: default;
+}
+
+.btn-disabled {
+    background-color: var(--disabled-color) !important;
+    border-color: var(--disabled-color) !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+}
+
+.btn-disabled:hover {
+    transform: none !important;
+}
+
+/* --- Spinner Styles --- */
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(45, 212, 191, 0.2);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    margin: 25px auto;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* --- Phase 4 Result Styles --- */
+.result-section {
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.result-title {
+    font-size: 18px;
+    color: var(--dark-color);
+    margin-bottom: 18px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary-color-light);
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.result-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 12px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 15px;
+    padding-left: 5px;
+}
+
+.result-item-label {
+    font-weight: 500;
+    color: var(--text-color-light);
+    font-size: 15px;
+}
+
+.result-item-value {
+    color: var(--dark-color);
+    font-weight: 600;
+    text-align: right;
+    font-size: 15px;
+}
+
+/* --- Phase 5 Proposal Styles --- */
+.proposal-section {
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.proposal-title {
+    font-size: 18px;
+    color: var(--dark-color);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+.proposal-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 12px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.proposal-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+.proposal-card {
+    background-color: #f9fafb;
+    border: 2px solid var(--border-color);
+    padding: 18px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.proposal-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
+    border-color: #d1d5db;
+}
+
+.proposal-card.selected {
+    border-color: var(--primary-color-dark);
+    background-color: var(--primary-color-lighter);
+    box-shadow: 0 4px 12px rgba(45, 212, 191, 0.2);
+    transform: none;
+}
+
+.proposal-card strong {
+    display: block;
+    color: var(--dark-color);
+    margin-bottom: 5px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.proposal-card p {
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.6;
+    color: var(--text-color-light);
+}
+
+.top-stylist-comment {
+    background-color: var(--primary-color-lighter);
+    border-left: 4px solid var(--primary-color);
+    padding: 18px;
+    border-radius: 12px;
+    margin: 20px 0 10px 0;
+}
+
+.top-stylist-comment p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-color);
+}
+
+.best-colors-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    padding: 10px 0;
+    justify-items: center;
+}
+
+.color-swatch-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.color-swatch-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+    margin-bottom: 8px;
+    background-color: #ccc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.color-swatch-name {
+    font-size: 13px;
+    color: var(--text-color);
+    font-weight: 500;
+    text-align: center;
+}
+
+.makeup-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 15px;
+    padding: 18px;
+    background-color: #f9fafb;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+}
+
+.makeup-item-label {
+    font-weight: 500;
+    color: var(--text-color-light);
+    font-size: 15px;
+}
+
+.makeup-item-value {
+    color: var(--dark-color);
+    font-weight: 600;
+    text-align: right;
+    font-size: 15px;
+}
+
+/* --- Button Styles (Global) --- */
+.btn-primary {
+    display: inline-block;
+    width: auto;
+    min-width: 200px;
+    margin: 0 auto;
+    color: white;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 14px 35px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    background: linear-gradient(to right, var(--primary-color), var(--primary-color-dark));
+    box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3);
+    transition: all 0.2s ease;
+}
+
+#phase6 .btn-primary {
+    display: block;
+    width: 100%;
+    margin-top: 25px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(45, 212, 191, 0.4);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0px) scale(1);
+    box-shadow: 0 3px 10px rgba(45, 212, 191, 0.3);
+}
+
+.btn-dark {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 30px auto 0 auto;
+    color: white;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 14px 20px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background-color: var(--dark-color);
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-dark:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background-color: #1e293b;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.3);
+}
+
+.btn-dark:active:not(:disabled) {
+    transform: translateY(0px);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2);
+}
+
+.btn-secondary {
+    display: block;
+    width: 100%;
+    margin: 15px auto 0 auto;
+    color: var(--primary-color);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 13px 20px;
+    border: 1px solid var(--primary-color);
+    border-radius: 12px;
+    cursor: pointer;
+    background-color: var(--primary-color-lighter);
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #ccfbf1;
+    transform: translateY(-1px);
+}
+
+.btn-secondary:active:not(:disabled) {
+    transform: translateY(0px);
+}
+
+.btn-secondary-white {
+    background-color: white;
+    margin-top: 10px;
+}
+
+.btn-secondary-white:hover:not(:disabled) {
+    background-color: #f8fafc;
+}
+
+.capture-loading-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px 20px;
+    border-radius: 12px;
+    z-index: 10;
+    color: var(--dark-color);
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Phase 6 Result --- */
+.generated-image-container {
+    position: relative;
+    width: 100%;
+    max-width: 350px;
+    min-height: 200px;
+    margin: 0 auto 25px auto;
+}
+
+#generated-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background-color: #f3f4f6;
+    margin: 0;
+    transition: opacity 0.3s ease;
+}
+
+#refinement-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    display: none;
+    z-index: 10;
+}
+
+/* 微調整セクション */
+.refinement-section {
+    margin-top: 30px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    background-color: #f9fafb;
+    border-radius: 16px;
+    text-align: left;
+}
+
+.refinement-title {
+    font-size: 18px;
+    color: var(--dark-color);
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+}
+
+#refinement-prompt-input {
+    width: 100%;
+}
+
+#refine-image-btn {
+    margin-top: 0;
+    font-size: 16px;
+}
+
+/* フェーズ6「提案に戻る」ボタン */
+#phase6 .btn-outline {
+    display: block;
+    width: 100%;
+    margin-top: 15px;
+    box-sizing: border-box;
+    background-color: white;
+    color: var(--text-color-light);
+    border-color: var(--border-color);
+}
+
+#phase6 .btn-outline:hover:not(:disabled) {
+    background-color: #f8fafc;
+    color: var(--text-color);
+    border-color: #d1d5db;
+}
+
+/* ★★★ カスタムモーダル ★★★ */
+.modal-overlay {
+    display: none;
+    /* デフォルト非表示 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.6);
+    /* ダークオーバーレイ */
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 0;
+    /* ヘッダー/フッターで分けるためゼロ */
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: transform 0.2s ease-in-out;
+}
+
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    background-color: var(--primary-color-lighter);
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--dark-color);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.modal-body {
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--text-color);
+    font-size: 16px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    /* 改行を反映 */
+}
+
+.modal-footer {
+    padding: 0 20px 25px 20px;
+    text-align: center;
+}
+
+.modal-btn {
+    width: 100%;
+    margin: 0;
+    font-size: 16px;
+}
+
+/* --- Landscape Mode Optimization (Monitor & Mobile) --- */
+/* Target Mobile Landscape AND Monitor Output */
+@media (orientation: landscape) {
+
+    /* --- Global Resets for No-Scroll --- */
+    body {
+        height: 100vh;
+        overflow: hidden;
+        /* Force no scroll on body */
+        padding: 10px !important;
+        font-size: 13px;
+        /* Reduced base font */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loading-container {
+        min-height: auto;
+        height: 100%;
+    }
+
+    /* Maximize container usage */
+    .phase-container {
+        height: 100%;
+        width: 100%;
+        display: none;
+        /* Ensure HIDDEN by default in this mode */
+        overflow: hidden;
+    }
+
+    /* FIX: Ensure active phase is always visible and flex in landscape */
+    .phase-container.active {
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+
+    /* Compact Card */
+    .card {
+        padding: 15px !important;
+        max-height: 100vh;
+        width: 100%;
+        box-shadow: none;
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    /* Compact Titles & Text */
+    .form-title,
+    .result-title,
+    .proposal-title,
+    .main-title {
+        font-size: 18px !important;
+        margin-bottom: 10px !important;
+        margin-top: 0 !important;
+        line-height: 1.2;
+    }
+
+    .description,
+    p {
+        font-size: 12px !important;
+        margin-bottom: 10px !important;
+        line-height: 1.4;
+    }
+
+    /* Truncate long descriptions if needed */
+    .description {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Compact Buttons */
+    .btn-primary,
+    .btn-dark,
+    .btn-secondary,
+    .btn-outline {
+        padding: 8px 16px !important;
+        font-size: 13px !important;
+        min-width: unset !important;
+        width: auto !important;
+        display: inline-block !important;
+        margin-top: 5px !important;
+    }
+
+    /* Compact Forms */
+    .form-group {
+        margin-bottom: 8px !important;
+    }
+
+    .form-group label {
+        font-size: 11px;
+        margin-bottom: 2px;
+    }
+
+    .form-control {
+        padding: 8px 10px;
+        font-size: 13px;
+        height: auto;
+    }
+
+    /* --- Phase 1: Opening (Vertical Stack for Landscape) --- */
+    #phase1 .phase1-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+        gap: 1vh;
+        /* Tight gap */
+        text-align: center;
+    }
+
+    /* Remove phantom classes */
+    .phase1-left,
+    .phase1-right {
+        display: none;
+    }
+
+    /* Logo Scaling */
+    #phase1 .logo {
+        width: 35vh !important;
+        height: 35vh !important;
+        max-width: 250px;
+        max-height: 250px;
+        margin: 0 0 1vh 0 !important;
+        object-fit: contain;
+    }
+
+    /* Text Scaling */
+    .logo-text-1 {
+        font-size: 10vh !important;
+        /* Large title */
+        line-height: 1;
+        margin-bottom: 0.5vh !important;
+        margin-top: 0 !important;
+    }
+
+    .logo-text-2 {
+        font-size: 5vh !important;
+        margin-bottom: 1vh !important;
+        line-height: 1.2;
+    }
+
+    #phase1 .description {
+        font-size: 2.5vh !important;
+        margin-bottom: 2vh !important;
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.4;
+    }
+
+    /* Button Styling */
+    #phase1 .btn-primary {
+        width: auto !important;
+        min-width: 200px;
+        padding: 1.5vh 5vh !important;
+        font-size: 3vh !important;
+        margin-top: 1vh !important;
+        border-radius: 50px;
+        /* Rounded pill style if not already */
+    }
+
+    /* --- Phase 2: Profile (2-Column Grid) --- */
+    /* --- Phase 2: Profile (2-Column Grid) --- */
+    #phase2 .card {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto auto auto;
+        /* No 1fr to prevent height forcing */
+        gap: 1.5vh 3vh;
+        align-items: stretch;
+        /* Stretch items */
+        text-align: left;
+        position: relative;
+        padding-bottom: 2vh !important;
+        height: auto;
+        /* Auto height, not 100% fixed */
+        overflow-y: visible;
+        overflow-x: hidden;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    #phase2 .form-group {
+        margin-bottom: 0 !important;
+    }
+
+    #phase2 label {
+        font-size: 1.8vh !important;
+        /* Consistent scaling */
+        margin-bottom: 0.5vh !important;
+        display: block;
+    }
+
+    #phase2 input[type="text"] {
+        padding: 1vh;
+        font-size: 2vh !important;
+        height: auto !important;
+        min-height: 52px;
+        /* Match gender height */
+    }
+
+    /* Compact Radio Buttons */
+    #phase2 .radio-group {
+        gap: 10px !important;
+    }
+
+    #phase2 .gender-selection {
+        min-height: 52px;
+        box-sizing: border-box;
+    }
+
+    #phase2 .radio-group label {
+        font-size: 1.8vh !important;
+        padding: 1vh !important;
+    }
+
+    /* Header spans full width */
+    #phase2 .form-title {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        margin-bottom: 1vh !important;
+        font-size: 3vh !important;
+        text-align: center;
+    }
+
+    /* Left Column: Name(1), Gender(2), Requests(3) */
+    #phase2 .form-group:nth-of-type(1) {
+        /* Name */
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #phase2 .form-group:nth-of-type(2) {
+        /* Gender */
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    #phase2 .form-group:nth-of-type(3) {
+        /* Requests */
+        grid-column: 1;
+        grid-row: 4;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0 !important;
+    }
+
+    /* Right Column: Inspiration(4) - Spans rows 2-4 */
+    #phase2 .form-group:nth-of-type(4) {
+        /* Inspiration (Last in HTML) */
+        grid-column: 2;
+        grid-row: 2 / 5;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #phase2 .inspiration-upload-container {
+        flex-grow: 1;
+        min-height: 30vh;
+        /* Taller area */
+        height: auto;
+    }
+
+    #phase2 .form-group:nth-of-type(3) textarea {
+        flex-grow: 0;
+        /* Don't expand infinitely */
+        height: 80px;
+        /* Fixed compact height */
+        min-height: 0;
+        resize: none;
+        padding: 1vh;
+        font-size: 2vh;
+    }
+
+    /* Button: Bottom Center - Grid Flow (Not Absolute) */
+    #phase2 #next-to-upload-btn {
+        grid-column: 1 / -1;
+        grid-row: 5;
+        position: static;
+        /* Reset absolute */
+        width: 50% !important;
+        min-width: 200px;
+        margin: 2vh auto 0 auto !important;
+        font-size: 2.5vh !important;
+        padding: 1.5vh 3vh !important;
+        display: block !important;
+        transform: none !important;
+    }
+
+    /* --- Phase 3: Upload (Horizontal Row) --- */
+    /* --- Phase 3: Viewer (90% Grid with 5vh Padding) --- */
+    /* --- Phase 3: Styles moved to Portrait Block --- */
+
+    /* --- Phase 4: Result (3 Columns) --- */
+    /* --- Phase 4: Result (3 Columns - Balanced) --- */
+    /* --- Phase 3.5: Loading (Centered) --- */
+    #phase3\.5 .card {
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    #phase3\.5 .spinner {
+        width: 8vh;
+        height: 8vh;
+        border-width: 0.8vh;
+    }
+
+    /* --- Phase 4: Result (3 Columns in Portrait, 2 in Landscape for Balance) --- */
+    /* --- Phase 3: Fix Image Sizing --- */
+    #phase3 .viewer-thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        /* Ensure image fits inside the box */
+        display: block;
+    }
+
+    /* --- Phase 4: Compact Layout (approx 2/3 height) --- */
+    /* --- Phase 4: Scrollable Layout (Revert) --- */
+    #phase4 .card {
+        padding: 20px !important;
+        padding-bottom: 80px !important;
+        /* Space for buttons */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        height: auto !important;
+        /* Allow growth */
+        max-height: none !important;
+        margin-top: 0;
+        overflow-y: visible !important;
+        /* Allow page scroll */
+    }
+
+    #phase4 .form-title {
+        flex-shrink: 0;
+        font-size: 2.2vh !important;
+        /* Smaller title */
+        margin-bottom: 1vh !important;
+    }
+
+    /* Flex Container */
+    #phase4 .split-container {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        height: auto !important;
+        min-height: 0;
+        overflow: visible !important;
+        flex-wrap: wrap;
+        /* Allow wrap on very small screens? No, user wants structure. */
+    }
+
+    /* Left Column: Face & Skeleton */
+    #phase4 .split-column-left {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Right Column: Hair & Color */
+    #phase4 .split-column-right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    /* Result Sections */
+    #phase4 .result-section {
+        flex: 1;
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 1vh;
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #phase4 .result-title {
+        font-size: 1.6vh !important;
+        margin-bottom: 0.5vh !important;
+        display: flex;
+        align-items: center;
+        gap: 0.8vh;
+    }
+
+    #phase4 .result-icon {
+        width: 2.5vh;
+        height: 2.5vh;
+    }
+
+    /* Inner Grids/Content Scaling */
+    #phase4 .result-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3vh;
+        overflow-y: auto;
+    }
+
+    #phase4 p,
+    #phase4 li,
+    #phase4 .result-item {
+        font-size: clamp(11px, 1.2vh, 16px) !important;
+        /* Readable text */
+        line-height: 1.4;
+    }
+
+    /* Buttons */
+    #phase4 #next-to-proposal-btn {
+        position: absolute;
+        bottom: 1.5vh;
+        right: 1.5vh;
+        width: auto !important;
+        min-width: 18vh;
+        font-size: 1.8vh !important;
+        padding: 0.8vh 2.5vh !important;
+        margin: 0 !important;
+        z-index: 10;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    #phase4 #save-phase4-btn {
+        position: absolute;
+        bottom: 1.5vh;
+        left: 1.5vh;
+        width: auto !important;
+        font-size: 1.4vh !important;
+        padding: 0.8vh 1.8vh !important;
+        margin: 0 !important;
+        background: transparent;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+    }
+
+}
+
+/* Result Section Styling */
+#phase4 .result-section {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 5px;
+    /* Tighter padding */
+    background: #f9fafb;
+    display: flex;
+    flex-direction: column;
+}
+
+#phase4 .result-title {
+    font-size: 11px !important;
+    margin-bottom: 3px !important;
+    padding-bottom: 2px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+#phase4 .result-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+}
+
+/* Table/Grid Content - Optimized for Space */
+#phase4 .result-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 6px !important;
+    overflow-y: auto;
+    /* Allow scroll if absolutely necessary */
+    padding-top: 5px !important;
+}
+
+#phase4 .result-item-label {
+    font-size: 8px !important;
+    /* Smaller font */
+    color: #666;
+    white-space: nowrap;
+    align-self: baseline;
+}
+
+#phase4 .result-item-value {
+    font-size: 9px !important;
+    font-weight: 600;
+    text-align: right;
+    white-space: normal;
+    line-height: 1.5;
+    word-break: break-all;
+    /* Prevent overflow forcing wide columns */
+}
+
+/* Buttons Positioned Bottom Right */
+#phase4 #next-to-proposal-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 15px;
+    width: auto !important;
+    margin: 0 !important;
+    z-index: 50;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+    display: block !important;
+    background-color: var(--dark-color);
+    color: white;
+    border: none;
+}
+
+#phase4 #save-phase4-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 130px;
+    /* Positioned left of the other button */
+    width: auto !important;
+    margin: 0 !important;
+    z-index: 50;
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+    display: block !important;
+    /* Show it! */
+    background-color: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+/* --- Phase 5: Proposal Layout (Grid Reorder) --- */
+#phase5 .card {
+    padding: 15px !important;
+    display: block !important;
+    /* Enable block to allow scroll */
+    height: auto !important;
+    min-height: 100%;
+    overflow-y: auto !important;
+    /* Enable Scroll */
+}
+
+#phase5 .form-title {
+    text-align: center;
+    margin-bottom: 15px !important;
+    font-size: 20px !important;
+}
+
+/* Use Grid on Container */
+#phase5 .split-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* 2 Columns */
+    gap: 15px;
+    width: 100%;
+}
+
+/* Unwrap the columns */
+#phase5 .split-column-left,
+#phase5 .split-column-right {
+    display: contents;
+    /* Children become grid items */
+}
+
+/* Assign Order & Placement */
+/* 1. Hairstyle (Left-1) -> Row 1Full */
+#phase5 .proposal-section:nth-child(1) {
+    /* Hairstyle */
+    order: 1;
+    grid-column: 1 / -1;
+}
+
+/* 2. Haircolor (Left-2) -> Row 2 Full */
+#phase5 .proposal-section:nth-child(2) {
+    /* Haircolor */
+    order: 2;
+    grid-column: 1 / -1;
+}
+
+/* 3. Makeup (Right-1) -> Row 3 Left */
+/* Note: nth-child is relative to parent.
+       In Right col, Makeup is 1st child.
+       But css selector needs to be specific if 'display contents' merges them layout-wise
+       selectors still target DOM structure.
+    */
+#phase5 .split-column-right .proposal-section:nth-child(1) {
+    /* Makeup */
+    order: 3;
+    grid-column: 1;
+}
+
+/* 4. Fashion (Right-2) -> Row 3 Right */
+#phase5 .split-column-right .proposal-section:nth-child(2) {
+    /* Fashion */
+    order: 4;
+    grid-column: 2;
+}
+
+/* 5. Best Colors (Left-3) -> Row 4 Center Adjusted */
+#phase5 .split-column-left .proposal-section:nth-child(3) {
+    /* Best Colors */
+    order: 5;
+    grid-column: 1 / -1;
+    max-width: 60%;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* 6. Advice (Right-3) -> Row 5 Center Adjusted */
+#phase5 .split-column-right .proposal-section:nth-child(3) {
+    /* Advice */
+    order: 6;
+    grid-column: 1 / -1;
+    max-width: 80%;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* Inner Grids for Proposals (Side by Side) */
+.proposal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Force 2 items next to each other */
+    gap: 10px;
+}
+
+.proposal-card {
+    padding: 12px !important;
+    height: 100%;
+    /* Equal height */
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0 !important;
+}
+
+#phase5 .proposal-card strong {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+#phase5 .proposal-card p {
+    font-size: 11px;
+    line-height: 1.4;
+    flex: 1;
+    overflow: hidden;
+    /* Prevent spill */
+}
+
+/* Button Area - Static to flow after content */
+#phase5 button {
+    position: static !important;
+    /* Reset absolute */
+    width: auto !important;
+    max-width: 300px;
+    margin: 10px auto !important;
+    display: block !important;
+}
+
+/* Flex container for buttons to sit next to each other? User said "don't overlap" */
+/* Let's wrap them or stack them cleanly */
+#phase5 .card>button {
+    margin-bottom: 10px !important;
+}
+
+/* --- Phase 6: Generation (3 Columns for Landscape) --- */
+/* --- Phase 6: Generation (Tab Layout) --- */
+#phase6 .card {
+    padding: 10px !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+    background: #fff;
+}
+
+/* Tab Navigation */
+.phase6-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 5px;
+}
+
+.tab-btn {
+    padding: 8px 20px;
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.tab-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Tab Content Wrappers */
+.phase6-tab-content {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+    display: none;
+    /* Controlled by JS */
+    animation: fadeIn 0.3s ease;
+}
+
+.phase6-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* === TAB 1: Style Config (3 Columns) === */
+/* === Phase 6 Layout (3 Columns) === */
+.phase6-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* .active removed as tabs are gone */
+
+.p6-col-style,
+.p6-col-color,
+.p6-col-action {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border-right: 1px solid #f1f5f9;
+    padding-right: 10px;
+}
+
+.p6-col-action {
+    border-right: none;
+    padding-right: 0;
+}
+
+.scroll-y {
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* === TAB 2: Composite (2 Columns) === */
+#phase6-tab-composite.active {
+    display: grid !important;
+    grid-template-columns: 320px 1fr;
+    gap: 10px;
+    height: 100%;
+}
+
+/* Left: Controls */
+.p6-comp-left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: center;
+    padding: 10px;
+    background: #f8fafc;
+}
+
+/* --- Phase 7 Refinement Layout --- */
+/* --- Phase 7 Refinement Layout --- */
+.phase7-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    grid-template-rows: 1fr auto;
+    /* Controls | Image */
+    /* Buttons  | Image */
+    gap: 20px;
+    height: calc(100dvh - 100px);
+    max-height: 100dvh;
+    overflow: hidden;
+    box-sizing: border-box;
+    padding-bottom: 20px;
+    grid-template-areas:
+        "controls image"
+        "buttons  image";
+}
+
+/* Assign Grid Areas */
+#phase7-adjustment-container {
+    grid-area: controls;
+    overflow-y: auto;
+    /* Allow scrolling for controls if needed */
+}
+
+.p7-comp-right {
+    grid-area: image;
+    height: 100%;
+}
+
+.comp-buttons-area {
+    grid-area: buttons;
+}
+
+
+/* Mobile Portrait: Vertical Layout (Controls -> Image -> Buttons) */
+/* Wait, user wanted: Sliders (Controls) -> Image -> Buttons? */
+/* Or Image -> Controls -> Buttons? usually Image first is better for context but user specified order previously */
+/* Previous Request: "Sliders -> Image -> Buttons" */
+
+@media screen and (orientation: portrait) {
+    .phase7-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        padding-bottom: 2vh !important;
+        overflow-y: auto !important;
+        /* Allow scroll in portrait if content pushes out */
+        overflow-x: hidden !important;
+        gap: 0 !important;
+    }
+
+    /* 1. Controls Container (Sliders) */
+    #phase7-adjustment-container {
+        order: 1 !important;
+        width: 100% !important;
+        flex: 0 0 auto !important;
+        /* Don't stretch */
+    }
+
+    /* 2. Image Area - Maximize this for Vertical Monitor */
+    .p7-comp-right {
+        order: 2 !important;
+        width: 100% !important;
+        flex: 1 1 auto !important;
+        /* Allow growing and shrinking */
+        min-height: 50vh !important;
+        /* Ensure at least half screen is image */
+        background: #f1f5f9;
+        overflow: hidden;
+        padding: 10px !important;
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+        box-sizing: border-box !important;
+    }
+
+    .image-preview-wrapper {
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #phase6-canvas,
+    #main-diagnosis-image {
+        max-width: 100% !important;
+        max-height: 100% !important;
+        object-fit: contain !important;
+    }
+
+    /* 3. Buttons */
+    .comp-buttons-area {
+        order: 3 !important;
+        width: 100% !important;
+        flex: 0 0 auto !important;
+        background: #fff;
+        border-top: 1px solid #f1f5f9;
+        padding: 20px !important;
+        /* Larger touch area */
+        display: flex !important;
+        justify-content: center !important;
+        gap: 15px !important;
+    }
+
+    /* Fix Font Sizes for Vertical PC (1920px height) */
+    /* 1vh = 19.2px. 1.1vh = 21px (OK). */
+    /* If mobile (800px), 1.1vh = 8.8px (Too small). */
+    /* Solution: Use clamp or min-px */
+
+}
+
+/* --- Restored Global Styles (Faders) --- */
+.fader-container {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    min-width: 0 !important;
+}
+
+.fader-title {
+    font-size: 1.1vh !important;
+    margin-bottom: 0.5vh !important;
+    white-space: nowrap;
+}
+
+.fader-label-val {
+    font-size: 1.2vh !important;
+    font-weight: bold;
+}
+
+/* Custom Fader Controls Layout */
+.control-item.fader-group {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0.5vh !important;
+    width: 100%;
+}
+
+/* --- Vertical Monitor Font Fixes (Override Global) --- */
+@media screen and (orientation: portrait) {
+    .fader-title {
+        font-size: max(1.1vh, 12px) !important;
+        margin-bottom: 5px !important;
+    }
+
+    .fader-label-val {
+        font-size: max(1.1vh, 12px) !important;
+    }
+
+    .comp-buttons-area button {
+        font-size: max(1.6vh, 14px) !important;
+        padding: 15px 30px !important;
+    }
+}
+
+.fader-icon {
+    font-size: 1.5vh !important;
+    display: none !important;
+    /* Hide icon to save space */
+}
+
+input.horizontal-fader {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.fader-btn-down,
+.fader-btn-up {
+    display: none !important;
+    /* Hide fine-tune buttons on mobile to save space? Or keep small? */
+}
+
+/* Let's keep it simple: Hide buttons, just slider + value */
+
+.fader-label-val {
+    font-size: 1.2vh !important;
+    font-weight: bold;
+}
+
+
+/* Image -> MIDDLE */
+.p7-comp-right {
+    order: 2 !important;
+    flex: 1 !important;
+    /* Take remaining space */
+    width: 100% !important;
+    min-height: 0 !important;
+    /* Allow shrinking */
+    padding: 1vh !important;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    background: #f1f5f9;
+    overflow: hidden;
+}
+
+.image-preview-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#main-diagnosis-image,
+#phase6-canvas {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    height: auto !important;
+}
+
+/* Buttons -> BOTTOM */
+.comp-buttons-area {
+    order: 3 !important;
+    padding: 1vh 2vh !important;
+    background: #fff;
+    border-top: 1px solid #f1f5f9;
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.save-buttons-group {
+    display: flex !important;
+    flex-direction: row !important;
+    /* Horizontal buttons */
+    gap: 1vh !important;
+    width: 100%;
+}
+
+.save-buttons-group button {
+    flex: 1 !important;
+    padding: 1.5vh !important;
+    font-size: 1.4vh !important;
+    border-radius: 50px !important;
+}
+
+/* Left: Controls */
+.p7-comp-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Center controls vertically */
+    gap: 20px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
+    /* Allow controls to scroll if needed */
+    height: 100%;
+}
+
+/* Right: Image */
+.p7-comp-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* Contain image */
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 10px;
+    position: relative;
+    height: 100%;
+}
+
+/* Image Restriction - Forced for Phase 7 */
+#phase7 .p7-comp-right img,
+#phase7 #main-diagnosis-image,
+#phase7 #phase6-canvas {
+    max-width: 90% !important;
+    /* Reduced to 90% as requested */
+    max-height: 90% !important;
+    /* Reduced to 90% as requested */
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Phase 7 Title & Spacing */
+#phase7 .phase-title {
+    margin-top: 0 !important;
+    margin-bottom: 5px !important;
+    padding-top: 5px !important;
+}
+
+#phase7 .phase7-layout {
+    padding-bottom: 5vh !important;
+}
+
+/* Left Column Internal Padding */
+.p7-comp-left {
+    padding-bottom: 20px !important;
+    /* Added 20px bottom padding inside area */
+}
+
+/* Phase 7 Title & Spacing */
+#phase7 .phase-title {
+    margin-top: 0 !important;
+    /* Minimal top margin */
+    margin-bottom: 2px !important;
+    padding-top: 5px !important;
+}
+
+#phase7 .phase7-layout {
+    padding-bottom: 10vh !important;
+    /* Larger bottom padding */
+}
+
+/* Fader Titles */
+.fader-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 5px;
+}
+
+.fader-label-val {
+    display: inline-block !important;
+    width: 45px;
+    text-align: right;
+    font-size: 14px;
+    color: #334155;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.fader-container {
+    margin-bottom: 15px;
+    /* Spacing between groups */
+}
+
+/* Phase 7 Buttons */
+.comp-buttons-area {
+    margin-top: auto;
+}
+
+.save-buttons-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.save-buttons-group button {
+    flex: 1;
+    padding: 12px;
+    cursor: pointer;
+}
+
+/* Reuse Fader Styles (horizontal-faders) - No Change Needed */
+/* Reuse Image Preview Wrapper - No Change Needed */
+
+/* Horizontal Faders */
+.horizontal-faders {
+    display: flex;
+    flex-direction: column;
+    /* Stacks Brightness, Hue, Saturation vertically */
+    gap: 20px;
+    width: 80%;
+}
+
+.fader-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: nowrap;
+    /* Prevent wrapping */
+}
+
+.fader-icon {
+    font-size: 18px;
+    width: 25px;
+    text-align: center;
+    flex-shrink: 0;
+    display: block !important;
+    /* Force Visibility */
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #333;
+    /* Ensure it's not white-on-white */
+}
+
+.fader-btn-down,
+.fader-btn-up {
+    background: transparent;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0 5px;
+    color: #64748b;
+    font-size: 12px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.horizontal-fader {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    touch-action: none;
+    /* Prevents scroll interference on mobile */
+    height: 12px;
+    /* Taller for visibility */
+    border-radius: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    border: 1px solid #dcdcdc;
+    /* Flat border */
+    margin: 0 10px;
+    background-color: transparent;
+    /* Clear formatting */
+    background-repeat: no-repeat;
+    box-shadow: none !important;
+    /* Remove 3D effects */
+}
+
+/* Track Gradients (Force Horizontal / 90deg) */
+
+/* Track Gradients (Force Horizontal 'to right') */
+
+/* Brightness */
+#range-brightness,
+#range-brightness::-webkit-slider-runnable-track {
+    background-image: linear-gradient(to right, #0e0400, #fffabb) !important;
+}
+
+/* Hue */
+#range-hue,
+#range-hue::-webkit-slider-runnable-track {
+    background-image: linear-gradient(to right, red, yellow, lime, cyan, blue, magenta, red) !important;
+}
+
+/* Saturation */
+#range-saturate,
+#range-saturate::-webkit-slider-runnable-track {
+    background-image: linear-gradient(to right, #ccc, #00d4ff) !important;
+}
+
+.horizontal-fader::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border: 2px solid #64748b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    /* margin-top might be needed depending on browser vertical align */
+}
+
+/* Button Area in Composite */
+.comp-buttons-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: auto;
+    /* Push to bottom if space permits */
+}
+
+.save-buttons-group {
+    display: flex;
+    gap: 10px;
+}
+
+.save-buttons-group button {
+    flex: 1;
+    padding: 10px;
+}
+
+#back-to-proposal-btn {
+    width: 100%;
+    padding: 10px;
+}
+
+/* Hide Original Footer */
+.phase6-footer-buttons {
+    display: none !important;
+}
+
+
+/* (Vertical Styles Removed) */
+
+/* Ensure radio options take full width in Phase 6 */
+#phase6 .radio-option {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* (Vertical Fader inputs removed) */
+
+/* Specific Gradients */
+#range-brightness {
+    background: linear-gradient(to top, #331a00, #e6c38a, #fffde6) !important;
+}
+
+#range-hue {
+    background: linear-gradient(to top, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000) !important;
+}
+
+#range-saturate {
+    background: linear-gradient(to top, #eee, #81D8D0) !important;
+}
+
+/* Hide standard labels inside since user wanted hidden */
+.control-item span {
+    display: none !important;
+}
+
+/* Column 3: Image (Right) - Maximized */
+
+
+/* Ensure image/canvas covers the area or contains properly */
+#main-diagnosis-image,
+#phase6-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain;
+    display: block;
+}
+
+/* Phase 6 specific buttons (Reset/Save) */
+.save-buttons-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-bottom: 5px;
+}
+
+.save-buttons-group button {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+    border-radius: 20px !important;
+    min-width: 100px;
+}
+
+/* Specific Colors */
+#btn-reset {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #64748b;
+}
+
+#btn-request-save {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+/* Footer Buttons (Back/Close) */
+.phase6-footer-buttons {
+    position: absolute;
+    bottom: 15px;
+    left: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+    pointer-events: auto;
+}
+
+.phase6-footer-buttons button {
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+    width: auto !important;
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+/* End of Styles */
+
+/* --- Phase 3: Viewer Mode Styles --- */
+.viewer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 Columns */
+    grid-template-rows: auto auto;
+    /* 2 Rows */
+    gap: 1.5vh;
+    width: 100%;
+    height: 100%;
+    /* Fill space */
+    margin-bottom: 0;
+}
+
+.viewer-item {
+    background: #fff;
+    border-radius: 8px;
+    /* Slightly sharper for premium feel */
+    border: 1px solid var(--border-color);
+    /* Use variable */
+    padding: 1vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* Center content */
+    aspect-ratio: auto;
+    /* Remove fixed aspect ratio, let grid handle */
+    height: 100%;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    /* Subtle shadow */
+}
+
+/* Status colors update for cleaner look */
+.viewer-item.ready {
+    border-color: var(--primary-color);
+    background-color: #fbfdfd;
+    /* Very subtle tint */
+}
+
+.viewer-item.pending {
+    border-color: #e2e8f0;
+    background-color: #f8fafc;
+}
+
+.viewer-thumbnail {
+    width: 100%;
+    flex: 1;
+    /* Take available space */
+    background-color: #f1f5f9;
+    border-radius: 4px;
+    margin-bottom: 1vh;
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #cbd5e1;
+    font-size: 3vh;
+    position: relative;
+    overflow: hidden;
+}
+
+.viewer-thumbnail img,
+.viewer-thumbnail video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.viewer-label {
+    font-size: 1.4vh;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.5vh;
+    font-family: 'Inter', sans-serif;
+    /* English font */
+}
+
+.status-badge {
+    font-size: 1.1vh;
+    padding: 0.3vh 0.8vh;
+    border-radius: 4px;
+    /* Less rounded */
+    color: #fff;
+    background-color: #94a3b8;
+    /* Muted gray for pending */
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ready .status-badge {
+    background-color: var(--primary-color);
+}
+
+.pending .status-badge {
+    background-color: #cbd5e1;
+    color: #64748b;
+}
+
+/* Action Cell (Bottom Right) */
+.viewer-actions-cell {
+    grid-column: 3;
+    /* Last column */
+    grid-row: 2;
+    /* Second row */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5vh;
+    padding: 10px;
+}
+
+#reload-viewer-btn,
+#request-diagnosis-btn-viewer {
+    width: 100%;
+    padding: 1.5vh 0;
+    font-size: 1.6vh;
+    border-radius: 6px;
+    /* Premium boxy button */
+    cursor: pointer;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+#reload-viewer-btn {
+    background: white;
+    color: var(--dark-color);
+    border: 1px solid var(--border-color);
+}
+
+#request-diagnosis-btn-viewer {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 10px rgba(32, 178, 170, 0.2);
+}
+
+#request-diagnosis-btn-viewer:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.status-note {
+    font-size: 1vh;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* Ensure button visibility in Phase 3 */
+#phase3 .card {
+    height: 90vh;
+    /* Fixed height for consistency */
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- Phase 3: Vertical Portrait Optimization --- */
+@media (orientation: portrait) {
+    #phase3 .form-title {
+        margin-top: 0 !important;
+        font-size: 3.5vh !important;
+        /* Match Phase 2 title size */
+    }
+
+    #phase3 .card {
+        justify-content: center;
+        position: relative;
+        padding: 2vh !important;
+        padding-bottom: 2vh !important;
+        height: auto !important;
+        /* Let content dictate height */
+        max-height: 90vh !important;
+        /* Prevent it from being too tall */
+        overflow: hidden;
+        margin-top: 5vh !important;
+        /* Add some top margin for balance */
+    }
+
+    .viewer-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: 28vh 28vh;
+        gap: 1.5vh;
+        margin: 0 auto !important;
+        width: 95%;
+        height: auto;
+        justify-content: center;
+    }
+
+    .viewer-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 5px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .viewer-label {
+        font-size: 1.4vh !important;
+        margin-bottom: 0.5vh !important;
+    }
+
+    .status-badge {
+        font-size: 1.2vh !important;
+        padding: 0.3vh 0.8vh !important;
+    }
+
+    .viewer-thumbnail {
+        width: 100%;
+        min-height: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        background: #00000005;
+    }
+
+    .viewer-thumbnail span {
+        font-size: 4vh !important;
+    }
+
+    .viewer-actions-cell {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2vh;
+        height: 100%;
+        background: transparent;
+    }
+
+    .viewer-actions-cell button {
+        width: 100% !important;
+        font-size: 1.8vh !important;
+        padding: 1.5vh !important;
+        border-radius: 5vh !important;
+    }
+
+    .status-note {
+        font-size: 1.2vh !important;
+        margin-top: 1vh !important;
+    }
+
+    #phase3 .upload-list {
+        display: none !important;
+    }
+
+    #phase3 .upload-item {
+        display: none !important;
+    }
+
+    #phase3 #request-diagnosis-btn {
+        display: none !important;
+    }
+
+    /* --- Phase 3.5: Loading (Centered) --- */
+    #phase3\.5 {
+        display: flex !important;
+        align-items: center !important;
+        /* Vertical Center */
+        justify-content: center !important;
+        /* Horizontal Center */
+        height: 100vh !important;
+        width: 100% !important;
+    }
+
+    #phase3\.5 .card {
+        justify-content: center !important;
+        align-items: center !important;
+        height: auto !important;
+        min-height: 30vh !important;
+        width: 80% !important;
+        padding: 5vh !important;
+        margin: auto !important;
+        /* Ensure centering */
+        text-align: center !important;
+    }
+
+    /* --- Phase 4: AI Diagnosis Result (Vertical Optimization - Single Column Fixed) --- */
+    /* Container: Flex Column, Top Aligned */
+    /* Container: Flex Column, Top Aligned */
+    /* Container: Flex Column, Top Aligned - SCROLLABLE FIX */
+    #phase4.phase-container {
+        display: block !important;
+        /* Allow normal flow */
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        /* Allow growth */
+        padding: 15px !important;
+        box-sizing: border-box !important;
+        margin-top: 0 !important;
+        background-color: var(--bg-color) !important;
+        z-index: 1000 !important;
+        overflow-y: visible !important;
+        /* Allow body scroll */
+    }
+
+    /* Card: Fills container */
+    /* Card: Fills container */
+    #phase4 .card {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        /* Allow growth */
+        padding: 5vh 2vh 10vh 2vh !important;
+        /* Detailed padding */
+        margin: 0 !important;
+        border-radius: 20px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+        overflow: visible !important;
+    }
+
+    /* Title: Compact */
+    #phase4 .form-title {
+        font-size: 2.2vh !important;
+        margin: 0.5vh 0 0.5vh 0 !important;
+        /* Minimizing top margin */
+        flex-shrink: 0;
+        line-height: 1.2 !important;
+    }
+
+    /* Split Container: Single Column Stack */
+    #phase4 .split-container {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 15px !important;
+        flex: none !important;
+        /* Don't force resize */
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+    }
+
+    /* ... (unchanged) ... */
+
+    #phase4 .split-column-left,
+    #phase4 .split-column-right {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5vh !important;
+        /* Reduced gap */
+        min-width: 0 !important;
+    }
+
+    /* Result Sections: Compact */
+    #phase4 .result-section {
+        padding: 0.5vh 1.2vh !important;
+        /* Reduced vertical padding */
+        margin-bottom: 0 !important;
+        border-radius: 1.2vh !important;
+    }
+
+    #phase4 .result-title {
+        font-size: 1.4vh !important;
+        margin-bottom: 0.2vh !important;
+        /* Minimized bottom margin */
+        color: var(--dark-color);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+    }
+
+    /* ... (unchanged) ... */
+
+    /* Grid Layout for Items */
+    #phase4 .result-grid {
+        display: grid !important;
+        grid-template-columns: auto 1fr !important;
+        gap: 0.2vh 1.5vh !important;
+        /* Reduced row gap */
+        align-items: baseline;
+    }
+
+    /* ... (Phase 5) ... */
+
+    #phase5 .form-title {
+        font-size: 2.2vh !important;
+        margin: 0.5vh 0 0.5vh 0 !important;
+        /* Minimizing top margin */
+        flex-shrink: 0;
+        line-height: 1.2 !important;
+    }
+
+    /* Split Container: GRID for Reordering */
+    /* Split Container: GRID for Reordering - SCROLLABLE FIX */
+    #phase5 .split-container {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 15px !important;
+        height: auto !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        align-content: start !important;
+    }
+
+    /* ... (unchanged) ... */
+
+    /* Proposal Sections - Generic */
+    #phase5 .proposal-section {
+        padding: 0.5vh 1vh !important;
+        /* Reduced vertical padding */
+        border-radius: 1.2vh !important;
+        margin-bottom: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* ... (unchanged) ... */
+
+    #phase5 .proposal-title {
+        font-size: 1.6vh !important;
+        margin-bottom: 0.2vh !important;
+        /* Minimized bottom margin */
+        display: flex;
+        align-items: center;
+    }
+
+    #phase5 .proposal-icon {
+        width: 1.6vh !important;
+        /* Reduced icon size slightly */
+        height: 1.6vh !important;
+        margin-right: 0.5vh !important;
+    }
+
+    /* Inner Grids */
+    #phase5 .proposal-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.4vh !important;
+        /* Reduced gap */
+        width: 100% !important;
+    }
+
+    /* Makeup & Fashion Grids */
+    #phase5 .makeup-grid {
+        display: grid !important;
+        grid-template-columns: auto 1fr !important;
+        gap: 0.2vh 1vh !important;
+        /* Reduced row gap */
+        width: 100% !important;
+        box-sizing: border-box !important;
+        align-items: baseline;
+    }
+
+    /* Best Colors Grid - 4 Columns Horizontal */
+    #phase5 .best-colors-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 0.4vh !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* ... (unchanged) ... */
+
+    /* 3. Best Color Items */
+    #phase5 .color-swatch-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.2vh;
+        /* Reduced gap */
+    }
+
+    #phase5 .color-swatch-circle {
+        width: 2.3vh !important;
+        /* Approx 2/3 of 3.5vh */
+        height: 2.3vh !important;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    #phase5 .color-swatch-name {
+        font-size: 1.0vh !important;
+        text-align: center;
+        line-height: 1.1;
+    }
+
+    #phase5 .top-stylist-comment p {
+        font-size: 1.3vh !important;
+        line-height: 1.3;
+        margin: 0;
+    }
+
+    /* Buttons (Horizontal Layout) */
+    #phase5 .phase5-button-container {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 1vh !important;
+        width: 100% !important;
+        margin-top: 1vh !important;
+        padding-top: 0.5vh;
+        border-top: 1px solid #f1f5f9;
+        flex-shrink: 0;
+    }
+
+    #phase5 .card button,
+    #phase5 .phase5-button-container button {
+        width: auto !important;
+        flex: 1 !important;
+        margin: 0 !important;
+        padding: 1vh 0.5vh !important;
+        font-size: 1.1vh !important;
+        border-radius: 1vh !important;
+        position: static !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        height: auto !important;
+        line-height: 1.2;
+    }
+
+    /* Remove old global button selector if needed, but the above covers it */
+
+    #phase5 #save-phase5-btn {
+        background: white !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #64748b !important;
+        padding: 1vh !important;
+        font-size: 1.4vh !important;
+    }
+
+    #phase5 #move-to-phase6-btn {
+        background: var(--dark-color) !important;
+        color: white !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* --- Phase 6: Style Selection (Vertical Optimization) --- */
+    /* Container: Absolute Overlay */
+    #phase6.phase-container {
+        display: flex !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        flex-direction: column !important;
+        padding: 0 15px 2vh 15px !important;
+        box-sizing: border-box !important;
+        background-color: var(--bg-color) !important;
+        z-index: 1000 !important;
+        overflow: hidden !important;
+    }
+
+    /* Layout Grid -> Single Column Stack */
+    #phase6 .phase6-layout-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow-y: auto !important;
+        /* Scroll entire form */
+        gap: 2vh !important;
+        padding-bottom: 5vh !important;
+        /* Space for bottom actions */
+    }
+
+    /* Columns -> Stacked Sections */
+    #phase6 .p6-col-style,
+    #phase6 .p6-col-color,
+    #phase6 .p6-col-action {
+        width: 100% !important;
+        height: auto !important;
+        /* Let content dictate height */
+        border-right: none !important;
+        padding-right: 0 !important;
+        overflow: visible !important;
+        flex-shrink: 0;
+        /* Prevent shrinking */
+    }
+
+    /* Section Titles */
+    #phase6 .refinement-title {
+        font-size: 1.8vh !important;
+        margin-bottom: 1vh !important;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 0.5vh;
+        color: var(--dark-color);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+    }
+
+    #phase6 .refinement-title img {
+        width: 2vh !important;
+        height: 2vh !important;
+        margin-right: 1vh !important;
+    }
+
+    /* Radio Options (Card Style) - Compact */
+    #phase6 .radio-option {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 1vh !important;
+        /* Reduced padding (was 1.5vh) */
+        margin-bottom: 0.8vh !important;
+        /* Reduced margin (was 1vh) */
+        border: 1px solid #e2e8f0;
+        border-radius: 1vh !important;
+        background: #fff;
+        display: flex !important;
+        align-items: center !important;
+        min-height: 4vh !important;
+        /* Ensure minimum touch target */
+    }
+
+    #phase6 .radio-option input[type="radio"] {
+        transform: scale(1.2);
+        /* Slightly smaller radio circle */
+        margin-right: 1vh;
+    }
+
+    #phase6 .radio-option label {
+        font-size: 1.2vh !important;
+        /* Smaller font (was 1.4vh) */
+        line-height: 1.2;
+        width: 100%;
+        display: block;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Action Area */
+    /* Action Area */
+    #phase6 .p6-col-action {
+        margin-top: 1vh !important;
+        padding-top: 1vh !important;
+        background: #f8fafc;
+        border-radius: 1.5vh;
+        padding: 2vh !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        padding-bottom: 5vh !important;
+        overflow: visible !important;
+    }
+
+    /* Header Style Fix */
+    #phase6 .phase-header {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 1.5vh 0 !important;
+        background: transparent !important;
+        border-bottom: none !important;
+        flex-shrink: 0;
+    }
+
+    #phase6 .phase-title {
+        font-size: 2.2vh !important;
+        font-weight: 700;
+        color: var(--dark-color);
+        margin: 0 !important;
+        text-align: center;
+        width: 100%;
+    }
+
+    /* Button Container */
+    #phase6 .phase6-bottom-buttons {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 1vh !important;
+        width: 100% !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-top: 2vh !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+
+    /* Buttons */
+    #phase6 #back-to-proposal-btn-p6 {
+        font-size: 1.4vh !important;
+        padding: 1.5vh !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #64748b !important;
+        background: white !important;
+        border-radius: 50px !important;
+        flex: 1 !important;
+        text-align: center;
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #phase6 #generate-image-btn {
+        width: auto !important;
+        font-size: 1.6vh !important;
+        padding: 1.5vh !important;
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+        color: white;
+        border: none;
+        border-radius: 50px !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4) !important;
+        font-weight: 700;
+        letter-spacing: 1px;
+        box-sizing: border-box !important;
+        max-width: none !important;
+        flex: 2 !important;
+        text-align: center;
+        display: flex !important;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+/* --- Phase 7 Styles (New - Refined) --- */
+#phase7.phase-container {
+    display: flex !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    flex-direction: column !important;
+    background-color: var(--bg-color) !important;
+    z-index: 1000 !important;
+    overflow: hidden !important;
+    padding: 0 15px 2vh 15px !important;
+    box-sizing: border-box !important;
+}
+
+/* Vertical / Mobile Optimization for Phase 7 */
+@media screen and (max-width: 768px),
+screen and (orientation: portrait) {
+    #phase7 .phase7-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        height: 100% !important;
+        overflow-y: hidden !important;
+        /* Main layout fixed, children scroll */
+        padding-bottom: 0 !important;
+    }
+
+    /* 1. Image Area (Top) - Forced Height */
+    .p7-comp-right {
+        order: 1 !important;
+        flex: none !important;
+        /* Disable flex scaling */
+        height: 45vh !important;
+        /* Force 45% of viewport height */
+        min-height: 45vh !important;
+        width: 100% !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        background-color: transparent !important;
+        /* Center content */
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 2. Controls Area (Bottom) - Remaining Space */
+    .p7-comp-left {
+        order: 2 !important;
+        flex: 1 1 auto !important;
+        /* Take remaining space */
+        height: auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        padding-bottom: 10vh !important;
+        /* Bottom buffer for buttons */
+        width: 100% !important;
+    }
+
+    /* Image Scaling in Portrait */
+    #phase7 #main-diagnosis-image,
+    #phase7 #phase6-canvas {
+        max-height: 100% !important;
+        max-width: 100% !important;
+        width: auto !important;
+        height: auto !important;
+        object-fit: contain !important;
+    }
+}
+
+/* Phase 7 Header (Matches Phase 6) */
+#phase7 .phase-header {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 1.5vh 0 1vh 0 !important;
+    background: transparent !important;
+    border-bottom: none !important;
+    flex-shrink: 0;
+}
+
+#phase7 .phase-title {
+    font-size: 2.2vh !important;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin: 0 !important;
+    text-align: center;
+    width: 100%;
+}
+
+.phase7-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    gap: 1.5vh;
+    /* Reduced gap */
+    width: 100%;
+}
+
+/* 1. Image Area (Top, Large) */
+.p7-comp-right {
+    flex: 2;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: transparent;
+}
+
+.image-preview-wrapper {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#phase6-canvas,
+#main-diagnosis-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* 2. Controls Area (Middle - Compact) */
+.p7-comp-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1vh;
+    /* Reduced gap */
+    overflow-y: auto;
+    padding: 0 5px;
+}
+
+.adjustment-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5vh;
+    /* Compact gap */
+}
+
+/* horizontal-faders class is used on the same element, so we can merge or just rely on this. 
+   Removing duplicate/conflicting .horizontal-faders rules to ensure consistent 0.5vh gap. */
+
+.fader-container {
+    background: #fff;
+    background: #f8fafc;
+    padding: 0.5vh;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 0.5vh;
+    text-align: center;
+    /* Center Title */
+}
+
+.fader-title {
+    font-size: 1.1vh;
+    font-weight: bold;
+    color: var(--dark-color);
+    margin-bottom: 0.5vh;
+}
+
+.fader-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Center Controls */
+    gap: 10px;
+}
+
+.fader-icon {
+    font-size: 1.4vh;
+}
+
+.horizontal-fader {
+    flex: 1;
+    max-width: none;
+    /* Full width */
+    height: 6px;
+    /* Visible */
+    background: #cbd5e1;
+    border-radius: 3px;
+    appearance: none;
+    cursor: pointer;
+}
+
+.fader-label-val {
+    font-size: clamp(12px, 1.4vh, 16px);
+    font-weight: bold;
+    color: var(--dark-color);
+    min-width: 50px;
+    /* Ensure 100% fits */
+    text-align: right;
+    display: inline-block;
+}
+
+/* Fine Tuning Button */
+.btn-fine-tune {
+    width: auto !important;
+    min-width: 200px;
+    max-width: 80%;
+    padding: 12px 24px !important;
+    font-size: clamp(14px, 1.5vh, 18px) !important;
+    margin: 10px auto 15px auto !important;
+    display: block !important;
+    border-radius: 50px !important;
+}
+
+/* Active State for Button */
+.btn-fine-tune.active {
+    background-color: #64748b !important;
+    border-color: #64748b !important;
+}
+
+
+
+.fader-btn-down,
+.fader-btn-up {
+    width: 3.5vh;
+    height: 3.5vh;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.2vh;
+}
+
+/* 3. Buttons Area (Bottom - Matches Phase 6) */
+.comp-buttons-area {
+    flex: 0 0 auto;
+    padding-top: 0.5vh;
+    padding-bottom: 2vh;
+    /* Bottom padding */
+}
+
+.save-buttons-group {
+    display: flex;
+    gap: 1vh;
+    justify-content: space-between;
+}
+
+/* Common Button Style for Phase 7 */
+.save-buttons-group button {
+    padding: 1.5vh !important;
+    border-radius: 50px !important;
+    font-size: 1.4vh !important;
+    font-weight: 700 !important;
+    white-space: nowrap;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Save Button (Primary) */
+#phase7 #btn-save {
+    flex: 2 !important;
+    /* Larger */
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%) !important;
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4) !important;
+}
+
+/* Back / Reset Buttons (Secondary) */
+#phase7 #btn-back-style,
+#phase7 #btn-reset {
+    flex: 1 !important;
+    background: white !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #64748b !important;
+}
+
+/* Debug / Hidden */
+#segmentation-status {
+    display: none;
+}

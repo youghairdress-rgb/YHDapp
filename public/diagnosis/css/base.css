@@ -1,0 +1,61 @@
+/* 基本設定 */
+:root {
+    --primary-color: #0ABAB5;
+    /* ティファニーブルー */
+    --primary-color-light: #E0F2F1;
+    /* 明るいティファニーブルー系 */
+    --primary-color-lighter: #F5FCFC;
+    /* ティファニーブルー系 (ホバー/選択背景) */
+    --primary-color-dark: #008782;
+    /* ティファニーブルー系 (暗め) */
+
+    --dark-color: #0f172a;
+    /* より濃い青 (コントラスト用) */
+    --text-color: #334155;
+    /* 基本テキスト (少し濃く) */
+    --text-color-light: #64748b;
+    /* 薄いテキスト */
+    --bg-color: #f8fafc;
+    /* 背景色 (少しだけ色味変更) */
+    --border-color: #e2e8f0;
+    /* 境界線 */
+    --card-bg: #ffffff;
+    /* カード背景 */
+    --success-color: #10b981;
+    /* 成功時の色 */
+    --disabled-color: #cbd5e1;
+    /* 無効時の色 */
+}
+
+html {
+    height: 100%;
+    overflow: hidden;
+    /* Phase 1 default: no scrollbar. JS toggles for other phases. */
+}
+
+/* 全体のフォントとベーススタイル */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+body {
+    font-family: 'Inter', 'Noto Sans JP', 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    box-sizing: border-box;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow: hidden;
+    /* Phase 1 default: no scrollbar. JS toggles for other phases. */
+}

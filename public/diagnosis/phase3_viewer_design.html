@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YHD-DX Phase 3 Viewer Prototype</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        /* Temporary overrides for prototype */
+        body {
+            background-color: var(--background-color, #f0f4f8);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .phase-container {
+            display: flex !important;
+            /* Force show */
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Viewer Specific Styles */
+        .viewer-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .viewer-item {
+            background: #fff;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            aspect-ratio: 3/4;
+            transition: all 0.3s ease;
+        }
+
+        .viewer-item.ready {
+            border-color: var(--primary-color, #20b2aa);
+            background-color: #f0fffe;
+        }
+
+        .viewer-item.pending {
+            border-color: #ff9800;
+            background-color: #fff8f0;
+        }
+
+        .viewer-thumbnail {
+            width: 100%;
+            height: 70%;
+            background-color: #eee;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 2rem;
+            position: relative;
+        }
+
+        .viewer-thumbnail img,
+        .viewer-thumbnail video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .viewer-label {
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            color: #fff;
+            background-color: #ccc;
+        }
+
+        .ready .status-badge {
+            background-color: var(--primary-color, #20b2aa);
+        }
+
+        .pending .status-badge {
+            background-color: #ff9800;
+        }
+
+        .action-area {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (orientation: landscape) {
+            .card {
+                max-width: 90%;
+                height: 90vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .form-title {
+                margin-bottom: 2vh !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="phase3-prototype" class="phase-container active">
+        <div class="card fade-in">
+            <h2 class="form-title">撮影素材の確認</h2>
+            <p class="description" style="text-align: center;">事前に撮影・アップロードされた素材を確認しています。</p>
+
+            <div class="viewer-grid">
+                <!-- Front Photo -->
+                <div class="viewer-item ready">
+                    <div class="viewer-label">写真：正面</div>
+                    <div class="viewer-thumbnail">
+                        <!-- Placeholder Image -->
+                        <img src="https://placehold.co/150x200/20b2aa/ffffff?text=Front" alt="Front Photo">
+                    </div>
+                    <span class="status-badge">OK</span>
+                </div>
+
+                <!-- Side Photo -->
+                <div class="viewer-item ready">
+                    <div class="viewer-label">写真：サイド</div>
+                    <div class="viewer-thumbnail">
+                        <img src="https://placehold.co/150x200/20b2aa/ffffff?text=Side" alt="Side Photo">
+                    </div>
+                    <span class="status-badge">OK</span>
+                </div>
+
+                <!-- Back Photo -->
+                <div class="viewer-item pending">
+                    <div class="viewer-label">写真：バック</div>
+                    <div class="viewer-thumbnail">
+                        <span>📷</span>
+                    </div>
+                    <span class="status-badge">未アップロード</span>
+                </div>
+
+                <!-- Front Video -->
+                <div class="viewer-item ready">
+                    <div class="viewer-label">動画：正面</div>
+                    <div class="viewer-thumbnail">
+                        <div style="position:absolute">▶️</div>
+                        <img src="https://placehold.co/150x200/333333/ffffff?text=Video" style="opacity:0.5">
+                    </div>
+                    <span class="status-badge">OK</span>
+                </div>
+
+                <!-- Back Video -->
+                <div class="viewer-item pending">
+                    <div class="viewer-label">動画：バック</div>
+                    <div class="viewer-thumbnail">
+                        <span>🎬</span>
+                    </div>
+                    <span class="status-badge">未アップロード</span>
+                </div>
+            </div>
+
+            <div class="action-area">
+                <button class="btn-secondary" onclick="location.reload()">再読み込み</button>
+                <button class="btn-primary" disabled>AI診断を開始する</button>
+            </div>
+
+            <p style="text-align:center; font-size:12px; margin-top:10px; color:#666;">
+                ※全ての素材が揃うとボタンが有効になります
+            </p>
+        </div>
+    </div>
+
+</body>
+
+</html>

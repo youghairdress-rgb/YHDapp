@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>撮影・アップロード - YHD-DX</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0ABAB5;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        p.desc {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .upload-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .upload-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .item-info {
+            text-align: left;
+        }
+
+        .item-title {
+            font-weight: bold;
+            font-size: 1rem;
+            display: block;
+        }
+
+        .item-status {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .item-status.done {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .btn-camera {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-camera:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Visually Hidden Input */
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Materials Upload</h1>
+    <p class="desc" id="customer-name-display" style="font-weight:bold; color:var(--primary-color); font-size:1.1rem;">
+    </p>
+
+    <div id="status-message"
+        style="display:none; padding:10px; background:#e0ffe0; color:green; border-radius:5px; margin-bottom:20px;">
+    </div>
+
+    <div class="upload-grid">
+        <!-- Front Photo -->
+        <div class="upload-card">
+            <div class="item-info">
+                <span class="item-title">📷 写真：正面</span>
+                <span class="item-status" id="status-front-photo">未撮影</span>
+            </div>
+            <label class="btn-camera">
+                撮影
+                <input type="file" class="visually-hidden" accept="image/*" capture="environment"
+                    onchange="handleUpload(this, 'item-front-photo')">
+            </label>
+        </div>
+
+        <!-- Side Photo -->
+        <div class="upload-card">
+            <div class="item-info">
+                <span class="item-title">📷 写真：サイド</span>
+                <span class="item-status" id="status-side-photo">未撮影</span>
+            </div>
+            <label class="btn-camera">
+                撮影
+                <input type="file" class="visually-hidden" accept="image/*" capture="environment"
+                    onchange="handleUpload(this, 'item-side-photo')">
+            </label>
+        </div>
+
+        <!-- Back Photo -->
+        <div class="upload-card">
+            <div class="item-info">
+                <span class="item-title">📷 写真：バック</span>
+                <span class="item-status" id="status-back-photo">未撮影</span>
+            </div>
+            <label class="btn-camera">
+                撮影
+                <input type="file" class="visually-hidden" accept="image/*" capture="environment"
+                    onchange="handleUpload(this, 'item-back-photo')">
+            </label>
+        </div>
+
+        <!-- Front Video -->
+        <div class="upload-card">
+            <div class="item-info">
+                <span class="item-title">🎬 動画：正面</span>
+                <span class="item-status" id="status-front-video">未撮影</span>
+            </div>
+            <label class="btn-camera">
+                撮影
+                <input type="file" class="visually-hidden" accept="video/*" capture="environment"
+                    onchange="handleUpload(this, 'item-front-video')">
+            </label>
+        </div>
+
+        <!-- Back Video -->
+        <div class="upload-card">
+            <div class="item-info">
+                <span class="item-title">🎬 動画：バック</span>
+                <span class="item-status" id="status-back-video">未撮影</span>
+            </div>
+            <label class="btn-camera">
+                撮影
+                <input type="file" class="visually-hidden" accept="video/*" capture="environment"
+                    onchange="handleUpload(this, 'item-back-video')">
+            </label>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+        import { appState, IS_DEV_MODE } from './js/state.js'; // Import config
+        // NOTE: We need a simplified state or config here. 
+        // For simplicity, we'll inline minimal config logic if imports fail, 
+        // but try to reuse state.js if possible. (Assuming state.js exports correctly)
+
+        // Initialize
+        const app = initializeApp(appState.firebaseConfig);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+
+        // Get User ID from URL
+        const params = new URLSearchParams(window.location.search);
+        const customerId = params.get('customerId'); // REQUIRED
+        const customerName = params.get('customerName'); // Requested for display
+
+        // Display Name
+        if (customerName) {
+            document.getElementById('customer-name-display').textContent = decodeURIComponent(customerName) + " 様";
+        } else if (customerId) {
+            document.getElementById('customer-name-display').textContent = "ID: " + customerId;
+        }
+
+        if (!customerId) {
+            alert("エラー: 顧客IDが指定されていません。(URLパラメータ ?customerId=... が必要です)");
+            document.querySelectorAll('input').forEach(i => i.disabled = true);
+        } else {
+            // Anon Auth for Storage Logic
+            signInAnonymously(auth).then(() => {
+                console.log("Auth success");
+            }).catch(e => console.error(e));
+        }
+
+        window.handleUpload = async (input, itemId) => {
+            const file = input.files[0];
+            if (!file) return;
+            if (!customerId) return;
+
+            const statusEl = document.getElementById(`status-${itemId.replace('item-', '')}`);
+            if (statusEl) statusEl.textContent = "アップロード中...";
+
+            // Simple compression could be added here similar to main app
+
+            try {
+                // Path: guest_uploads/{customerId}/{itemId}
+                const storageRef = ref(storage, `guest_uploads/${customerId}/${itemId}`);
+
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+
+                if (statusEl) {
+                    statusEl.textContent = "完了 ✓";
+                    statusEl.classList.add('done');
+                }
+
+                showMessage("アップロードしました！");
+
+            } catch (err) {
+                console.error(err);
+                if (statusEl) statusEl.textContent = "エラーが発生しました";
+                alert("アップロード失敗: " + err.message);
+            }
+        };
+
+        function showMessage(msg) {
+            const el = document.getElementById('status-message');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+    </script>
+</body>
+
+</html>

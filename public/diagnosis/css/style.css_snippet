@@ -1,0 +1,9 @@
+
+/* Capture Boundary Line */
+.capture-boundary {
+    border: 0;
+    border-top: 2px dashed #cbd5e1; /* Visible dashed line */
+    margin: 20px 0;
+    width: 100%;
+    display: block;
+}

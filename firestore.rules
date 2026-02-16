@@ -40,13 +40,13 @@ service cloud.firestore {
     match /users/{userId} {
       // ユーザーによる初回登録(create)と、自身のプロフィールの更新(update)を許可
       allow create, update: if isOwner(userId);
-      // 管理者による顧客情報の操作（削除や、管理者による書き込み）を許可
-      allow delete, write: if isAdmin();
+      // 管理者による顧客情報の全操作（作成・更新・削除）を許可
+      allow write: if isAdmin();
     }
 
     match /users/{userId}/gallery/{imageId} {
-        // ギャラリーへの写真情報登録(create)や削除(delete)は管理者のみ
-        allow write: if isAdmin();
+        // 顧客本人による書き込みを許可（診断アプリからの保存用）および管理者
+        allow read, write: if isOwner(userId) || isAdmin();
     }
 
     match /sales/{saleId} {

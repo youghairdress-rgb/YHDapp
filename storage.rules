@@ -20,7 +20,10 @@ service firebase.storage {
     match /uploads/{userId}/{allPaths=**} {
       allow read, write: if request.auth.uid == userId || isAdmin();
     }
+    
     // AI Analysis Image Uploads (Temporary/Demo)
+    // ⚠️ 注意: 以下のパスは認証なしでアクセス可能（開発用）
+    // 本番運用時は request.auth != null のチェックを追加してください
     match /ai-analysis/{allPaths=**} {
       allow read, write: if true;
     }

@@ -1,0 +1,48 @@
+/* animations.css */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes floatUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseLogo {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 10px 40px rgba(45, 212, 191, 0.4);
+    }
+
+    50% {
+        transform: scale(1.03);
+        box-shadow: 0 15px 50px rgba(45, 212, 191, 0.6);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 10px 40px rgba(45, 212, 191, 0.4);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

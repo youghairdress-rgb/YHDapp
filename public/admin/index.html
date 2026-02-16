@@ -262,27 +262,28 @@
                 </div>
                 <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
 
-
-                <div id="loading-container" style="display: flex;">
-                    <div class="spinner"></div>
-                    <p id="loading-text">読み込み中...</p>
-                </div>
-                <div id="error-container" style="display: none;">
-                    <h2>エラー</h2>
-                    <p id="error-message"></p>
-                    <button id="retry-button" class="button-primary">再読み込み</button>
-                </div>
             </div>
-            <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-            <script type="module" src="./firebase-init.js"></script>
-            <script type="module" src="./admin-auth.js"></script>
-            <script type="module" src="./admin.js"></script>
-            <script type="module" src="./firebase-init.js"></script>
-            <script type="module" src="./admin-auth.js"></script>
-            <script type="module" src="./admin.js"></script>
+            <!-- /.dashboard-main -->
+        </main>
 
-            <!-- ▼▼▼ 追加: 写真アップロード用隠し入力 ▼▼▼ -->
-            <input type="file" id="photo-upload-input" accept="image/*" style="display: none;">
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+            <button id="retry-button" class="button-primary">再読み込み</button>
+        </div>
+    </div>
+
+    <!-- 写真アップロード用隠し入力 -->
+    <input type="file" id="photo-upload-input" accept="image/*" style="display: none;">
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script type="module" src="./firebase-init.js"></script>
+    <script type="module" src="./admin-auth.js"></script>
+    <script type="module" src="./admin.js"></script>
 </body>
 
 </html>

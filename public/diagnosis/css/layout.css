@@ -1,0 +1,96 @@
+/* layout.css - Containers, Grid, Phase Structure */
+
+/* Phase Container - All phases are fullscreen fixed (no scroll) */
+.phase-container {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0s 0.3s;
+    box-sizing: border-box;
+    background-color: var(--bg-color);
+    z-index: 50;
+}
+
+.phase-container.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease-in-out, visibility 0s 0s;
+}
+
+/* Card */
+.card {
+    background-color: var(--card-bg);
+    padding: 35px 20px;
+    border-radius: 24px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    position: relative;
+    max-width: 1000px;
+    /* Default max-width for cards */
+    margin: 0 auto;
+}
+
+/* Grid Layouts */
+.result-grid,
+.proposal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.makeup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+/* Split Containers (Phase 4, 5) */
+.split-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+@media (min-width: 768px) {
+    .split-container {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .split-column-left,
+    .split-column-right {
+        flex: 1;
+        width: 50%;
+    }
+}
+
+/* Phase 1 Specific Layout */
+#phase1 {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdfa 50%, #fff 100%);
+    z-index: 100;
+}
+
+.phase1-content {
+    text-align: center;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
