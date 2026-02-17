@@ -688,10 +688,12 @@ const customersMain = async (auth, user) => {
             const encodedName = encodeURIComponent(customer.name);
 
             // ▼▼▼ 修正: リンク先を YHD-DX のLIFF IDに変更 ▼▼▼
-            // 注意: "ここに_YHD-DX_のLIFF_ID" の部分を、実際の YHD-DX の LIFF ID (例: 1234567890-AbCdEfGh) に書き換えてください。
-            // YHD-AI (旧): 2008345232-pVNR18m1
-            const dxLiffId = "2008345232-zq4A3Vg3"; // ★ここを新しいYHD-DXのLIFF IDに変更してください★
-            const counselingLiffUrl = `https://liff.line.me/${dxLiffId}?customerId=${customer.id}&customerName=${encodedName}`;
+            // ▼▼▼ 修正: リンク先を YHD-DX の直接URLに変更（LIFF ID経由だと予約画面に飛ぶため） ▼▼▼
+            // const dxLiffId = "2008345232-zq4A3Vg3"; 
+            // const counselingLiffUrl = `https://liff.line.me/${dxLiffId}?customerId=${customer.id}&customerName=${encodedName}`;
+            // ▼ 修正: YHD-db統合版URLに変更
+            const counselingLiffUrl = `https://yhd-db.web.app/diagnosis/?customerId=${customer.id}&customerName=${encodedName}`;
+            // ▲▲▲ 修正ここまで ▲▲▲
             // ▲▲▲ 修正ここまで ▲▲▲
 
             // ▼▼▼ 修正: LINEアイコンと注意事項アイコンのロジックを変更 ▼▼▼

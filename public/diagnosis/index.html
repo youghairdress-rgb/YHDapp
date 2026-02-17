@@ -15,7 +15,7 @@
 
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=37">
     <link rel="stylesheet" href="css/components.css">
 
     <!-- LIFF SDK -->
@@ -101,7 +101,7 @@
 
                 <div id="inspiration-upload-container" class="inspiration-upload-container" role="button" tabindex="0">
                     <div class="inspiration-preview-area">
-                        <img id="inspiration-image-preview" alt="プレビュー">
+                        <img id="inspiration-image-preview" src="images/AI.png" alt="プレビュー">
                     </div>
                     <!-- Icon placeholder removed as we use the preview area now -->
 
@@ -238,7 +238,7 @@
                         </h3>
                         <div id="hairstyle-proposal" class="proposal-grid"></div>
                     </div>
-                    <div class="proposal-section">
+                    <div class="proposal-section spacer-top">
                         <h3 class="proposal-title"><img src="images/ヘアカラー.png" alt="" class="proposal-icon"> 似合うヘアカラー
                         </h3>
                         <div id="haircolor-proposal" class="proposal-grid"></div>
@@ -251,7 +251,7 @@
                 </div>
 
                 <div class="split-column-right">
-                    <div class="proposal-section">
+                    <div class="proposal-section spacer-top">
                         <h3 class="proposal-title"><img src="images/メイク.png" alt="" class="proposal-icon"> 似合うメイク</h3>
                         <div id="makeup-proposal" class="makeup-grid"></div>
                     </div>
@@ -273,9 +273,9 @@
             <!-- ★ 変更: 設定へ進むボタン -->
             <hr class="capture-boundary">
             <div class="phase5-button-container">
-                <button id="move-to-phase6-btn" class="btn-dark">合成画像を生成</button>
-                <button id="save-phase5-btn" class="btn-secondary no-print">画像保存</button>
                 <button id="back-to-diagnosis-btn" class="btn-secondary btn-secondary-white no-print">戻る</button>
+                <button id="save-phase5-btn" class="btn-secondary no-print">画像保存</button>
+                <button id="move-to-phase6-btn" class="btn-dark">合成画像を生成</button>
             </div>
         </div>
     </div>
@@ -330,45 +330,44 @@
             <!-- Left: Controls -->
             <div id="phase7-adjustment-container" class="p7-comp-left">
                 <!-- Debug Status for iPad -->
-                <div id="segmentation-status"
-                    style="font-size:10px; color:#666; margin-bottom:5px; padding: 2px; border: 1px dashed #ccc;">Ready
+                <div id="segmentation-status" style="display:none !important;">Ready
                 </div>
                 <div class="adjustment-controls horizontal-faders">
                     <!-- Brightness -->
                     <div class="fader-container">
-                        <div class="fader-title">Brightness</div>
+                        <div class="fader-title">Brightness <span id="label-brightness-val"
+                                style="font-weight:normal; margin-left:5px;">(10tone)</span></div>
                         <div class="control-item fader-group">
                             <span class="fader-icon">💡</span>
                             <button class="fader-btn-down" data-target="range-brightness" data-step="-1">◀</button>
                             <input type="range" id="range-brightness" min="5" max="20" value="10"
                                 class="horizontal-fader">
                             <button class="fader-btn-up" data-target="range-brightness" data-step="1">▶</button>
-                            <span id="label-brightness" class="fader-label-val">10</span>
                         </div>
                     </div>
 
                     <!-- Hue -->
                     <div class="fader-container">
-                        <div class="fader-title">Hue</div>
+                        <div class="fader-title">Hue <span id="label-hue-val"
+                                style="font-weight:normal; margin-left:5px;">(180°)</span></div>
                         <div class="control-item fader-group">
                             <span class="fader-icon">🎨</span>
                             <button class="fader-btn-down" data-target="range-hue" data-step="-10">◀</button>
                             <input type="range" id="range-hue" min="0" max="360" value="180" class="horizontal-fader">
                             <button class="fader-btn-up" data-target="range-hue" data-step="10">▶</button>
-                            <span id="label-hue" class="fader-label-val">180°</span>
                         </div>
                     </div>
 
                     <!-- Saturate -->
                     <div class="fader-container">
-                        <div class="fader-title">Saturation</div>
+                        <div class="fader-title">Saturation <span id="label-saturate-val"
+                                style="font-weight:normal; margin-left:5px;">(0%)</span></div>
                         <div class="control-item fader-group">
                             <span class="fader-icon">💧</span>
                             <button class="fader-btn-down" data-target="range-saturate" data-step="-10">◀</button>
-                            <input type="range" id="range-saturate" min="0" max="200" value="0"
+                            <input type="range" id="range-saturate" min="0" max="100" value="0"
                                 class="horizontal-fader">
                             <button class="fader-btn-up" data-target="range-saturate" data-step="10">▶</button>
-                            <span id="label-saturate" class="fader-label-val">0%</span>
                         </div>
                     </div>
                 </div>
@@ -380,15 +379,15 @@
                 <div class="image-preview-wrapper">
                     <img id="main-diagnosis-image" src="" alt="Diagnosis Result" style="display:none;"
                         crossorigin="anonymous">
-                    <canvas id="phase6-canvas" style="max-width: 100%; height: auto;"></canvas>
+                    <canvas id="phase6-canvas"></canvas>
                 </div>
             </div>
 
             <!-- Buttons Area (Moved to root for easier layout) -->
             <div class="comp-buttons-area">
                 <div class="save-buttons-group">
-                    <button id="btn-save" class="btn-primary">保存</button>
                     <button id="btn-back-style" class="btn-outline">Styleに戻る</button>
+                    <button id="btn-save" class="btn-primary">保存</button>
                     <button id="btn-reset" class="btn-dark-outline">リセット</button>
                 </div>
                 <!-- Hidden but kept if ref needed logic -->
@@ -413,7 +412,14 @@
         </div>
     </div>
 
-    <script src="js/main.js" type="module"></script>
+    <!-- MediaPipe Vision (Global Bundle) -->
+    <!-- MediaPipe Vision (ESM Import) -->
+    <script type="module">
+        import { FilesetResolver, ImageSegmenter } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/+esm";
+        window.MediaPipeVision = { FilesetResolver, ImageSegmenter };
+    </script>
+
+    <script src="js/main.js?v=6" type="module"></script>
 </body>
 
 </html>

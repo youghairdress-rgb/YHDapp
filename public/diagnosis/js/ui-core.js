@@ -3,7 +3,7 @@
  * Core UI logic: Phase switching, Loader, Modal, Basic helpers
  */
 
-import { logger, setTextContent } from './helpers.js';
+import { logger, setTextContent, hideElement, showElement } from './helpers.js';
 import { appState } from './state.js';
 
 // --- Phase Management ---
@@ -109,7 +109,12 @@ export function showModal(title, message, onOk = null) {
 
 export function hideModal() {
     const modal = document.getElementById('custom-modal');
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.style.visibility = 'hidden';
+        }, 300);
+    }
 }
 
 export function checkAllFilesUploaded(allUploaded) {

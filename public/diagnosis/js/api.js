@@ -3,18 +3,21 @@
  * Handles communication with Cloud Functions (HTTP) and Firebase Storage
  */
 
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { appState } from './state.js';
 import { logger } from './helpers.js';
 
 // --- Generic Fetch Wrapper ---
 
 async function fetchInternal(endpointName, body) {
-  if (!appState.apiBaseUrl) {
+  if (appState.apiBaseUrl === undefined || appState.apiBaseUrl === null) {
     throw new Error("API Base URL is not configured.");
   }
-  const url = `${appState.apiBaseUrl}/${endpointName}`;
+  // If apiBaseUrl is set, use it. Otherwise use relative path (starts with /)
+  const url = appState.apiBaseUrl
+    ? `${appState.apiBaseUrl}/${endpointName}`
+    : `/${endpointName}`;
 
   logger.log(`[API] Calling ${endpointName}...`);
 
@@ -32,8 +35,9 @@ async function fetchInternal(endpointName, body) {
       try {
         errorData = await response.json();
       } catch (e) {
-        // JSON解析に失敗した場合（ボディが既に消費されている可能性）
-        errorData = { message: `HTTP Error ${response.status}` };
+        // If not JSON, try text
+        const text = await response.text();
+        errorData = { message: text || `HTTP Error ${response.status}` };
       }
 
       const error = new Error(errorData.message || errorData.error || "Unknown Server Error");
@@ -55,6 +59,7 @@ async function fetchInternal(endpointName, body) {
 // --- Auth ---
 
 export async function requestCustomToken(accessToken) {
+  // 直接Functionsを叩くため、正確な関数名(V2)を指定
   return fetchInternal('createFirebaseCustomTokenV2', { accessToken });
 }
 

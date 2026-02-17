@@ -4,10 +4,10 @@
  * Refactored to use modular UI components.
  */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { appState, IS_DEV_MODE, USE_MOCK_AUTH } from './state.js';
 import { initializeAppFailure, setTextContent, hideLoadingScreen, compressImage, base64ToBlob, logger } from './helpers.js';
@@ -271,7 +271,7 @@ async function handleInspirationSelect(e) {
         if (btn) { btn.textContent = '変更'; btn.disabled = false; }
 
         // Save to Gallery Background
-        saveImageToGallery(processed, appState.userProfile.firebaseUid, 'inspiration', 'inspiration', '参考画像')
+        saveImageToGallery(appState.userProfile.firebaseUid, processed, 'inspiration', 'inspiration', '参考画像')
             .catch(e => console.warn("Background Save Error:", e));
 
     } catch (err) {
@@ -472,18 +472,27 @@ async function captureAndSave(selector, title) {
     if (!element) return;
     toggleLoader(true, "保存中...");
 
+    // Store original styles to restore later
+    const originalHeight = element.style.height;
+    const originalOverflow = element.style.overflow;
+    const originalMaxHeight = element.style.maxHeight;
+
     try {
-        // Simple HTML2Canvas capture
-        // (Simplified from original complex logic for brevity, but retaining core goal)
-        // Note: For complex scroll handling, the original logic was heavy. 
-        // We will trust html2canvas defaults or add back complexity if user complains.
-        // Given "Comprehensive Refactoring", simplifying is good IF it works.
-        // But original had specific expand logic. Let's keep it minimal for now to avoid bloat.
+        // Temporarily expand element to capture full content
+        // This is necessary for scrollable containers like Phase 5
+        element.style.height = element.scrollHeight + 'px';
+        element.style.overflow = 'visible';
+        element.style.maxHeight = 'none';
+
+        // Brief delay to ensure layout updates
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const canvas = await html2canvas(element, {
             useCORS: true,
             scale: 2,
-            backgroundColor: "#ffffff"
+            backgroundColor: "#ffffff",
+            windowHeight: element.scrollHeight,
+            scrollY: -window.scrollY // Correct scrolling offset
         });
 
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
@@ -494,6 +503,10 @@ async function captureAndSave(selector, title) {
         console.error("Capture failed:", error);
         showModal("保存失敗", "画面の保存に失敗しました。\n" + error.message);
     } finally {
+        // Restore original styles
+        element.style.height = originalHeight;
+        element.style.overflow = originalOverflow;
+        element.style.maxHeight = originalMaxHeight;
         toggleLoader(false);
     }
 }

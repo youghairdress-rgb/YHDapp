@@ -15,54 +15,39 @@ export function displayDiagnosisResult(result) {
     const createResultItem = (label, value) => {
         const div = document.createElement('div');
         div.className = 'result-item';
-        div.innerHTML = `<div class="result-item-label">${escapeHtml(label)}</div><div class="result-item-value">${escapeHtml(value)}</div>`;
+        div.innerHTML = `<div class="result-item-label">${escapeHtml(label)}</div><div class="result-item-value">${escapeHtml(value || 'N/A')}</div>`;
         return div;
     };
 
-    // 1. Face
-    const faceContainer = document.getElementById('face-results');
-    if (faceContainer && result.face) {
-        faceContainer.innerHTML = '';
-        faceContainer.appendChild(createResultItem('目', result.face.eyes));
-        faceContainer.appendChild(createResultItem('鼻', result.face.nose));
-        faceContainer.appendChild(createResultItem('口', result.face.mouth));
-        faceContainer.appendChild(createResultItem('眉', result.face.eyebrows));
-        faceContainer.appendChild(createResultItem('額', result.face.forehead));
-    }
+    // Label mappings for Japanese display
+    const faceLabels = { nose: '鼻', mouth: '口', eyes: '目', eyebrows: '眉', forehead: 'おでこ' };
+    const skeletonLabels = { neckLength: '首', faceShape: '顔型', bodyLine: 'ボディライン', shoulderLine: '肩', faceStereoscopy: '立体感', bodyTypeFeature: '体型' };
+    const pcLabels = { baseColor: 'ベースカラー', season: 'シーズン', brightness: '明度', saturation: '彩度', eyeColor: '瞳の色' };
+    const hcLabels = { quality: '髪質', curlType: 'クセ', damageLevel: 'ダメージ', volume: '毛量', currentLevel: '現在のレベル' };
 
-    // 2. Skeleton
-    const skContainer = document.getElementById('skeleton-results');
-    if (skContainer && result.skeleton) {
-        skContainer.innerHTML = '';
-        skContainer.appendChild(createResultItem('顔型', result.skeleton.faceShape));
-        skContainer.appendChild(createResultItem('首の長さ', result.skeleton.neckLength));
-        skContainer.appendChild(createResultItem('顔の立体感', result.skeleton.faceStereoscopy));
-        skContainer.appendChild(createResultItem('ボディライン', result.skeleton.bodyLine));
-        skContainer.appendChild(createResultItem('肩のライン', result.skeleton.shoulderLine));
-        skContainer.appendChild(createResultItem('体型の特徴', result.skeleton.bodyTypeFeature));
-    }
+    // Helper to render a section
+    const renderSection = (containerId, data, labels) => {
+        const container = document.getElementById(containerId);
+        if (!container || !data) return;
+        container.innerHTML = '';
+        Object.entries(labels).forEach(([key, label]) => {
+            if (data[key] && data[key] !== 'N/A') {
+                container.appendChild(createResultItem(label, data[key]));
+            }
+        });
+    };
 
-    // 3. Personal Color
-    const pcContainer = document.getElementById('personal-color-results');
-    if (pcContainer && result.personalColor) {
-        pcContainer.innerHTML = '';
-        pcContainer.appendChild(createResultItem('ベース', result.personalColor.baseColor));
-        pcContainer.appendChild(createResultItem('シーズン', result.personalColor.season));
-        pcContainer.appendChild(createResultItem('明度', result.personalColor.brightness));
-        pcContainer.appendChild(createResultItem('彩度', result.personalColor.saturation));
-        pcContainer.appendChild(createResultItem('瞳の色', result.personalColor.eyeColor));
-    }
+    // 1. Face (お顔の特徴)
+    renderSection('face-results', result.face, faceLabels);
 
-    // 4. Hair Condition
-    const hcContainer = document.getElementById('hair-condition-results');
-    if (hcContainer && result.hairCondition) {
-        hcContainer.innerHTML = '';
-        hcContainer.appendChild(createResultItem('髪質', result.hairCondition.quality));
-        hcContainer.appendChild(createResultItem('クセ', result.hairCondition.curlType));
-        hcContainer.appendChild(createResultItem('ダメージ', result.hairCondition.damageLevel));
-        hcContainer.appendChild(createResultItem('毛量', result.hairCondition.volume));
-        hcContainer.appendChild(createResultItem('現在のレベル', result.hairCondition.currentLevel));
-    }
+    // 2. Skeleton (骨格・ボディ)
+    renderSection('skeleton-results', result.skeleton, skeletonLabels);
+
+    // 3. Hair Condition (現在の髪の状態)
+    renderSection('hair-condition-results', result.hairCondition, hcLabels);
+
+    // 4. Personal Color (パーソナルカラー)
+    renderSection('personal-color-results', result.personalColor, pcLabels);
 }
 
 // --- Proposal Display (Phase 5) ---
@@ -121,7 +106,8 @@ export function displayProposalResult(proposal) {
         const map = { eyeshadow: "アイシャドウ", cheek: "チーク", lip: "リップ" };
         Object.entries(proposal.makeup).forEach(([key, value]) => {
             const div = document.createElement('div');
-            div.innerHTML = `<span class="makeup-item-label">${escapeHtml(map[key] || key)}</span><br><span class="makeup-item-value">${escapeHtml(value)}</span>`;
+            div.className = 'makeup-item-row';
+            div.innerHTML = `<div class="makeup-label">${escapeHtml(map[key] || key)}</div><div class="makeup-value">${escapeHtml(value)}</div>`;
             containers.makeup.appendChild(div);
         });
     }
@@ -131,7 +117,8 @@ export function displayProposalResult(proposal) {
         const renderFashionItem = (label, val) => {
             const text = Array.isArray(val) ? val.join(' / ') : val;
             const div = document.createElement('div');
-            div.innerHTML = `<span class="makeup-item-label">${label}</span><br><span class="makeup-item-value">${escapeHtml(text)}</span>`;
+            div.className = 'makeup-item-row';
+            div.innerHTML = `<div class="makeup-label">${label}</div><div class="makeup-value">${escapeHtml(text)}</div>`;
             containers.fashion.appendChild(div);
         };
         if (proposal.fashion.recommendedStyles) renderFashionItem("似合うスタイル", proposal.fashion.recommendedStyles);
@@ -164,8 +151,10 @@ export function renderGenerationConfigUI() {
     // Style Options
     let styleHtml = '';
     if (proposal.hairstyles) {
-        styleHtml += createRadioOption('style-select', 'style1', `提案Style1: ${proposal.hairstyles.style1.name}`, true);
-        styleHtml += createRadioOption('style-select', 'style2', `提案Style2: ${proposal.hairstyles.style2.name}`);
+        Object.values(proposal.hairstyles).forEach((style, index) => {
+            const val = `style${index + 1}`;
+            styleHtml += createRadioOption('style-select', val, `提案Style${index + 1}: ${style.name}`, index === 0);
+        });
     }
     if (hasInspiration) styleHtml += createRadioOption('style-select', 'user_request', '★ ご希望のStyle (写真から再現)');
     styleHtml += createRadioOption('style-select', 'keep_style', 'スタイルは変えない (現在の髪型のまま)');
@@ -174,8 +163,12 @@ export function renderGenerationConfigUI() {
     // Color Options
     let colorHtml = '';
     if (proposal.haircolors) {
-        colorHtml += createRadioOption('color-select', 'color1', `提案Color1: ${proposal.haircolors.color1.name}`, true);
-        colorHtml += createRadioOption('color-select', 'color2', `提案Color2: ${proposal.haircolors.color2.name}`);
+        Object.values(proposal.haircolors).forEach((color, index) => {
+            const val = `color${index + 1}`;
+            // If styles exist, don't auto-check color to avoid confusion? Or just check first one.
+            // Let's check first one consistent with styles.
+            colorHtml += createRadioOption('color-select', val, `提案Color${index + 1}: ${color.name}`, index === 0);
+        });
     }
     if (hasInspiration) colorHtml += createRadioOption('color-select', 'user_request', '★ ご希望のColor (写真から再現)');
     colorHtml += createRadioOption('color-select', 'keep_color', '明るさを選択');
@@ -245,7 +238,7 @@ function initializePhase6Adjustments() {
     const imgElement = document.getElementById('main-diagnosis-image');
     if (imgElement) {
         imgElement.crossOrigin = "anonymous";
-        imgElement.style.display = 'block';
+        // imgElement.style.display = 'block'; // Do not show source image
     }
 
     // Create or Get Canvas
@@ -253,10 +246,6 @@ function initializePhase6Adjustments() {
     if (!phase6Canvas) {
         phase6Canvas = document.createElement('canvas');
         phase6Canvas.id = 'phase6-canvas';
-        phase6Canvas.style.width = '100%';
-        phase6Canvas.style.height = '100%';
-        phase6Canvas.style.objectFit = 'cover';
-        phase6Canvas.style.borderRadius = '8px';
 
         if (imgElement && imgElement.parentNode) {
             imgElement.parentNode.appendChild(phase6Canvas);
@@ -276,6 +265,6 @@ function resetSliders() {
     if (rHue) rHue.value = 180;
     if (rSaturate) rSaturate.value = 0;
     if (lBrightness) lBrightness.textContent = '10';
-    if (lHue) lHue.textContent = '180°';
+
     if (lSaturate) lSaturate.textContent = '0%';
 }

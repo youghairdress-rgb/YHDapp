@@ -5,7 +5,7 @@
  * 最新のトレンド情報を収集・要約してFirestoreに保存する
  */
 
-const config = require("../config");
+const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const cheerio = require("cheerio");
@@ -55,7 +55,7 @@ async function fetchPageContent(url) {
  * @return {Promise<string>} - 要約されたトレンド情報
  */
 async function summarizeTrendsWithGemini(combinedText, apiKey) {
-    const apiUrl = `${config.api.baseUrl}/${config.models.diagnosis}:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
 
     const systemPrompt = `
 You are a Professional Hair Trend Analyst.

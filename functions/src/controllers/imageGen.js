@@ -2,7 +2,7 @@
  * src/controllers/imageGen.js
  *
  * ヘアスタイル画像生成コントローラー
- * Vertex AI (Gemini 2.5 Flash Image Preview) を使用して、
+ * Gemini API (v1beta) を使用して、
  * ユーザーの顔写真を維持したまま、指定された髪型・髪色に合成する。
  */
 
@@ -15,9 +15,6 @@ const { sendSuccess, sendError } = require("../utils/responseHelper");
 
 /**
  * ヘアスタイル生成のリクエストを処理する
- * @param {object} req
- * @param {object} res
- * @param {object} dependencies
  */
 async function generateHairstyleImageController(req, res, dependencies) {
   const { imageGenApiKey, storage } = dependencies;
@@ -26,8 +23,7 @@ async function generateHairstyleImageController(req, res, dependencies) {
     return sendError(res, 405, "Method Not Allowed", `Method ${req.method} not allowed.`);
   }
 
-  const apiKey = imageGenApiKey.value() ? imageGenApiKey.value().trim() : "";
-  if (!apiKey || !storage) {
+  if (!imageGenApiKey || !storage) {
     return sendError(res, 500, "Configuration Error", "API Key or Storage not configured.");
   }
 
@@ -54,8 +50,13 @@ async function generateHairstyleImageController(req, res, dependencies) {
 
   logger.info(`[generateHairstyleImage] Received request for user: ${firebaseUid}`);
 
-  const modelName = config.models.imageGen;
-  const apiUrl = `${config.api.baseUrl}/${modelName}:generateContent?key=${apiKey}`;
+  const modelId = config.models.imageGen; // e.g. "gemini-2.5-flash-image"
+  const baseUrl = config.api.baseUrl; // "https://generativelanguage.googleapis.com/v1beta/models"
+
+  // URL構築: generateContent (Gemini API Standard)
+  const url = `${baseUrl}/${modelId}:generateContent?key=${imageGenApiKey.value()}`;
+
+  logger.info(`[generateHairstyleImage] Calling Gemini API Model: ${modelId}`);
 
   const prompt = getGenerationPrompt({
     hairstyleName, hairstyleDesc,
@@ -68,43 +69,84 @@ async function generateHairstyleImageController(req, res, dependencies) {
     hasToneOverride: !!hasToneOverride
   });
 
-  const payload = {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { responseModalities: ["IMAGE"] },
-    safetySettings: [
-      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-    ]
-  };
+  // 3. 画像データの取得 & Payload構築
+  const parts = [];
 
-  // 3. 画像データの取得
+  // Prompt (Text)
+  parts.push({ text: prompt });
+
+  // Original Image
   try {
     const imgPart = await fetchAsBase64(originalImageUrl, "originalImage");
-    payload.contents[0].parts.push(imgPart);
-
-    if (inspirationImageUrl) {
-      const inspPart = await fetchAsBase64(inspirationImageUrl, "inspirationImage");
-      payload.contents[0].parts.push(inspPart);
-    }
+    parts.push(imgPart);
   } catch (error) {
     return sendError(res, 500, "Image Fetch Error", `画像の取得に失敗しました: ${error.message}`);
   }
 
+  // Inspiration Image (Optional)
+  if (inspirationImageUrl) {
+    try {
+      const inspPart = await fetchAsBase64(inspirationImageUrl, "inspirationImage");
+      parts.push(inspPart);
+    } catch (error) {
+      logger.warn(`[generateHairstyleImage] Failed to fetch inspiration image: ${error.message}`);
+      // Continue without it
+    }
+  }
+
+  // Gemini Payload
+  const payload = {
+    contents: [
+      {
+        parts: parts
+      }
+    ],
+    generationConfig: {
+      temperature: 0.4,
+      topK: 32,
+      topP: 1,
+      maxOutputTokens: 2048, // Gemini 2.x might use this for text, but keeping it safe
+      // responseMimeType: "image/jpeg" // If supported by 2.5 flash image model directly
+    }
+  };
+
   // 5. API呼び出し
   try {
-    const aiResponse = await callGeminiApiWithRetry(apiUrl, payload, 3);
-    const imagePart = aiResponse?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+    const data = await callGeminiApiWithRetry(url, payload, 3);
 
-    if (!imagePart?.inlineData?.data) {
-      throw new Error("AIからの応答に画像データが含まれていませんでした。");
+    // Response Parsing for Gemini
+    // Expecting: candidates[0].content.parts[].inlineData (if image is returned inline)
+    // OR: candidates[0].content.parts[].text (if model insists on text)
+
+    const candidate = data.candidates?.[0];
+    if (!candidate) {
+      throw new Error("No candidates returned from API.");
     }
 
-    return sendSuccess(res, {
-      imageBase64: imagePart.inlineData.data,
-      mimeType: imagePart.inlineData.mimeType || "image/png",
-    }, "Image generated successfully.");
+    // Check for blocking
+    if (candidate.finishReason === "SAFETY") {
+      throw new Error("画像生成が安全性の理由でブロックされました。");
+    }
+
+    // Try to find image part
+    const imagePart = candidate.content?.parts?.find(p => p.inlineData);
+
+    if (imagePart && imagePart.inlineData) {
+      return sendSuccess(res, {
+        imageBase64: imagePart.inlineData.data,
+        mimeType: imagePart.inlineData.mimeType,
+      }, "Image generated successfully.");
+    }
+
+    // Fallback: Check for text output (error or link?)
+    const textPart = candidate.content?.parts?.find(p => p.text);
+    if (textPart) {
+      // If we get text, it might mean the model refused to generate image or this model is text-only
+      logger.warn(`[generateHairstyleImage] Model returned text instead of image: ${textPart.text.substring(0, 100)}...`);
+      throw new Error(`モデルが画像を生成しませんでした (Text output received). Code 400 equivalent.`);
+    }
+
+    throw new Error("AIから有効な画像データが返されませんでした。");
 
   } catch (apiError) {
     return sendError(res, 500, "Image Generation Error", `画像生成に失敗しました: ${apiError.message}`);
@@ -121,65 +163,75 @@ async function refineHairstyleImageController(req, res, dependencies) {
     return sendError(res, 405, "Method Not Allowed", `Method ${req.method} not allowed.`);
   }
 
-  const apiKey = imageGenApiKey.value() ? imageGenApiKey.value().trim() : "";
-  if (!apiKey || !storage) {
-    return sendError(res, 500, "Configuration Error", "API Key or Storage not configured.");
-  }
-
+  // 2. リクエストデータの取得
   const { generatedImageUrl, firebaseUid, refinementText } = req.body;
+
   if (!generatedImageUrl || !firebaseUid || !refinementText) {
     return sendError(res, 400, "Bad Request", "Missing required data.");
   }
 
-  // 3. Data URL Parsing
-  let imageBase64, imageMimeType;
+  if (!imageGenApiKey) {
+    return sendError(res, 500, "Configuration Error", "API Key not configured.");
+  }
+
+  logger.info(`[refineHairstyleImage] Processing refinement for user: ${firebaseUid}`);
+
+  const modelId = config.models.imageGen;
+  const baseUrl = config.api.baseUrl;
+  const url = `${baseUrl}/${modelId}:generateContent?key=${imageGenApiKey.value()}`;
+
+  const prompt = getRefinementPrompt(refinementText);
+
+  // 3. 画像データの取得 (Generated Image is base64 data url)
+  let imageBase64;
+  let mimeType = "image/png";
   try {
     const match = generatedImageUrl.match(/^data:(image\/.+);base64,(.+)$/);
     if (!match) throw new Error("Invalid Data URL format.");
-    imageMimeType = match[1];
+    mimeType = match[1];
     imageBase64 = match[2];
   } catch (e) {
     return sendError(res, 500, "Image Parse Error", `画像データの解析に失敗しました: ${e.message}`);
   }
 
-  // 4. Payload
-  const modelName = config.models.imageGen;
-  const apiUrl = `${config.api.baseUrl}/${modelName}:generateContent?key=${apiKey}`;
-  const prompt = getRefinementPrompt(refinementText);
+  const parts = [
+    { text: prompt },
+    {
+      inlineData: {
+        mimeType: mimeType,
+        data: imageBase64
+      }
+    }
+  ];
 
   const payload = {
-    contents: [{
-      role: "user",
-      parts: [
-        { text: prompt },
-        { inlineData: { mimeType: imageMimeType, data: imageBase64 } }
-      ]
-    }],
-    generationConfig: { responseModalities: ["IMAGE"] },
-    safetySettings: [
-      { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-      { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-    ]
+    contents: [{ parts: parts }],
+    generationConfig: {
+      temperature: 0.4
+    }
   };
 
   // 5. API Call
   try {
-    const aiResponse = await callGeminiApiWithRetry(apiUrl, payload, 3);
-    const imagePart = aiResponse?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+    const data = await callGeminiApiWithRetry(url, payload, 3);
 
-    if (!imagePart?.inlineData?.data) {
-      throw new Error("AIから画像データが返されませんでした。");
+    // Response Parsing
+    const candidate = data.candidates?.[0];
+    if (!candidate) throw new Error("No candidates returned.");
+
+    const imagePart = candidate.content?.parts?.find(p => p.inlineData);
+
+    if (imagePart && imagePart.inlineData) {
+      return sendSuccess(res, {
+        imageBase64: imagePart.inlineData.data,
+        mimeType: imagePart.inlineData.mimeType,
+      }, "Image refined successfully.");
     }
 
-    return sendSuccess(res, {
-      imageBase64: imagePart.inlineData.data,
-      mimeType: imagePart.inlineData.mimeType || "image/png",
-    }, "Image refined successfully.");
+    throw new Error("AIから画像データが返されませんでした。");
 
   } catch (apiError) {
-    return sendError(res, 500, "Image Generation Error", `画像修正に失敗しました: ${apiError.message}`);
+    return sendError(res, 500, "Image Refinement Error", `画像修正に失敗しました: ${apiError.message}`);
   }
 }
 

@@ -17,5 +17,35 @@
   },
   "storage": {
     "rules": "storage.rules"
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/requestDiagnosis",
+      "function": "requestDiagnosis"
+    },
+    {
+      "source": "/generateHairstyleImage",
+      "function": "generateHairstyleImage"
+    },
+    {
+      "source": "/refineHairstyleImage",
+      "function": "refineHairstyleImage"
+    },
+    {
+      "source": "/createFirebaseCustomToken",
+      "function": "createFirebaseCustomTokenV2"
+    },
+    {
+      "source": "/analyzeTrends",
+      "function": "analyzeTrends"
+    },
+    {
+      "source": "/mergeUserData",
+      "function": "mergeUserData"
+    },
+    {
+      "source": "/sendPushMessage",
+      "function": "sendPushMessage"
+    }
+  ]
 }
