@@ -171,7 +171,11 @@ exports.notifyAdminOnPhotoUpload = functions.region("asia-northeast1").firestore
     .document("users/{userId}/gallery/{photoId}")
     .onCreate(async (snap, context) => {
         const newData = snap.data();
-        // 管理者が同期した写真は通知しない
+
+        // ユーザーの手動アップロード以外は通知しない（isUserUploadフラグがない場合は無視）
+        if (!newData.isUserUpload) return null;
+
+        // 管理者が同期した写真は通知しない(念のため既存ロジックも維持)
         if (newData.isSyncedPhoto) return null;
 
         const db = admin.firestore();

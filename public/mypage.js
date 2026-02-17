@@ -142,6 +142,7 @@ const uploadAndSavePhoto = async (file) => {
             url: downloadURL,
             originalPath: snapshot.ref.fullPath, // 重複チェック用にパスを保存
             createdAt: serverTimestamp(),
+            isUserUpload: true // 通知送信用フラグ
         });
 
         // ギャラリータブが現在アクティブでなくても、データを再読み込みする
