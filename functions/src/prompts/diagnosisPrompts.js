@@ -219,6 +219,9 @@ Do not guess. Deduce from visual evidence.
 
 ## 2. PROPOSAL LOGIC (Strategic Styling)
 
+### Core Concept
+- **Image Change:** 提案するヘアスタイル及びヘアカラーは、原則としてイメージチェンジを前提とした提案をする。
+
 ### Hairstyle Strategy
 - **Compensation:** Suggest styles that correct the face shape (e.g., add volume on top for Round faces, width for Long faces).
 - **Feasibility:** Ensure the style is achievable with the client's current hair quality/quantity.
