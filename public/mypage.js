@@ -1,8 +1,7 @@
-// ▼▼▼ 修正: storage と addDoc をインポート ▼▼▼
 import { db, initializeLiffAndAuth, storage } from './admin/firebase-init.js';
 import { doc, getDoc, setDoc, collection, query, where, orderBy, getDocs, serverTimestamp, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-// ▲▲▲ 修正ここまで ▲▲▲
+import { initEditor, openEditorModal } from './js/privacy_editor.js'; // New Import
 
 // --- DOM Helper Functions ---
 const loadingContainer = document.getElementById('loading-container');
@@ -52,8 +51,10 @@ const main = async () => {
         const { user, profile } = await initializeLiffAndAuth("2008029428-VljQlRjZ");
 
         // ▼▼▼ 修正: currentUserId にセット ▼▼▼
-        currentUserId = profile.userId;
-        // ▲▲▲ 修正ここまで ▲▲▲
+        currentUserId = user.uid; // グローバル変数にセット
+
+        // Initialize Privacy Editor (Imported storage used internally)
+        initEditor();
 
         showLoading("顧客情報を確認中...");
         const userDocRef = doc(db, "users", profile.userId);
@@ -131,11 +132,33 @@ const uploadAndSavePhoto = async (file) => {
     }
 
     showUploadingOverlay(true);
+
+    // Androidでのアップロード詰まり対策: タイムアウトと名前の正規化
     try {
         const timestamp = Date.now();
-        const storageRef = ref(storage, `users/${currentUserId}/gallery/${timestamp}-${file.name}`);
 
-        const snapshot = await uploadBytes(storageRef, file);
+        // ファイル名が空、または拡張子がない場合の対策
+        let safeName = file.name || `image_${timestamp}`;
+        if (!safeName.includes('.')) {
+            // MIMEタイプから推測、またはjpgをデフォルトに
+            if (file.type === 'image/png') safeName += '.png';
+            else safeName += '.jpg';
+        }
+
+        const storageRef = ref(storage, `users/${currentUserId}/gallery/${timestamp}-${safeName}`);
+
+        // メタデータを明示的に設定 (AndroidでcontentTypeが空になる問題対策)
+        const metadata = {
+            contentType: file.type || 'image/jpeg',
+        };
+
+        // タイムアウト設定 (30秒)
+        const uploadTask = uploadBytes(storageRef, file, metadata);
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("アップロードがタイムアウトしました。通信環境の良い場所で再度お試しください。")), 30000)
+        );
+
+        const snapshot = await Promise.race([uploadTask, timeoutPromise]);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
         await addDoc(collection(db, `users/${currentUserId}/gallery`), {
@@ -162,6 +185,8 @@ const uploadAndSavePhoto = async (file) => {
             msg += "\n(アップロードがキャンセルされました)";
         } else if (error.message) {
             msg += `\n(${error.message})`;
+        } else {
+            msg += `\n(${JSON.stringify(error)})`;
         }
         alert(msg);
     } finally {
@@ -399,12 +424,17 @@ const fetchGallery = async (userId) => {
 
         const viewer = document.getElementById('image-viewer');
         const viewerImg = document.getElementById('viewer-img');
+        const btnOpenEditor = document.getElementById('btn-open-editor'); // New Button
+
         galleryContainer.querySelectorAll('.gallery-thumbnail').forEach(img => {
             img.addEventListener('click', () => {
                 viewerImg.src = img.src;
                 // ★★★ 修正点: bodyに専用クラスを追加 ★★★
                 document.body.classList.add('user-modal-open');
                 viewer.style.display = 'flex';
+
+                // Show/Hide Review Button based on image type (optional, but let's show for all)
+                // btnOpenEditor.style.display = 'block';
             });
         });
         viewer.querySelector('.close-viewer').addEventListener('click', () => {
@@ -412,6 +442,22 @@ const fetchGallery = async (userId) => {
             document.body.classList.remove('user-modal-open');
             viewer.style.display = 'none';
         });
+
+        // Review Button Event
+        if (btnOpenEditor) {
+            btnOpenEditor.addEventListener('click', () => {
+                // Open Editor
+                initEditor(); // Lazy init or re-init
+                openEditorModal(viewerImg.src);
+                // Close Viewer to avoid overlap? Or keep it open?
+                // Better to keep viewer open in background or close it. 
+                // Let's keep it but maybe hide it if it conflicts. 
+                // For now, the modal overlay sits on top.
+            });
+        }
+
+        // Initialize Editor Helper
+        initEditor();
 
     } catch (error) {
         console.error("ギャラリーの読み込みエラー:", error);

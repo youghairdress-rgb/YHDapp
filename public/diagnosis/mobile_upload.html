@@ -198,7 +198,7 @@
         // Initialize
         const app = initializeApp(appState.firebaseConfig);
         const auth = getAuth(app);
-        const storage = getStorage(app);
+        const storage = getStorage(app, "gs://yhd-db.firebasestorage.app");
 
         // Get User ID from URL
         const params = new URLSearchParams(window.location.search);
