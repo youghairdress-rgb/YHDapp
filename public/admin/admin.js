@@ -338,6 +338,17 @@ const adminMain = async (auth, user) => {
             } else {
                 console.warn("detailMatchingLink element not found");
             }
+
+            // Hair App Links
+            const detailHairUploadLink = document.getElementById('detail-hair-upload-link');
+            const detailHairEditLink = document.getElementById('detail-hair-edit-link');
+
+            if (detailHairUploadLink) {
+                detailHairUploadLink.href = `../hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+            }
+            if (detailHairEditLink) {
+                detailHairEditLink.href = `../hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+            }
         }
         openModal(detailModal);
     };

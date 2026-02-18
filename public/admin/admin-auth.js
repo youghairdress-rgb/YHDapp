@@ -49,15 +49,19 @@ export const runAdminPage = (mainFunction, pageLiffId = null) => {
         try {
             showLoading("LIFFを初期化中...");
             const liffId = pageLiffId || ADMIN_DEFAULT_LIFF_ID;
-            
+
             const { user } = await initializeLiffAndAuth(liffId);
 
             showLoading("管理者権限を確認中...");
-            
-            // ▼▼▼ 修正点: forceRefresh (true) を削除 ▼▼▼
-            // キャッシュされたトークン（とクレーム）を使用することで高速化する
-            const idTokenResult = await user.getIdTokenResult(); 
-            // ▲▲▲ 修正ここまで ▲▲▲
+
+            // First try with cached token
+            let idTokenResult = await user.getIdTokenResult();
+
+            // If admin claim is missing, force refresh and try again
+            if (!idTokenResult.claims.admin) {
+                console.log("Admin claim missing in cached token, forcing refresh...");
+                idTokenResult = await user.getIdTokenResult(true);
+            }
 
             if (!idTokenResult.claims.admin) {
                 throw new Error("管理者権限がありません。");

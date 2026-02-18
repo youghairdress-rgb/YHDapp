@@ -36,6 +36,9 @@ service firebase.storage {
     match /guest_uploads/{allPaths=**} {
       allow read, write: if true;
     }
+    match /hair_app_uploads/{allPaths=**} {
+      allow read, write: if true;
+    }
     // ★★★ 修正ここまで ▲▲▲★★★
 
     // ★★★ 修正: 口コミ用の一時画像保存パス ★★★

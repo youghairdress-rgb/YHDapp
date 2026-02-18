@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Upload Photo | YHD</title>
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            font-family: 'Noto Sans JP', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        .upload-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 30px;
+        }
+
+        .btn-camera-large {
+            background-color: #0ABAB5;
+            color: white;
+            border: none;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(10, 186, 181, 0.4);
+            transition: transform 0.1s;
+        }
+
+        .btn-camera-large:active {
+            transform: scale(0.95);
+        }
+
+        .btn-camera-large i {
+            font-size: 3rem;
+        }
+
+        /* Visually Hidden Input */
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+
+        .uploading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+            color: white;
+        }
+
+        .preview-container {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 300px;
+            display: none;
+        }
+
+        .preview-image {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-message {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #0ABAB5;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2 id="customer-name-display">ゲスト 様</h2>
+    <p>髪色シミュレーション用の写真をアップロード</p>
+
+    <div class="upload-card">
+        <label class="btn-camera-large">
+            <i class="fa-solid fa-camera"></i>
+            <span>撮影・選択</span>
+            <!-- capture="user" for selfie, or "environment" for back camera. User can usually switch. -->
+            <input type="file" id="camera-input" class="visually-hidden" accept="image/*" capture="user">
+        </label>
+
+        <div id="status-message" class="status-message">完了しました！</div>
+
+        <div class="preview-container" id="preview-container">
+            <img id="preview-image" class="preview-image">
+        </div>
+    </div>
+
+    <div id="uploading-overlay" class="uploading-overlay">
+        <div class="spinner"></div> <!-- Reuse style.css spinner if available or add inline style -->
+        <p style="margin-top:20px;">アップロード中...</p>
+    </div>
+
+    <script type="module" src="js/hair_app_mobile.js"></script>
+</body>
+
+</html>

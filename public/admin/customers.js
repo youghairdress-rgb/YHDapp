@@ -711,8 +711,12 @@ const customersMain = async (auth, user) => {
                     ${noteIcon}
                 </div>
                 <div class="customer-card-actions">
-                    <button class="icon-button camera-btn" title="写真"><i class="fa-solid fa-camera"></i></button>
+                    <button class="icon-button camera-btn" title="写真(Admin)"><i class="fa-solid fa-camera"></i></button>
                     
+                    <!-- Hair App Links -->
+                    <a href="../hair_upload.html?customerId=${customer.id}" class="icon-button" title="髪色アプリ(撮影)" target="_blank"><i class="fa-solid fa-mobile-screen"></i></a>
+                    <a href="../hair_transform.html?customerId=${customer.id}" class="icon-button" title="髪色アプリ(編集)" target="_blank"><i class="fa-solid fa-palette"></i></a>
+
                     <button class="icon-button msg-btn" title="LINEメッセージ"><i class="fa-regular fa-envelope"></i></button>
 
                     <a href="${counselingLiffUrl}" class="icon-button" title="AIカウンセリング" target="_blank"><i class="fa-solid fa-wand-magic-sparkles"></i></a>

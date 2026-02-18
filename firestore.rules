@@ -42,6 +42,10 @@ service cloud.firestore {
       allow create, update: if isOwner(userId);
       // 管理者による顧客情報の全操作（作成・更新・削除）を許可
       allow write: if isAdmin();
+      
+      // ★★★ 髪色アプリ用: 匿名ユーザーでも特定フィールドのみ更新許可 ★★★
+      allow update: if request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['hair_app_latest', 'hair_app_updatedAt']);
     }
 
     match /users/{userId}/gallery/{imageId} {
