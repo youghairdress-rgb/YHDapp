@@ -5,10 +5,9 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { getFirestore, doc, getDoc, collection, query, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, getDownloadURL, uploadBytes, ref as storageRef } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-// Reusing existing API logic helper (simplified)
 // Reusing existing API logic helper (simplified)
 import { generateHairstyleImage } from '../diagnosis/js/api.js';
 import { appState } from '../diagnosis/js/state.js';
@@ -29,15 +28,10 @@ const auth = getAuth(app);
 
 // Mock AppState for API usage
 appState.firebase = { app, auth, storage, firestore: db };
-// API Base URL needs to be set. Usually it's in state.js or hardcoded. 
-// For now, we reuse the logic in main.js but we need to ensure appState.apiBaseUrl is set if api.js uses it.
-// Checking api.js... it uses appState.apiBaseUrl. 
-// We should check what main.js sets it to. usually '/api' or functions URL.
-// Let's try to detect local vs prod.
+
 if (window.location.hostname === "localhost") {
     // appState.apiBaseUrl = "http://127.0.0.1:5001/yhd-db/us-central1"; // Example
 }
-// actually in main.js it might default to relative path proxy.
 
 document.addEventListener('DOMContentLoaded', async () => {
     await signInAnonymously(auth);
@@ -64,27 +58,26 @@ async function loadCustomer(id) {
         if (snapshot.exists()) {
             currentCustomer = { id: snapshot.id, ...snapshot.data() };
             document.getElementById('customer-name-display').textContent =
-                `${currentCustomer.name} 様 (ID: ${currentCustomer.id})`; // Use ID for now if name missing
+                `${currentCustomer.name} 様`; // UI request: Hide ID
 
-            // Fetch Latest Image
-            // Priority: 1. hair_app_latest (from metadata) 2. Recent upload in 'uploads' 3. Gallery
+            // Fetch Latest Image from hair_upload.html (Mobile App)
+            // The mobile app uploads to `hair_app_uploads/{id}/{timestamp}.jpg`
+            // AND updates `hair_app_latest` field in Firestore.
             let imageUrl = null;
+
             if (currentCustomer.hair_app_latest) {
                 imageUrl = currentCustomer.hair_app_latest;
+                console.log("Loaded from hair_app_latest:", imageUrl);
             } else {
-                // Fallback: Check uploads collection
-                // This might be tricky without specific knowledge of where mobile app uploads.
-                // For now, let's assume the Mobile App WILL set hair_app_latest.
-                // Or try to fetch from 'guest_uploads'
-                const q = query(collection(db, `guest_uploads/${id}/item-front-photo`), limit(1));
-                // Actually guest_uploads structure is file storage...
+                // Fallback or Alert
+                console.log("No hair_app_latest field found.");
             }
 
             if (imageUrl) {
                 originalImageSrc = imageUrl;
                 showStep1(imageUrl);
             } else {
-                alert("画像が見つかりません。モバイルアプリからアップロードしてください。");
+                alert("モバイルアプリからアップロードされた画像が見つかりません。\n(hair_upload.html からアップロードしてください)");
             }
 
         } else {
@@ -101,8 +94,8 @@ async function loadCustomer(id) {
 // --- UI Logic ---
 
 function showStep1(src) {
-    document.getElementById('step1-controls').classList.add('active');
-    document.getElementById('step2-controls').classList.remove('active');
+    // document.getElementById('step1-controls').classList.add('active'); // Removed: Not in HTML
+    // document.getElementById('step2-controls').classList.remove('active'); // Removed: Not in HTML
 
     const img = document.getElementById('source-image');
     img.src = src;
@@ -110,36 +103,35 @@ function showStep1(src) {
 
     const canvas = document.getElementById('transform-canvas');
     canvas.style.display = 'none';
+
+    // Hide Placeholder
+    const placeholder = document.getElementById('image-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
 }
 
 async function handleGenerateTone() {
-    const toneVal = document.getElementById('tone-select').value;
-    if (!toneVal) return;
+    const toneVal = document.getElementById('hair-tone-select').value;
+    const promptVal = document.getElementById('refinement-prompt-input').value.trim(); // Use prompt
+    const isPromptActive = !!promptVal;
 
-    showLoading(true, "AIがトーンを変更中...");
+    showLoading(true, "AIが画像を生成中...");
 
     try {
-        // Prepare Params imitating Phase 6
-        // We need 'generateHairstyleImage' from api.js
-        // Params: originalImageUrl, firebaseUid, recommendedLevel, hasToneOverride...
-
         const params = {
             originalImageUrl: originalImageSrc,
             firebaseUid: currentCustomer.id,
-            hairstyleName: "現在の髪型", // Placeholder
-            hairstyleDesc: "維持",
-            haircolorName: "現在の髪色", // Placeholder
-            haircolorDesc: "維持",
-            recommendedLevel: toneVal,
+            hairstyleName: isPromptActive ? "ご希望スタイル" : "現在の髪型",
+            hairstyleDesc: isPromptActive ? promptVal : "維持",
+            haircolorName: isPromptActive ? "ご希望カラー" : "現在の髪色",
+            haircolorDesc: isPromptActive ? promptVal : "維持",
+            recommendedLevel: toneVal || "Tone 7",
             currentLevel: "Tone 7", // Default assumption
-            userRequestsText: "",
-            isUserStyle: false,
-            isUserColor: false,
-            hasToneOverride: true,
-            keepStyle: true,
-            keepColor: true // We want to keep color "family" but change tone? 
-            // Actually if keepColor is true, the prompt usually says "keep hair color".
-            // But recommendedLevel adds "Tone X".
+            userRequestsText: promptVal,
+            isUserStyle: false, // Always false to prioritize keepStyle
+            isUserColor: isPromptActive, // Treat as user request
+            hasToneOverride: !!toneVal,
+            keepStyle: true, // User requested strict style preservation
+            keepColor: !isPromptActive // Release color hold if prompt active
         };
 
         const res = await generateHairstyleImage(params);
@@ -158,14 +150,18 @@ async function handleGenerateTone() {
 }
 
 async function showStep2(src) {
-    document.getElementById('step1-controls').classList.remove('active');
-    document.getElementById('step2-controls').classList.add('active');
+    // document.getElementById('step1-controls').classList.remove('active'); // Removed
+    // document.getElementById('step2-controls').classList.add('active'); // Removed
 
     const img = document.getElementById('source-image');
     img.style.display = 'none';
 
     const canvas = document.getElementById('transform-canvas');
     canvas.style.display = 'block';
+
+    // Hide Placeholder (Just in case)
+    const placeholder = document.getElementById('image-placeholder');
+    if (placeholder) placeholder.style.display = 'none';
 
     // Initialize MediaPipe
     if (!imageSegmenter) {
@@ -175,12 +171,17 @@ async function showStep2(src) {
     }
 
     // Load Image onto Canvas & Run Segmentation
-    await runSegmentationAndDraw(src);
+    // Pass src directly to runHairSegmentation (it handles offscreen loading now)
+    await runHairSegmentation(src);
 }
 
-// --- MediaPipe Logic (Simplified Adapter) ---
+// --- MediaPipe & Canvas Logic (Ported from ui-features.js) ---
+
+let originalImageBitmap = null;
+// let hairMaskBitmap = null; // Defined globally
 
 async function initializeHairSegmenter() {
+    if (imageSegmenter) return;
     try {
         const { ImageSegmenter, FilesetResolver } = window.MediaPipeVision;
         const visionTasks = await FilesetResolver.forVisionTasks(
@@ -195,94 +196,146 @@ async function initializeHairSegmenter() {
             outputCategoryMask: true,
             outputConfidenceMasks: false
         });
+        console.log("Hair Segmenter Initialized");
     } catch (e) {
         console.error("MediaPipe Init Error:", e);
         alert("AI機能の初期化に失敗しました。");
     }
 }
 
-async function runSegmentationAndDraw(src) {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = src;
-    await new Promise(r => img.onload = r);
+async function runHairSegmentation(imgElementOrSrc) {
+    if (!imageSegmenter) await initializeHairSegmenter();
+    if (!imageSegmenter) return;
 
-    currentImageBitmap = img; // Store for redraws
+    try {
+        const src = (typeof imgElementOrSrc === 'string') ? imgElementOrSrc : imgElementOrSrc.src;
+        if (!src) return;
 
-    const canvas = document.getElementById('transform-canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+        // Load into offscreen image (Diagnosis Logic)
+        const offscreenImg = new Image();
+        offscreenImg.crossOrigin = "anonymous";
+        await new Promise((resolve, reject) => {
+            offscreenImg.onload = resolve;
+            offscreenImg.onerror = reject;
+            offscreenImg.src = src;
+        });
 
-    // Draw initial
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0);
+        const canvas = document.getElementById('transform-canvas');
+        if (!canvas) return;
 
-    if (imageSegmenter) {
-        const result = imageSegmenter.segment(img);
+        canvas.width = offscreenImg.naturalWidth;
+        canvas.height = offscreenImg.naturalHeight;
+
+        // 1. Store Original
+        originalImageBitmap = offscreenImg; // Use offscreen image as bitmap
+
+        // Initial Draw (Show image while segmenting)
+        applyImageAdjustments();
+
+        // Segment
+        const result = imageSegmenter.segment(offscreenImg);
         const categoryMask = result.categoryMask;
 
-        // Create Alpha Mask
-        const maskData = categoryMask.getAsUint8Array();
-        const maskImgData = new ImageData(categoryMask.width, categoryMask.height);
-        for (let i = 0; i < maskData.length; i++) {
-            const idx = i * 4;
-            const isHair = maskData[i] === 1; // 1 is hair
-            maskImgData.data[idx] = 0;
-            maskImgData.data[idx + 1] = 0;
-            maskImgData.data[idx + 2] = 0;
-            maskImgData.data[idx + 3] = isHair ? 255 : 0;
-        }
-        hairMaskBitmap = await createImageBitmap(maskImgData);
+        const maskWidth = categoryMask.width;
+        const maskHeight = categoryMask.height;
+        const maskImageData = new ImageData(maskWidth, maskHeight);
+        const maskArray = categoryMask.getAsUint8Array();
 
-        // Initial Apply (Default sliders)
-        applyColor();
+        for (let i = 0; i < maskArray.length; ++i) {
+            const val = maskArray[i];
+            const alpha = (val === 1) ? 255 : 0; // Hair = 1
+            const idx = i * 4;
+            maskImageData.data[idx] = 0;
+            maskImageData.data[idx + 1] = 0;
+            maskImageData.data[idx + 2] = 0;
+            maskImageData.data[idx + 3] = alpha;
+        }
+
+        hairMaskBitmap = await createImageBitmap(maskImageData);
+
+        // Re-draw with mask
+        applyImageAdjustments();
+
+    } catch (e) {
+        console.error("Segmentation Failed:", e);
     }
 }
 
-function applyColor() {
-    if (!currentImageBitmap || !hairMaskBitmap) return;
-
+function applyImageAdjustments() {
     const canvas = document.getElementById('transform-canvas');
+    if (!canvas || !originalImageBitmap) return; // Need original at least
+
     const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
+    const width = canvas.width;
+    const height = canvas.height;
 
-    // Get Values
-    const hue = parseInt(document.getElementById('range-hue').value);
-    const sat = parseInt(document.getElementById('range-sat').value);
-    const opacity = parseInt(document.getElementById('range-opacity').value) / 100.0;
+    // Get Slider Values
+    const bInput = document.getElementById('range-brightness');
+    const bVal = parseInt(bInput?.value || "10");
 
-    // Draw Base
+    const hInput = document.getElementById('range-hue');
+    const hVal = parseInt(hInput?.value || "180");
+
+    const sInput = document.getElementById('range-saturate');
+    const sVal = parseInt(sInput?.value || "0");
+
+    // Logic (Exact Match to Diagnosis):
+    const brightnessScale = 1.0 + ((bVal - 10) / 10.0);
+    const colorOpacity = sVal / 100.0;
+    const colorString = `hsl(${hVal}, 50%, 50%)`;
+
+    ctx.save();
+    ctx.clearRect(0, 0, width, height);
+
+    // 1. Draw Background (Original)
     ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(currentImageBitmap, 0, 0);
+    ctx.filter = 'none';
+    ctx.drawImage(originalImageBitmap, 0, 0, width, height);
 
-    if (opacity > 0) {
-        // Create Color Layer (Offscreen)
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = w; tempCanvas.height = h;
-        const tempCtx = tempCanvas.getContext('2d');
-
-        // Draw Color
-        tempCtx.fillStyle = `hsl(${hue}, ${sat}%, 50%)`;
-        tempCtx.fillRect(0, 0, w, h);
-
-        // Mask it
-        tempCtx.globalCompositeOperation = 'destination-in';
-        tempCtx.drawImage(hairMaskBitmap, 0, 0, w, h);
-
-        // Blend it
-        ctx.save();
-        ctx.globalCompositeOperation = 'overlay'; // or 'color' or 'soft-light'
-        // 'color' mode preserves luma, changes hue/sat. 
-        // 'overlay' adds contrast. 
-        // Phase 7 uses 'color' inside the logic usually, but here let's try 'color' first as it's safer for tints.
-        // Actually ui-features.js uses manual blending math sometimes, or 'color' blend mode.
-        // Let's stick to 'color' blend mode for standard tinting.
-        ctx.globalCompositeOperation = 'color';
-        ctx.globalAlpha = opacity;
-        ctx.drawImage(tempCanvas, 0, 0);
+    if (!hairMaskBitmap) {
         ctx.restore();
+        return;
     }
+
+    // 2. Prepare Treated Layer
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // A. Brightness (Filter)
+    tempCtx.filter = `brightness(${brightnessScale})`;
+    tempCtx.drawImage(originalImageBitmap, 0, 0, width, height);
+    tempCtx.filter = 'none';
+
+    // B. Mask Hair
+    tempCtx.globalCompositeOperation = 'destination-in';
+    tempCtx.drawImage(hairMaskBitmap, 0, 0, width, height);
+
+    // C. Color Tint
+    if (colorOpacity > 0) {
+        const colorCanvas = document.createElement('canvas');
+        colorCanvas.width = width;
+        colorCanvas.height = height;
+        const colorCtx = colorCanvas.getContext('2d');
+
+        colorCtx.fillStyle = colorString;
+        colorCtx.fillRect(0, 0, width, height);
+
+        colorCtx.globalCompositeOperation = 'destination-in';
+        colorCtx.drawImage(hairMaskBitmap, 0, 0, width, height);
+
+        tempCtx.globalCompositeOperation = 'color';
+        tempCtx.globalAlpha = colorOpacity;
+        tempCtx.drawImage(colorCanvas, 0, 0);
+    }
+
+    // 3. Composite Treated Layer
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1.0;
+    ctx.drawImage(tempCanvas, 0, 0);
+
+    ctx.restore();
 }
 
 
@@ -290,34 +343,88 @@ function applyColor() {
 function setupEventListeners() {
     document.getElementById('btn-generate-tone').addEventListener('click', handleGenerateTone);
 
-    document.getElementById('btn-back-step1').addEventListener('click', () => {
-        document.getElementById('step2-controls').classList.remove('active');
-        document.getElementById('step1-controls').classList.add('active');
-        document.getElementById('source-image').style.display = 'block';
-        document.getElementById('transform-canvas').style.display = 'none';
+    const updateLabel = (rangeId, labelId, suffix) => {
+        const r = document.getElementById(rangeId);
+        const l = document.getElementById(labelId);
+        if (r && l) l.textContent = `(${r.value}${suffix})`;
+    };
 
-        // Restore original image as source for step 1
-        const img = document.getElementById('source-image');
-        img.src = originalImageSrc;
+    const handleInput = () => {
+        applyImageAdjustments();
+        updateLabel('range-brightness', 'label-brightness-val', 'tone');
+        updateLabel('range-hue', 'label-hue-val', '°');
+        updateLabel('range-saturate', 'label-saturate-val', '%');
+    };
+
+    ['range-brightness', 'range-hue', 'range-saturate'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', handleInput);
     });
 
-    ['range-hue', 'range-sat', 'range-opacity'].forEach(id => {
-        document.getElementById(id).addEventListener('input', (e) => {
-            // Update label
-            if (id === 'range-hue') document.getElementById('label-hue').textContent = e.target.value + '°';
-            if (id === 'range-sat') document.getElementById('label-sat').textContent = e.target.value + '%';
-            if (id === 'range-opacity') document.getElementById('label-opacity').textContent = e.target.value + '%';
-            applyColor();
-        });
+    // Reset
+    document.getElementById('btn-reset')?.addEventListener('click', () => {
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+        };
+        setVal('range-brightness', 10);
+        setVal('range-hue', 180);
+        setVal('range-saturate', 0);
     });
 
-    document.getElementById('btn-save-image').addEventListener('click', () => {
+    document.getElementById('btn-save-image').addEventListener('click', async () => {
         const canvas = document.getElementById('transform-canvas');
-        const link = document.createElement('a');
-        link.download = `hair-transform-${Date.now()}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
+
+        // If canvas is hidden (no generation yet), warn.
+        if (canvas.style.display === 'none') {
+            alert('画像を生成してください。');
+            return;
+        }
+
+        // 2. Save to Firestore Gallery
+        if (confirm("マイページのギャラリーに保存しますか？")) {
+            await saveToGallery(canvas);
+        }
     });
+}
+
+async function saveToGallery(canvas) {
+    showLoading(true, "ギャラリーに保存中...");
+    try {
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const filename = `transform_${Date.now()}.png`;
+
+        // User Request: "Dedicated folder for PC, separate from mobile"
+        // Mobile uses: guest_uploads or uploads
+        // PC will use: pc_generated
+        const storagePath = `pc_generated/${currentCustomer.id}/${filename}`;
+
+        // Use the imported storageRef correctly
+        const sRef = storageRef(storage, storagePath);
+
+        // Upload to Storage (Dedicated Folder)
+        await uploadBytes(sRef, blob);
+        const url = await getDownloadURL(sRef);
+
+        // Firestore (Shared Gallery)
+        // This ensures it appears in My Page Gallery
+        await addDoc(collection(db, `users/${currentCustomer.id}/gallery`), {
+            url: url,
+            storagePath: storagePath, // Save the PC specific path
+            createdAt: serverTimestamp(),
+            title: "髪色シミュレーション (PC)",
+            type: "hair_simulation_pc",
+            isUserUpload: false // Differentiate if needed
+        });
+
+        alert("保存しました！\nマイページのギャラリーに表示されます。");
+
+    } catch (e) {
+        console.error("Save Error:", e);
+        alert("保存に失敗しました: " + e.message);
+    } finally {
+        showLoading(false);
+    }
 }
 
 function setupColorPresets() {
@@ -330,16 +437,21 @@ function setupColorPresets() {
     ];
 
     const container = document.getElementById('color-presets');
+    if (!container) return; // Safely exit if not found
     presets.forEach(p => {
         const btn = document.createElement('div');
         btn.className = 'color-preset-btn';
         btn.style.backgroundColor = p.color;
         btn.addEventListener('click', () => {
-            document.getElementById('range-hue').value = p.h;
-            document.getElementById('range-sat').value = p.s;
-            // Trigger input events to update labels and canvas
-            document.getElementById('range-hue').dispatchEvent(new Event('input'));
-            document.getElementById('range-sat').dispatchEvent(new Event('input'));
+            const hueInput = document.getElementById('range-hue');
+            const satInput = document.getElementById('range-sat');
+            if (hueInput && satInput) {
+                hueInput.value = p.h;
+                satInput.value = p.s;
+                // Trigger input events to update labels and canvas
+                hueInput.dispatchEvent(new Event('input'));
+                satInput.dispatchEvent(new Event('input'));
+            }
         });
         container.appendChild(btn);
     });

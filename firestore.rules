@@ -49,8 +49,16 @@ service cloud.firestore {
     }
 
     match /users/{userId}/gallery/{imageId} {
-        // 顧客本人による書き込みを許可（診断アプリからの保存用）および管理者
-        allow read, write: if isOwner(userId) || isAdmin();
+        // 顧客本人(isOwner) または 管理者(isAdmin)
+        // または、PCアプリからの保存(hair_simulation_pc)であれば、誰でも作成(create)許可
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) || isAdmin() || 
+                      (request.auth != null && (
+                        request.resource.data.type == "hair_simulation_pc" ||
+                        request.resource.data.type == "ai-matching" ||
+                        request.resource.data.type == "ai-matching-result"
+                      ));
+        allow update, delete: if isOwner(userId) || isAdmin();
     }
 
     match /sales/{saleId} {

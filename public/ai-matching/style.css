@@ -429,105 +429,154 @@ body {
 /* --- PC / 横画面モニター / iPad Pro Landscape 向け最適化 (1024px以上) --- */
 @media screen and (min-width: 1024px) {
     body {
-        overflow: hidden;
-        /* スクロール禁止 */
+        overflow: hidden !important;
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        /* Fallback */
+        height: 100dvh;
     }
 
     .app-container {
+        /* position: fixed; <--- 削除: 自然なフローに戻す */
+        position: relative;
+        width: 100%;
+        height: 100%;
+        /* bodyに合わせて100% */
         max-width: none;
-        width: 100vw;
-        height: 100vh;
-        padding: 20px 40px;
+        padding: 0 40px 10px 40px;
+        /* 上パディング削除 */
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: linear-gradient(135deg, #e0f7fa 0%, #ffffff 100%);
+    }
+
+    /* Admin style.cssのHeader干渉をリセット */
+    header.main-header {
+        margin-bottom: 0;
+        padding: 0.5rem 0;
+        /* 高さを抑える */
+        background: transparent;
+        /* 背景干渉防止 */
+        box-shadow: none;
+        flex-shrink: 0;
     }
 
     /* Page 1: 写真カラム - PC/iPad横は横並び */
     .photo-columns {
         flex-direction: row;
-        /* 横並びに戻す */
-        gap: 2rem;
-        max-width: 1200px;
+        gap: 1.5rem;
+        /* Gapを少し詰める */
+        max-width: 1400px;
+        /* 幅を広げる */
         margin: 0 auto;
-        height: auto;
-        min-height: 80vh;
+        flex: 1;
+        min-height: 0;
         align-items: center;
         justify-content: center;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* Screen: 大枠 */
+    .screen {
+        flex: 1;
+        /* display: flex; <--- 削除済み (display: none/active制御) */
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+        height: 100%;
+        width: 100%;
+        padding-top: 10px;
+        /* ヘッダーとの隙間 */
     }
 
     .photo-column {
         flex: 1;
         width: auto;
-        max-width: 350px;
+        max-width: 320px;
+        /* 少しスリムに */
         height: auto;
+        max-height: 80%;
+        /* 画面高さいっぱいにならないように */
         aspect-ratio: 9/16;
-        max-height: none;
     }
 
     /* Page 2: 結果画面 - 画像最大化レイアウト */
-    /* Page 2: 結果画面 - 画像最大化レイアウト */
     .result-layout {
+        flex: 1;
         width: 100%;
-        height: calc(100dvh - 90px);
-        /* 100dvhでアドレスバー分も考慮 */
         max-width: 1800px;
         margin: 0 auto;
+        display: flex;
+        flex-direction: row;
         gap: 2rem;
+        padding-bottom: 20px;
+        min-height: 0;
+        overflow: hidden;
         align-items: center;
         justify-content: center;
-        flex-wrap: nowrap;
-        overflow: hidden;
-        /* はみ出し防止 */
     }
 
     .result-info-panel {
-        flex: 1;
-        width: auto;
-        max-width: none;
+        flex: 0 0 400px;
+        /* 幅を固定値に (%だと崩れやすいので) */
+        max-width: 30vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         height: auto;
-        max-height: 95%;
-        /* 上下に少し余裕 */
+        max-height: 100%;
+        min-height: 0;
         overflow-y: auto;
-        padding: 3rem;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.8);
+        /* 視認性確保 */
     }
 
     .score-value {
-        font-size: 6rem;
+        font-size: 3.5rem;
+        /* 適正サイズ */
+        line-height: 1.2;
     }
 
     .result-image-panel {
         flex: 1;
-        width: auto;
         height: 100%;
-        /* 親(result-layout)の高さに合わせる */
-        max-width: none;
-        background: transparent;
-        box-shadow: none;
-        border: none;
-        overflow: hidden;
+        min-height: 0;
+        min-width: 0;
         display: flex;
         justify-content: center;
         align-items: center;
         padding: 0;
+        background: transparent;
+        box-shadow: none;
+        border: none;
     }
 
     .after-image-container {
         width: 100%;
         height: 100%;
-        /* 高さ100%で親にフィット */
-        /* aspect-ratio固定を削除し、画像の形に合わせる(contain) */
+        max-height: 100%;
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         overflow: hidden;
         position: relative;
         background-color: #000;
-        /* 余白は黒埋め */
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     .after-image {
-        width: 100%;
-        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
         object-fit: contain;
-        /* 画像全体を必ず表示 */
     }
 }
 

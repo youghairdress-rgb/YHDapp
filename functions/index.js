@@ -164,9 +164,16 @@ exports.sendPushMessage = functions.region("asia-northeast1").https.onCall(async
     return { success: true };
 });
 
-// --- 5. analyzeHairstyle --- (未実装のため削除済み)
-
-// --- 6. notifyAdminOnPhotoUpload ---
+// --- 5. analyzeHairstyle ---
+exports.analyzeHairstyle = functions.region("asia-northeast1").runWith({ timeoutSeconds: 300 }).https.onRequest((req, res) => {
+    cors(req, res, async () => {
+        // AI Matching Controller Import (Lazy load)
+        const { analyzeHairstyleController } = require("./src/controllers/aiMatching");
+        await analyzeHairstyleController(req, res, {
+            apiKey: GEMINI_API_KEY
+        });
+    });
+});
 exports.notifyAdminOnPhotoUpload = functions.region("asia-northeast1").firestore
     .document("users/{userId}/gallery/{photoId}")
     .onCreate(async (snap, context) => {

@@ -46,6 +46,10 @@
     {
       "source": "/sendPushMessage",
       "function": "sendPushMessage"
+    },
+    {
+      "source": "/analyzeHairstyle",
+      "function": "analyzeHairstyle"
     }
   ]
 }

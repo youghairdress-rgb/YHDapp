@@ -16,12 +16,20 @@ service firebase.storage {
       allow read, write: if request.auth.uid == userId || isAdmin();
     }
     
-    // Diagnosis temporary uploads
+    // Diagnosis temporary uploads (Legacy/Other)
     match /uploads/{userId}/{allPaths=**} {
       allow read, write: if request.auth.uid == userId || isAdmin();
     }
     
-    // AI Analysis Image Uploads (Temporary/Demo)
+    // AI Matching App Uploads
+    match /ai-matching-uploads/{allPaths=**} {
+      allow read, write: if true; 
+    }
+
+    // AI Matching App Results
+    match /ai-matching-results/{allPaths=**} {
+      allow read, write: if true;
+    }
     // ⚠️ 注意: 以下のパスは認証なしでアクセス可能（開発用）
     // 本番運用時は request.auth != null のチェックを追加してください
     match /ai-analysis/{allPaths=**} {
@@ -37,6 +45,9 @@ service firebase.storage {
       allow read, write: if true;
     }
     match /hair_app_uploads/{allPaths=**} {
+      allow read, write: if true;
+    }
+    match /pc_generated/{allPaths=**} {
       allow read, write: if true;
     }
     // ★★★ 修正ここまで ▲▲▲★★★

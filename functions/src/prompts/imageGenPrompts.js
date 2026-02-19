@@ -37,7 +37,7 @@ function getGenerationPrompt(data) {
     `
 **PRIORITY USER REQUEST:**
 "${userRequestsText}"
-(This instruction overrides standard style defaults. Execute with precision.)
+(This instruction overrides standard style defaults. Execute with precision. NOTE: Unless the request explicitly describes a form change, do not change the original hairstyle.)
 ` :
     "";
 
@@ -58,8 +58,9 @@ function getGenerationPrompt(data) {
   let styleInstruction;
   if (keepStyle) {
     styleInstruction = `
-- **Style Goal:** MAINTAIN CURRENT FORM
+- **Style Goal:** MAINTAIN CURRENT FORM (Do not change the original hairstyle)
 - **Structural Rules:**
+  - **CRITICAL:** Do not change the original hairstyle.
   - Freeze the silhouette, length, and layering of the user's hair.
   - Do NOT alter the geometry of the hairstyle.
   - Only modify surface properties (color/texture) as requested.

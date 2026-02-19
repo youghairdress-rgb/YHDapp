@@ -256,9 +256,8 @@ window.startDiagnosis = async () => {
         }
 
         // 分析開始
+        // 分析開始
         diagnoseBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 分析中...';
-
-        const analyzeHairstyle = httpsCallable(functions, 'analyzeHairstyle');
 
         // Before画像(=最新の予約写真)を取得
         const latestBookingPhotoUrl = await fetchLatestBeforeImage(appState.customerId);
@@ -271,12 +270,25 @@ window.startDiagnosis = async () => {
         };
         console.log("Sending to AI:", inputData); // デバッグ用ログ
 
-        const result = await analyzeHairstyle(inputData);
+        // httpsCallable -> fetch に変更 (onRequest利用のため)
+        // Hosting rewriteが不安定なため、絶対パス（Cloud Function URL）を直接指定
+        const response = await fetch('https://asia-northeast1-yhd-db.cloudfunctions.net/analyzeHairstyle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(inputData)
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.message || `Server Error: ${response.status}`);
+        }
+
+        const analysisData = await response.json();
 
         // 結果表示用ステート更新 (再利用のため)
         appState.uploadedUrls = latestImages;
 
-        const analysisData = result.data;
+        // const analysisData = result.data; // 不要
         displayResult(analysisData);
 
     } catch (error) {

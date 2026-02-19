@@ -6,355 +6,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hair Color Transformation | YHD</title>
     <!-- Styles -->
+    <link rel="stylesheet" href="diagnosis/css/base.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Noto Sans JP', sans-serif;
-            color: #333;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            /* App-like feel */
-        }
-
-        .app-container {
-            display: flex;
-            flex: 1;
-            height: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-            background: white;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Sidebar / Controls */
-        .controls-panel {
-            width: 350px;
-            background: #fff;
-            border-right: 1px solid #eee;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
-        }
-
-        .controls-header {
-            margin-bottom: 30px;
-        }
-
-        .controls-header h1 {
-            font-size: 1.5rem;
-            color: #333;
-            margin: 0;
-        }
-
-        .controls-header p {
-            color: #888;
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        /* Main View */
-        .main-view {
-            flex: 1;
-            background: #fafafa;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            padding: 20px;
-        }
-
-        .image-container {
-            max-width: 100%;
-            max-height: 100%;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .image-container img,
-        .image-container canvas {
-            display: block;
-            max-width: 100%;
-            max-height: 80vh;
-            /* Fit within viewport */
-            object-fit: contain;
-        }
-
-        /* Step Visibility */
-        .step-container {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .step-container.active {
-            display: flex;
-        }
-
-        /* Form Elements */
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-label {
-            display: block;
-            font-weight: 700;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-        }
-
-        .form-select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 1rem;
-            background-color: #f8fafc;
-        }
-
-        /* Sliders (Phase 7 Style) */
-        .slider-group {
-            margin-bottom: 20px;
-        }
-
-        .slider-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .range-slider {
-            width: 100%;
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 3px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .range-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #3b82f6;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Buttons */
-        .btn-primary {
-            background-color: #333;
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: 700;
-            width: 100%;
-            cursor: pointer;
-            transition: opacity 0.2s;
-            margin-top: auto;
-            /* Push to bottom */
-        }
-
-        .btn-primary:hover {
-            opacity: 0.9;
-        }
-
-        .btn-secondary {
-            background-color: white;
-            color: #333;
-            border: 2px solid #e2e8f0;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 700;
-            width: 100%;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            display: none;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #333;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Color Preset Buttons */
-        .color-presets {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .color-preset-btn {
-            width: 100%;
-            padding-bottom: 100%;
-            /* Square */
-            border-radius: 50%;
-            border: 2px solid #eee;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .color-preset-btn.active {
-            border-color: #333;
-            transform: scale(1.1);
-        }
-    </style>
 </head>
 
-<body>
+<body class="pc-app-body">
 
-    <div class="app-container">
+    <!-- Main Flex Container -->
+    <div class="pc-container">
 
-        <!-- SIDEBAR -->
-        <div class="controls-panel">
-            <div class="controls-header">
-                <h1>Hair Transformation</h1>
-                <p id="customer-name-display"></p>
-            </div>
+        <!-- LEFT PANEL: Controls (approx 40-45%) -->
+        <div class="pc-left-panel">
 
-            <!-- STEP 1: TONE SELECTION -->
-            <div id="step1-controls" class="step-container active">
-                <div class="form-group">
-                    <label class="form-label">ベースの明るさ (Tone)</label>
-                    <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">
-                        現在の髪色をベースに、AIが自然なトーンアップ・ダウンを行います。
-                    </p>
-                    <select id="tone-select" class="form-select">
-                        <option value="Tone 5">Tone 5 (地毛に近い黒)</option>
-                        <option value="Tone 6">Tone 6 (暗めの茶色)</option>
-                        <option value="Tone 7" selected>Tone 7 (自然な茶色)</option>
-                        <option value="Tone 8">Tone 8 (やや明るい茶色)</option>
-                        <option value="Tone 9">Tone 9 (明るい茶色)</option>
-                        <option value="Tone 10">Tone 10 (かなり明るい茶色)</option>
-                        <option value="Tone 12">Tone 12 (ブリーチなしの限界)</option>
-                        <option value="Tone 14">Tone 14 (ブリーチ毛・金髪)</option>
-                        <option value="Tone 16">Tone 16 (ホワイトブリーチ)</option>
-                    </select>
+            <!-- 1. Header Area -->
+            <header class="pc-header">
+                <div class="logo-area">
+                    <img src="diagnosis/images/YHDlogo2.gif" alt="YHD Logo" class="pc-logo">
                 </div>
+                <div class="title-area">
+                    <h1 class="pc-app-title">Hair Color Transformation</h1>
+                    <p id="customer-name-display" class="pc-customer-name">読み込み中...</p>
+                </div>
+            </header>
 
-                <button id="btn-generate-tone" class="btn-primary">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> AIでトーンを変更
-                </button>
-            </div>
+            <!-- 2. Controls Grid -->
+            <div class="pc-controls-grid">
 
-            <!-- STEP 2: COLOR ADJUSTMENT -->
-            <div id="step2-controls" class="step-container">
+                <!-- Col 1: Input & Generation -->
+                <div class="pc-control-col">
 
-                <!-- Color Presets -->
-                <div class="form-group">
-                    <label class="form-label">カラーニュアンス</label>
-                    <div class="color-presets" id="color-presets">
-                        <!-- JS creates buttons here -->
+                    <!-- Tone Selection -->
+                    <div class="pc-group">
+                        <label class="pc-label">明るさ（Tone）</label>
+                        <p class="pc-desc">現在の髪色をベースに、AIがトーンを変更します。</p>
+                        <select id="hair-tone-select" class="pc-select">
+                            <option value="">現在の髪色</option>
+                            <option value="Tone 5">Tone 5</option>
+                            <option value="Tone 7">Tone 7</option>
+                            <option value="Tone 9">Tone 9</option>
+                            <option value="Tone 11">Tone 11</option>
+                            <option value="Tone 13">Tone 13</option>
+                            <option value="Tone 15">Tone 15</option>
+                            <option value="Tone 18">Tone 18</option>
+                        </select>
                     </div>
-                </div>
 
-                <!-- Sliders -->
-                <div class="slider-group">
-                    <div class="slider-header">
-                        <span>色相 (Hue)</span>
-                        <span id="label-hue">0°</span>
+                    <!-- Prompt Input -->
+                    <div class="pc-group">
+                        <label class="pc-label">ご希望（Prompt）</label>
+                        <textarea id="refinement-prompt-input" class="pc-textarea"
+                            placeholder="例：ダークグレーにシルバーグレーのバレイヤージュ"></textarea>
                     </div>
-                    <input type="range" id="range-hue" class="range-slider" min="0" max="360" value="0">
-                </div>
 
-                <div class="slider-group">
-                    <div class="slider-header">
-                        <span>彩度 (Saturation)</span>
-                        <span id="label-sat">30%</span>
-                    </div>
-                    <input type="range" id="range-sat" class="range-slider" min="0" max="100" value="30">
-                </div>
-
-                <div class="slider-group">
-                    <div class="slider-header">
-                        <span>ブレンド濃度 (Opacity)</span>
-                        <span id="label-opacity">50%</span>
-                    </div>
-                    <input type="range" id="range-opacity" class="range-slider" min="0" max="100" value="50">
-                </div>
-
-                <div style="margin-top:auto;">
-                    <button id="btn-save-image" class="btn-primary">
-                        <i class="fa-solid fa-download"></i> 画像を保存
+                    <!-- Generate Button -->
+                    <button id="btn-generate-tone" class="pc-btn-primary">
+                        Composite START
                     </button>
-                    <button id="btn-back-step1" class="btn-secondary">
-                        <i class="fa-solid fa-arrow-left"></i> トーン選択に戻る
+
+                </div>
+
+                <!-- Col 2: Refinement Sliders -->
+                <div class="pc-control-col">
+
+                    <h2 class="pc-section-title">Refinement</h2>
+
+                    <!-- Brightness Slider -->
+                    <div class="pc-slider-group">
+                        <div class="pc-slider-label">
+                            <span>Brightness</span>
+                            <span id="label-brightness-val">(10tone)</span>
+                        </div>
+                        <div class="pc-slider-wrapper brightness-wrapper">
+                            <input type="range" id="range-brightness" min="5" max="20" value="10"
+                                class="pc-range-slider brightness-slider">
+                        </div>
+                    </div>
+
+                    <!-- Hue Slider -->
+                    <div class="pc-slider-group">
+                        <div class="pc-slider-label">
+                            <span>Hue</span>
+                            <span id="label-hue-val">(180°)</span>
+                        </div>
+                        <div class="pc-slider-wrapper hue-wrapper">
+                            <input type="range" id="range-hue" min="0" max="360" value="180"
+                                class="pc-range-slider hue-slider">
+                        </div>
+                    </div>
+
+                    <!-- Saturation Slider -->
+                    <div class="pc-slider-group">
+                        <div class="pc-slider-label">
+                            <span>Saturation</span>
+                            <span id="label-saturate-val">(0%)</span>
+                        </div>
+                        <div class="pc-slider-wrapper sat-wrapper">
+                            <input type="range" id="range-saturate" min="0" max="100" value="0"
+                                class="pc-range-slider sat-slider">
+                        </div>
+                    </div>
+
+                    <!-- Save Button -->
+                    <button id="btn-save-image" class="pc-btn-primary" style="margin-top: auto;">
+                        画像を保存
                     </button>
+
+                    <button id="btn-reset" class="pc-btn-reset" style="margin-top: 10px;">
+                        リセット
+                    </button>
+
                 </div>
             </div>
+
         </div>
 
-        <!-- MAIN VIEW -->
-        <div class="main-view">
-            <div id="loading-overlay" class="loading-overlay">
-                <div class="spinner"></div>
-                <p id="loading-text">Loading...</p>
-            </div>
+        <!-- RIGHT PANEL: Image Display (approx 55-60%) -->
+        <div class="pc-right-panel">
+            <div id="image-display-area" class="pc-image-area">
+                <div id="loading-overlay" class="loading-overlay" style="display:none;">
+                    <div class="spinner"></div>
+                    <p id="loading-text">Loading...</p>
+                </div>
 
-            <div class="image-container">
-                <!-- Step 1 Image -->
+                <!-- Images / Canvas -->
                 <img id="source-image" src="" alt="Source" style="display:none;">
-
-                <!-- Step 2 Canvas (MediaPipe Overlay) -->
                 <canvas id="transform-canvas"></canvas>
+
+                <!-- Placeholder text if no image -->
+                <div id="image-placeholder" class="image-placeholder-text">
+                    画像表示領域<br>
+                    (元画像→生成画像)
+                </div>
             </div>
         </div>
 
     </div>
 
-    <!-- Firebase & Config -->
+    <!-- Scripts -->
     <script type="module" src="js/hair_app_pc.js"></script>
-
-    <!-- MediaPipe Vision (Global Load like diagnosis/index.html) -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js"
-        crossorigin="anonymous"></script>
-    <script>
-        // Expose MediaPipe global for module usage
-        window.MediaPipeVision = window.vision; 
+    <script type="module">
+        import { FilesetResolver, ImageSegmenter } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/+esm";
+        window.MediaPipeVision = { FilesetResolver, ImageSegmenter };
     </script>
 </body>
 

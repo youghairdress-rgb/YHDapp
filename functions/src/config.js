@@ -28,8 +28,8 @@ module.exports = {
 
     // Model Configurations
     models: {
-        diagnosis: "gemini-2.5-flash-preview-09-2025",
-        imageGen: "gemini-2.5-flash-image", // User requested "2.5 flash image 001"
+        diagnosis: "gemini-2.5-flash-preview-09-2025", // Restored per user instruction
+        imageGen: "gemini-2.5-flash-image", // Restored per user instruction
     },
 
     // Vertex AI Configuration
