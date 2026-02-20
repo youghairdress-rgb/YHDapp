@@ -69,3 +69,14 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Vite build outputs
+dist/
+dist_vite/
+dist_*/
+
+# Local debug logs
+*.txt
+*.bak
+public/test_*
+vite.config.test.mjs

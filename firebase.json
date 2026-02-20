@@ -8,48 +8,48 @@
     "source": "functions"
   },
   "hosting": {
-    "public": "dist",
+    "public": "dist_vite",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/requestDiagnosis",
+        "function": "requestDiagnosis"
+      },
+      {
+        "source": "/generateHairstyleImage",
+        "function": "generateHairstyleImage"
+      },
+      {
+        "source": "/refineHairstyleImage",
+        "function": "refineHairstyleImage"
+      },
+      {
+        "source": "/createFirebaseCustomToken",
+        "function": "createFirebaseCustomTokenV2"
+      },
+      {
+        "source": "/analyzeTrends",
+        "function": "analyzeTrends"
+      },
+      {
+        "source": "/mergeUserData",
+        "function": "mergeUserData"
+      },
+      {
+        "source": "/sendPushMessage",
+        "function": "sendPushMessage"
+      },
+      {
+        "source": "/analyzeHairstyle",
+        "function": "analyzeHairstyle"
+      }
     ]
   },
   "storage": {
     "rules": "storage.rules"
-  },
-  "rewrites": [
-    {
-      "source": "/requestDiagnosis",
-      "function": "requestDiagnosis"
-    },
-    {
-      "source": "/generateHairstyleImage",
-      "function": "generateHairstyleImage"
-    },
-    {
-      "source": "/refineHairstyleImage",
-      "function": "refineHairstyleImage"
-    },
-    {
-      "source": "/createFirebaseCustomToken",
-      "function": "createFirebaseCustomTokenV2"
-    },
-    {
-      "source": "/analyzeTrends",
-      "function": "analyzeTrends"
-    },
-    {
-      "source": "/mergeUserData",
-      "function": "mergeUserData"
-    },
-    {
-      "source": "/sendPushMessage",
-      "function": "sendPushMessage"
-    },
-    {
-      "source": "/analyzeHairstyle",
-      "function": "analyzeHairstyle"
-    }
-  ]
+  }
 }

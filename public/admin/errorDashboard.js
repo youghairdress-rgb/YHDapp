@@ -1,73 +1,73 @@
 /**
  * errorDashboard.js
  * 管理画面用エラーダッシュボード
- * 
+ *
  * 使用方法:
  * import { renderErrorDashboard, loadErrorStats } from './errorDashboard.js';
  */
 
-import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+import { httpsCallable } from 'firebase/functions';
 
-const CLOUD_FUNCTIONS_URL = "https://asia-northeast1-yhd-db.cloudfunctions.net";
+const CLOUD_FUNCTIONS_URL = 'https://asia-northeast1-yhd-db.cloudfunctions.net';
 
 /**
  * エラーログを取得
  */
 export async function fetchErrorLogs(days = 7, token) {
-    try {
-        const response = await fetch(`${CLOUD_FUNCTIONS_URL}/getErrorLogs?days=${days}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+  try {
+    const response = await fetch(`${CLOUD_FUNCTIONS_URL}/getErrorLogs?days=${days}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-        if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.errors || [];
-    } catch (error) {
-        console.error('[fetchErrorLogs]', error);
-        return [];
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
     }
+
+    const data = await response.json();
+    return data.errors || [];
+  } catch (error) {
+    console.error('[fetchErrorLogs]', error);
+    return [];
+  }
 }
 
 /**
  * エラー統計を取得
  */
 export async function fetchErrorStats(days = 7, token) {
-    try {
-        const response = await fetch(`${CLOUD_FUNCTIONS_URL}/getErrorStats?days=${days}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+  try {
+    const response = await fetch(`${CLOUD_FUNCTIONS_URL}/getErrorStats?days=${days}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-        if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data.stats || {};
-    } catch (error) {
-        console.error('[fetchErrorStats]', error);
-        return {};
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
     }
+
+    const data = await response.json();
+    return data.stats || {};
+  } catch (error) {
+    console.error('[fetchErrorStats]', error);
+    return {};
+  }
 }
 
 /**
  * エラーダッシュボード HTML をレンダリング
  */
 export function renderErrorDashboard(containerId = 'error-dashboard-container') {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+  const container = document.getElementById(containerId);
+  if (!container) return;
 
-    container.innerHTML = `
+  container.innerHTML = `
         <div id="error-dashboard" style="padding: 20px; background: #f8fafc; border-radius: 8px;">
             <h2 style="margin-top: 0;">🚨 エラー監視ダッシュボード</h2>
             
@@ -135,109 +135,113 @@ export function renderErrorDashboard(containerId = 'error-dashboard-container') 
         </div>
     `;
 
-    // イベントリスナー設定
-    document.getElementById('error-refresh-btn')?.addEventListener('click', () => {
-        loadErrorData();
-    });
-
-    document.getElementById('error-days-filter')?.addEventListener('change', (e) => {
-        loadErrorData(parseInt(e.target.value));
-    });
-
-    // 初期読み込み
+  // イベントリスナー設定
+  document.getElementById('error-refresh-btn')?.addEventListener('click', () => {
     loadErrorData();
+  });
+
+  document.getElementById('error-days-filter')?.addEventListener('change', (e) => {
+    loadErrorData(parseInt(e.target.value));
+  });
+
+  // 初期読み込み
+  loadErrorData();
 }
 
 /**
  * エラーデータを読み込んでレンダリング
  */
 async function loadErrorData(days = 7) {
-    try {
-        // 認証トークン取得（Firebase Auth）
-        const auth = window.firebase?.auth;
-        if (!auth || !auth.currentUser) {
-            console.warn('[loadErrorData] Not authenticated');
-            return;
-        }
-
-        const token = await auth.currentUser.getIdToken();
-
-        // データ取得
-        const [statsData, logsData] = await Promise.all([
-            fetchErrorStats(days, token),
-            fetchErrorLogs(days, token)
-        ]);
-
-        // 統計情報をレンダリング
-        renderErrorStats(statsData);
-
-        // ログテーブルをレンダリング
-        renderErrorLogs(logsData);
-
-    } catch (error) {
-        console.error('[loadErrorData]', error);
-        document.getElementById('error-logs-empty').textContent = 'エラーが発生しました';
+  try {
+    // 認証トークン取得（Firebase Auth）
+    const auth = window.firebase?.auth;
+    if (!auth || !auth.currentUser) {
+      console.warn('[loadErrorData] Not authenticated');
+      return;
     }
+
+    const token = await auth.currentUser.getIdToken();
+
+    // データ取得
+    const [statsData, logsData] = await Promise.all([
+      fetchErrorStats(days, token),
+      fetchErrorLogs(days, token),
+    ]);
+
+    // 統計情報をレンダリング
+    renderErrorStats(statsData);
+
+    // ログテーブルをレンダリング
+    renderErrorLogs(logsData);
+  } catch (error) {
+    console.error('[loadErrorData]', error);
+    document.getElementById('error-logs-empty').textContent = 'エラーが発生しました';
+  }
 }
 
 /**
  * 統計情報をレンダリング
  */
 function renderErrorStats(stats) {
-    if (!stats || !stats.bySeverity) return;
+  if (!stats || !stats.bySeverity) return;
 
-    document.getElementById('stat-critical').textContent = stats.bySeverity.CRITICAL || 0;
-    document.getElementById('stat-high').textContent = stats.bySeverity.HIGH || 0;
-    document.getElementById('stat-medium').textContent = stats.bySeverity.MEDIUM || 0;
-    document.getElementById('stat-total').textContent = stats.total || 0;
+  document.getElementById('stat-critical').textContent = stats.bySeverity.CRITICAL || 0;
+  document.getElementById('stat-high').textContent = stats.bySeverity.HIGH || 0;
+  document.getElementById('stat-medium').textContent = stats.bySeverity.MEDIUM || 0;
+  document.getElementById('stat-total').textContent = stats.total || 0;
 
-    // 関数別統計
-    const functionStatsDiv = document.getElementById('function-stats');
-    if (stats.byFunction && Object.keys(stats.byFunction).length > 0) {
-        functionStatsDiv.innerHTML = Object.entries(stats.byFunction)
-            .map(([func, count]) => `
+  // 関数別統計
+  const functionStatsDiv = document.getElementById('function-stats');
+  if (stats.byFunction && Object.keys(stats.byFunction).length > 0) {
+    functionStatsDiv.innerHTML = Object.entries(stats.byFunction)
+      .map(
+        ([func, count]) => `
                 <div style="padding: 12px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 500; color: #1f2937;">${func}</span>
                     <span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-weight: 600;">${count}</span>
                 </div>
-            `)
-            .join('');
-    } else {
-        functionStatsDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">データなし</div>';
-    }
+            `
+      )
+      .join('');
+  } else {
+    functionStatsDiv.innerHTML =
+      '<div style="padding: 20px; text-align: center; color: #999;">データなし</div>';
+  }
 }
 
 /**
  * エラーログテーブルをレンダリング
  */
 function renderErrorLogs(logs) {
-    const tbody = document.getElementById('error-logs-body');
-    const emptyDiv = document.getElementById('error-logs-empty');
+  const tbody = document.getElementById('error-logs-body');
+  const emptyDiv = document.getElementById('error-logs-empty');
 
-    if (!logs || logs.length === 0) {
-        tbody.innerHTML = '';
-        emptyDiv.textContent = 'エラーログはありません';
-        emptyDiv.style.display = 'block';
-        return;
-    }
+  if (!logs || logs.length === 0) {
+    tbody.innerHTML = '';
+    emptyDiv.textContent = 'エラーログはありません';
+    emptyDiv.style.display = 'block';
+    return;
+  }
 
-    emptyDiv.style.display = 'none';
+  emptyDiv.style.display = 'none';
 
-    const severityColors = {
-        CRITICAL: '#ef4444',
-        HIGH: '#f97316',
-        MEDIUM: '#eab308',
-        LOW: '#6b7280'
-    };
+  const severityColors = {
+    CRITICAL: '#ef4444',
+    HIGH: '#f97316',
+    MEDIUM: '#eab308',
+    LOW: '#6b7280',
+  };
 
-    const severityEmojis = {
-        CRITICAL: '🚨',
-        HIGH: '⚠️',
-        MEDIUM: '⚡',
-        LOW: 'ℹ️'
-    };
+  const severityEmojis = {
+    CRITICAL: '🚨',
+    HIGH: '⚠️',
+    MEDIUM: '⚡',
+    LOW: 'ℹ️',
+  };
 
-    tbody.innerHTML = logs.map(log => `
+  tbody.innerHTML = logs
+    .map(
+      (log) => `
         <tr style="border-bottom: 1px solid #e5e7eb; hover: background: #f9fafb;">
             <td style="padding: 12px; color: #666; font-size: 12px;">${log.timestamp || '-'}</td>
             <td style="padding: 12px;">
@@ -253,42 +257,44 @@ function renderErrorLogs(logs) {
                 ${log.userId ? `<small>${log.userId}</small>` : '-'}
             </td>
         </tr>
-    `).join('');
+    `
+    )
+    .join('');
 }
 
 /**
  * admin 画面に統合するためのヘルパー
  */
 export function setupErrorDashboard(adminPage) {
-    // admin.html に id="error-dashboard-section" の div があると仮定
-    const errorSection = document.getElementById('error-dashboard-section');
-    
-    if (errorSection) {
-        renderErrorDashboard('error-dashboard-section');
-    } else {
-        console.warn('[setupErrorDashboard] error-dashboard-section not found');
-    }
+  // admin.html に id="error-dashboard-section" の div があると仮定
+  const errorSection = document.getElementById('error-dashboard-section');
+
+  if (errorSection) {
+    renderErrorDashboard('error-dashboard-section');
+  } else {
+    console.warn('[setupErrorDashboard] error-dashboard-section not found');
+  }
 }
 
 // 定期的に自動更新（オプション）
 let autoRefreshInterval = null;
 
 export function startAutoRefresh(intervalSeconds = 300) {
-    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-    
-    autoRefreshInterval = setInterval(() => {
-        const daysSelect = document.getElementById('error-days-filter');
-        const days = daysSelect ? parseInt(daysSelect.value) : 7;
-        loadErrorData(days);
-    }, intervalSeconds * 1000);
-    
-    console.log(`[startAutoRefresh] Started with ${intervalSeconds}s interval`);
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+
+  autoRefreshInterval = setInterval(() => {
+    const daysSelect = document.getElementById('error-days-filter');
+    const days = daysSelect ? parseInt(daysSelect.value) : 7;
+    loadErrorData(days);
+  }, intervalSeconds * 1000);
+
+  console.log(`[startAutoRefresh] Started with ${intervalSeconds}s interval`);
 }
 
 export function stopAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-        console.log('[stopAutoRefresh] Stopped');
-    }
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+    console.log('[stopAutoRefresh] Stopped');
+  }
 }

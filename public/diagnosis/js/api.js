@@ -3,8 +3,18 @@
  * Handles communication with Cloud Functions (HTTP) and Firebase Storage
  */
 
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from 'firebase/storage';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { appState } from './state.js';
 import { logger } from './helpers.js';
 
@@ -12,12 +22,10 @@ import { logger } from './helpers.js';
 
 async function fetchInternal(endpointName, body) {
   if (appState.apiBaseUrl === undefined || appState.apiBaseUrl === null) {
-    throw new Error("API Base URL is not configured.");
+    throw new Error('API Base URL is not configured.');
   }
   // If apiBaseUrl is set, use it. Otherwise use relative path (starts with /)
-  const url = appState.apiBaseUrl
-    ? `${appState.apiBaseUrl}/${endpointName}`
-    : `/${endpointName}`;
+  const url = appState.apiBaseUrl ? `${appState.apiBaseUrl}/${endpointName}` : `/${endpointName}`;
 
   logger.log(`[API] Calling ${endpointName}...`);
 
@@ -27,7 +35,7 @@ async function fetchInternal(endpointName, body) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -40,7 +48,7 @@ async function fetchInternal(endpointName, body) {
         errorData = { message: text || `HTTP Error ${response.status}` };
       }
 
-      const error = new Error(errorData.message || errorData.error || "Unknown Server Error");
+      const error = new Error(errorData.message || errorData.error || 'Unknown Server Error');
       error.status = response.status;
       error.details = errorData;
       throw error;
@@ -49,7 +57,6 @@ async function fetchInternal(endpointName, body) {
     const data = await response.json();
     logger.log(`[API] ${endpointName} success`);
     return data; // Result is usually { ...data } or just data
-
   } catch (error) {
     logger.error(`[API] ${endpointName} failed:`, error);
     throw error;
@@ -66,7 +73,7 @@ export async function requestCustomToken(accessToken) {
 // --- Storage & Firestore ---
 
 export async function uploadFileToStorage(file, path) {
-  if (!file) throw new Error("No file provided");
+  if (!file) throw new Error('No file provided');
 
   try {
     const storage = getStorage();
@@ -77,11 +84,11 @@ export async function uploadFileToStorage(file, path) {
     return url;
   } catch (e) {
     logger.error(`[Upload] Failed: ${path}`, e);
-    throw new Error("画像のアップロードに失敗しました。");
+    throw new Error('画像のアップロードに失敗しました。', { cause: e });
   }
 }
 
-export async function saveImageToGallery(blob, userId, styleName, colorName, note = "") {
+export async function saveImageToGallery(blob, userId, styleName, colorName, note = '') {
   // 1. Upload to Storage
   const timestamp = Date.now();
   const fileName = `gen-${timestamp}.png`;
@@ -96,11 +103,11 @@ export async function saveImageToGallery(blob, userId, styleName, colorName, not
     await addDoc(galleryRef, {
       url: url,
       storagePath: path,
-      styleName: styleName || "N/A",
-      colorName: colorName || "N/A",
+      styleName: styleName || 'N/A',
+      colorName: colorName || 'N/A',
       note: note,
       createdAt: serverTimestamp(),
-      type: 'generated'
+      type: 'generated',
     });
     logger.log(`[Gallery] Saved to Firestore: ${path}`);
     return url;
@@ -124,8 +131,8 @@ export async function saveScreenshotToGallery(blob, userId, title) {
     await addDoc(galleryRef, {
       url: url,
       storagePath: path,
-      title: title || "スクリーンショット",
-      type: "screenshot",
+      title: title || 'スクリーンショット',
+      type: 'screenshot',
       createdAt: serverTimestamp(),
     });
     logger.log(`[Gallery] Screenshot saved: ${path}`);
@@ -144,12 +151,12 @@ export async function requestDiagnosis(fileUrls, user, gender) {
     userProfile: { firebaseUid: user.firebaseUid, lineUserId: user.userId },
     gender: gender,
   });
-};
+}
 
 export async function generateHairstyleImage(params) {
   return fetchInternal('generateHairstyleImage', params);
-};
+}
 
 export async function refineHairstyleImage(generatedImageUrl, firebaseUid, refinementText) {
   return fetchInternal('refineHairstyleImage', { generatedImageUrl, firebaseUid, refinementText });
-};
+}

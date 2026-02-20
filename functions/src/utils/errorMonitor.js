@@ -9,7 +9,17 @@ const axios = require('axios');
 const { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, limit, orderBy } = require('firebase-admin/firestore');
 const logger = require('firebase-functions/logger');
 
-const db = getFirestore();
+let db;
+
+/**
+ * Firestore インスタンスの取得（遅延初期化）
+ */
+function getDb() {
+    if (!db) {
+        db = getFirestore();
+    }
+    return db;
+}
 
 /**
  * エラー重要度の判定
@@ -81,7 +91,7 @@ async function logError(error, functionName, context = {}) {
             userAgent: context.userAgent || 'N/A'
         };
 
-        const docRef = await addDoc(collection(db, 'error_logs'), errorDoc);
+        const docRef = await addDoc(collection(getDb(), 'error_logs'), errorDoc);
         logger.info(`[ErrorMonitor] Error logged: ${docRef.id} (${severity})`);
         
         return { docId: docRef.id, severity };
@@ -209,7 +219,7 @@ async function getRecentErrors(days = 7) {
         since.setDate(since.getDate() - days);
 
         const q = query(
-            collection(db, 'error_logs'),
+            collection(getDb(), 'error_logs'),
             where('timestamp', '>=', since),
             orderBy('timestamp', 'desc'),
             limit(50)

@@ -187,13 +187,15 @@
 
     <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+        import { initializeApp } from "firebase/app";
+        import { getAuth, signInAnonymously } from "firebase/auth";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
         import { appState, IS_DEV_MODE } from './js/state.js'; // Import config
         // NOTE: We need a simplified state or config here. 
         // For simplicity, we'll inline minimal config logic if imports fail, 
         // but try to reuse state.js if possible. (Assuming state.js exports correctly)
+
+        import { compressImage } from './js/helpers.js';
 
         // Initialize
         const app = initializeApp(appState.firebaseConfig);
@@ -227,16 +229,32 @@
             if (!file) return;
             if (!customerId) return;
 
+            const titleEl = input.closest('.upload-card').querySelector('.item-title'); 
             const statusEl = document.getElementById(`status-${itemId.replace('item-', '')}`);
-            if (statusEl) statusEl.textContent = "アップロード中...";
-
-            // Simple compression could be added here similar to main app
+            
+            // UI update: Uploading start
+            if (statusEl) statusEl.textContent = "準備中...";
 
             try {
+                let uploadFile = file;
+
+                // Image Compression
+                if (file.type.startsWith('image/')) {
+                    if (statusEl) statusEl.textContent = "画像圧縮中...";
+                    try {
+                        uploadFile = await compressImage(file, 2048, 0.90);
+                        console.log(`Compression: ${file.size} -> ${uploadFile.size}`);
+                    } catch (cErr) {
+                        console.warn("Compression failed, using original.", cErr);
+                    }
+                }
+
+                if (statusEl) statusEl.textContent = "アップロード中...";
+
                 // Path: guest_uploads/{customerId}/{itemId}
                 const storageRef = ref(storage, `guest_uploads/${customerId}/${itemId}`);
 
-                await uploadBytes(storageRef, file);
+                await uploadBytes(storageRef, uploadFile);
                 const url = await getDownloadURL(storageRef);
 
                 if (statusEl) {

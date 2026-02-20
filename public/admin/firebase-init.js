@@ -1,18 +1,23 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-import { getFunctions } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+import liff from '@line/liff';
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import {
+  getAuth,
+  signInWithCustomToken,
+  onAuthStateChanged,
+} from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
+import { getFunctions } from 'firebase/functions';
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "AIzaSyCjZcF8GFC4CJMYmpucjJ_yShsn74wDLVw",
-    authDomain: "yhd-db.firebaseapp.com",
-    projectId: "yhd-db",
-    storageBucket: "yhd-db.firebasestorage.app",
-    messagingSenderId: "940208179982",
-    appId: "1:940208179982:web:92abb326fa1dc8ee0b655f",
-    measurementId: "G-RSYFJW3TN6"
+  apiKey: 'AIzaSyCjZcF8GFC4CJMYmpucjJ_yShsn74wDLVw',
+  authDomain: 'yhd-db.firebaseapp.com',
+  projectId: 'yhd-db',
+  storageBucket: 'yhd-db.firebasestorage.app',
+  messagingSenderId: '940208179982',
+  appId: '1:940208179982:web:92abb326fa1dc8ee0b655f',
+  measurementId: 'G-RSYFJW3TN6',
 };
 
 // Firebaseサービスの初期化
@@ -20,117 +25,118 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
-const functions = getFunctions(app, "asia-northeast1");
+const functions = getFunctions(app, 'asia-northeast1');
 
 // Cloud FunctionsのURL
-const CLOUD_FUNCTIONS_URL = "https://asia-northeast1-yhd-db.cloudfunctions.net";
+const CLOUD_FUNCTIONS_URL = 'https://asia-northeast1-yhd-db.cloudfunctions.net';
 
 // --- ▼▼▼ 認証ロジックを修正 ▼▼▼ ---
 
 // onAuthStateChanged を Promise 化し、現在の認証状態を取得するヘルパー
-const getFirebaseUser = () => new Promise((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(auth,
-        (user) => {
-            unsubscribe(); // 最初の状態変更でリスナーを解除
-            resolve(user); // ユーザー情報（ログインしていなければ null）を解決
-        },
-        (error) => {
-            unsubscribe();
-            reject(error);
-        }
+const getFirebaseUser = () =>
+  new Promise((resolve, reject) => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        unsubscribe(); // 最初の状態変更でリスナーを解除
+        resolve(user); // ユーザー情報（ログインしていなければ null）を解決
+      },
+      (error) => {
+        unsubscribe();
+        reject(error);
+      }
     );
-});
+  });
 
 /**
  * LIFFの初期化とFirebaseへの認証を行う共通関数
  * @param {string} liffId - 初期化するLIFFアプリのID
  * @returns {Promise<{user: import("firebase/auth").User, profile: any}>} 認証済みユーザーとLINEプロフィール
  */
-const initializeLiffAndAuth = (liffId) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            console.log(`LIFFを初期化します。LIFF ID: ${liffId}`);
-            await liff.init({ liffId });
-            console.log("LIFFの初期化が完了しました。");
+const initializeLiffAndAuth = async (liffId) => {
+  try {
+    console.log(`LIFFを初期化します。LIFF ID: ${liffId}`);
+    await liff.init({ liffId });
+    console.log('LIFFの初期化が完了しました。');
 
-            if (!liff.isLoggedIn()) {
-                console.log("LIFFにログインしていません。ログインページにリダイレクトします。");
-                liff.login({ redirectUri: window.location.href });
-                // リダイレクトするためPromiseは解決しない
-                return;
-            }
-            console.log("LIFFにログイン済みです。");
+    if (!liff.isLoggedIn()) {
+      console.log('LIFFにログインしていません。ログインページにリダイレクトします。');
+      liff.login({ redirectUri: window.location.href });
+      // リダイレクトするため解決を待機するPromiseを返すが、実際には遷移する
+      return new Promise(() => {});
+    }
+    console.log('LIFFにログイン済みです。');
 
-            // まずローカルのFirebaseセッションを確認
-            let currentUser = await getFirebaseUser();
+    // まずローカルのFirebaseセッションを確認
+    let currentUser = await getFirebaseUser();
 
-            if (currentUser && !currentUser.isAnonymous) {
-                console.log(`Firebaseセッションが有効です。ユーザー: ${currentUser.uid}`);
-                // セッションは有効だが、念のためLINEプロフィールを取得
-                try {
-                    const profile = await liff.getProfile();
-                    return resolve({ user: currentUser, profile });
-                } catch (profileError) {
-                    return reject(new Error(`LINEプロフィールの取得に失敗しました: ${profileError.message}`));
-                }
-            }
+    if (currentUser && !currentUser.isAnonymous) {
+      console.log(`Firebaseセッションが有効です。ユーザー: ${currentUser.uid}`);
+      // セッションは有効だが、念のためLINEプロフィールを取得
+      try {
+        const profile = await liff.getProfile();
+        return { user: currentUser, profile };
+      } catch (profileError) {
+        throw new Error(`LINEプロフィールの取得に失敗しました: ${profileError.message}`, {
+          cause: profileError,
+        });
+      }
+    }
 
-            // Firebaseセッションが無効、または初回ログインの場合
-            console.log("Firebaseセッションが無効です。カスタムトークンを取得します。");
-            const accessToken = liff.getAccessToken();
-            if (!accessToken) {
-                return reject(new Error("LIFFアクセストークンが取得できませんでした。ログインし直してください。"));
-            }
+    // Firebaseセッションが無効、または初回ログインの場合
+    console.log('Firebaseセッションが無効です。カスタムトークンを取得します。');
+    const accessToken = liff.getAccessToken();
+    if (!accessToken) {
+      throw new Error('LIFFアクセストークンが取得できませんでした。ログインし直してください。');
+    }
 
-            const { user, profile } = await firebaseLoginWithToken(accessToken);
-            resolve({ user, profile });
-
-        } catch (error) {
-            console.error("LIFFの初期化または認証プロセスでエラーが発生しました:", error);
-            reject(new Error(`LIFFの処理中にエラーが発生しました: ${error.message}`));
-        }
-    });
+    return await firebaseLoginWithToken(accessToken);
+  } catch (error) {
+    console.error('LIFFの初期化または認証プロセスでエラーが発生しました:', error);
+    throw new Error(`LIFFの処理中にエラーが発生しました: ${error.message}`, { cause: error });
+  }
 };
 
 // カスタムトークンを使用してFirebaseにログインする関数
 const firebaseLoginWithToken = async (accessToken) => {
-    try {
-        const response = await fetch(`${CLOUD_FUNCTIONS_URL}/createFirebaseCustomToken`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accessToken })
-        });
+  try {
+    const response = await fetch(`${CLOUD_FUNCTIONS_URL}/createFirebaseCustomToken`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken }),
+    });
 
-        if (!response.ok) {
-            if (response.status === 401) {
-                console.warn("アクセストークンが無効(401)です。LIFFの再ログインを試みます。");
-                liff.login({ redirectUri: window.location.href });
-                // リダイレクト待機
-                return new Promise(() => { });
-            }
-            const errorText = await response.text();
-            throw new Error(`カスタムトークンの取得に失敗しました。ステータス: ${response.status}, サーバー応答: ${errorText}`);
-        }
-
-        const { customToken } = await response.json();
-        console.log("カスタムトークンを正常に取得しました。");
-
-        const userCredential = await signInWithCustomToken(auth, customToken);
-        console.log(`Firebaseへのサインインに成功しました。UID: ${userCredential.user.uid}`);
-
-        const profile = await liff.getProfile();
-        console.log("LINEプロフィールを正常に取得しました。");
-
-        return { user: userCredential.user, profile };
-    } catch (error) {
-        console.error("Firebaseログイン処理中にエラーが発生しました:", error);
-        throw error; // エラーを呼び出し元に投げる
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.warn('アクセストークンが無効(401)です。LIFFの再ログインを試みます。');
+        liff.login({ redirectUri: window.location.href });
+        // リダイレクト待機
+        return new Promise(() => {});
+      }
+      const errorText = await response.text();
+      throw new Error(
+        `カスタムトークンの取得に失敗しました。ステータス: ${response.status}, サーバー応答: ${errorText}`
+      );
     }
+
+    const { customToken } = await response.json();
+    console.log('カスタムトークンを正常に取得しました。');
+
+    const userCredential = await signInWithCustomToken(auth, customToken);
+    console.log(`Firebaseへのサインインに成功しました。UID: ${userCredential.user.uid}`);
+
+    const profile = await liff.getProfile();
+    console.log('LINEプロフィールを正常に取得しました。');
+
+    return { user: userCredential.user, profile };
+  } catch (error) {
+    console.error('Firebaseログイン処理中にエラーが発生しました:', error);
+    throw error; // エラーを呼び出し元に投げる
+  }
 };
 
 // 以前の `firebaseLogin` 関数は `initializeLiffAndAuth` に統合・リファクタリングされました。
 
 // --- ▲▲▲ 認証ロジックを修正 ▲▲▲ ---
-
 
 export { db, auth, storage, functions, initializeLiffAndAuth };

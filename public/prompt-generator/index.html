@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AIプロンプトジェネレーター | YHD App</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-50 text-gray-800 font-sans pb-12 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+      <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+        <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+          <span class="text-2xl">✨</span> プロンプト ジェネレーター
+        </h1>
+      </div>
+
+      <!-- Mode Selector -->
+      <div class="max-w-4xl mx-auto px-4 pb-2">
+        <div class="flex bg-gray-100 p-1 rounded-lg" id="mode-selector">
+          <button
+            id="btn-mode-diagnosis"
+            onclick="setMode('diagnosis')"
+            class="flex-1 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all bg-white shadow-sm text-indigo-600"
+          >
+            <i class="fa-solid fa-scissors"></i> スタイル診断用
+          </button>
+          <button
+            id="btn-mode-color"
+            onclick="setMode('hair_color')"
+            class="flex-1 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+          >
+            <i class="fa-solid fa-fill-drip"></i> 髪色チェンジ用
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 mt-6 flex flex-col md:flex-row gap-6">
+      <!-- Left/Top: Selection Area -->
+      <div class="flex-1 space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-800">キーワードを選択</h2>
+            <button
+              onclick="resetTags()"
+              class="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1"
+            >
+              <i class="fa-solid fa-rotate-right"></i> リセット
+            </button>
+          </div>
+          <p class="text-sm text-gray-500 mb-6">
+            希望するイメージに近いタグをタップしてください。プロンプトが自動で生成されます。
+          </p>
+
+          <div id="categories-container" class="space-y-6">
+            <!-- Categories will be rendered here by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right/Bottom: Result Area -->
+      <div class="md:w-1/3 w-full">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-32">
+          <h2 class="text-lg font-bold text-gray-800 mb-4">生成されたプロンプト</h2>
+
+          <div class="relative">
+            <textarea
+              id="prompt-textarea"
+              readonly
+              placeholder="タグを選択すると、ここにプロンプトが自動生成されます。"
+              class="w-full h-64 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none leading-relaxed"
+            ></textarea>
+          </div>
+
+          <button
+            id="copy-btn"
+            onclick="copyPrompt()"
+            disabled
+            class="mt-4 w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-all bg-gray-100 text-gray-400 cursor-not-allowed"
+          >
+            <i class="fa-regular fa-copy"></i> プロンプトをコピー
+          </button>
+          <p class="text-xs text-gray-500 mt-3 text-center">
+            コピーした文章を、各アプリの自由入力欄にペーストしてご利用ください。
+          </p>
+        </div>
+      </div>
+    </main>
+
+    <script type="module">
+      // データ定義
+      const APP_MODES = {
+        DIAGNOSIS: 'diagnosis',
+        HAIR_COLOR: 'hair_color',
+      };
+
+      const EN_TRANSLATIONS = {
+        'ブラウン系（ショコラ等）': 'chocolate brown hair',
+        'アッシュ・グレー系': 'ash brown hair, cool toned hair',
+        'ピンク・レッド系（カシス等）': 'pink-red hair, cassis hair color',
+        'オレンジ系（アプリコット等）': 'apricot orange hair',
+        'ベージュ系（ミルクティー等）': 'milk tea beige hair',
+        グレージュ: 'greige hair color',
+        'ブラック（暗髪）': 'dark black hair',
+        'オリーブ・マット系': 'olive ash hair, matte hair color',
+        'ブルー・ネイビー系': 'navy blue hair color',
+        '4〜5トーン（地毛・黒髪）': 'dark hair tone',
+        '6〜7トーン（暗め・オフィスOK）': 'natural dark tone hair',
+        '8〜9トーン（中間・自然な明るさ）': 'medium bright tone hair',
+        '10〜12トーン（明るめ・ハイトーン）': 'bright high-tone hair',
+        '13トーン以上（ブリーチ必須レベル）': 'bleached very bright hair',
+        'ワンカラー（全体染め）': 'solid hair color',
+        インナーカラー: 'inner color hair, peekaboo highlights',
+        イヤリングカラー: 'earring color hair, inner highlights around ears',
+        ハイライト: 'highlighted hair',
+        シークレットハイライト: 'subtle secret highlights',
+        グラデーション: 'ombre hair color gradient',
+        バレイヤージュ: 'balayage hair',
+        フェイスフレーミング: 'face framing highlights, money piece hair',
+        アンブレラカラー: 'umbrella two-tone hair color',
+        裾カラー: 'dip dye hair ends',
+        ルーツカラー: 'shadow roots hair color',
+        透明感: 'transparent sheer hair texture',
+        ツヤ感: 'glossy shiny hair',
+        くすみ感: 'smoky muted hair color',
+        まろやか: 'soft mellow hair color',
+        外国人風: 'western style hair color',
+        艶髪: 'beautiful silky smooth hair',
+        色落ちも綺麗: 'beautifully maintained hair color',
+        髪質改善カラー: 'extremely healthy flawless hair',
+        白髪ぼかし: 'naturally blended elegant hair',
+        ダメージレス: 'undamaged healthy hair texture',
+      };
+
+      const CATEGORIES = {
+        [APP_MODES.DIAGNOSIS]: [
+          {
+            id: 'length',
+            title: 'レングス（長さ）',
+            multiSelect: false,
+            tags: [
+              'ベリーショート',
+              'ショート',
+              'ボブ',
+              'ミディアム',
+              'セミロング',
+              'ロング',
+              'スーパーロング',
+            ],
+          },
+          {
+            id: 'taste',
+            title: 'テイスト（雰囲気）',
+            multiSelect: true,
+            tags: [
+              'フェミニン',
+              'クール',
+              'カジュアル',
+              'エレガント',
+              '韓国風（ヨシンモリ）',
+              'ワンホン（中華風）',
+              'ナチュラル',
+              '大人可愛い',
+              'モード',
+              'ハンサム',
+              '抜け感・こなれ感',
+            ],
+          },
+          {
+            id: 'bangs',
+            title: '前髪・顔回り',
+            multiSelect: true,
+            tags: [
+              '前髪あり',
+              '前髪なし',
+              'シースルーバング',
+              '2wayバング',
+              'センターパート',
+              'おくれ毛・エギョモリ',
+              'かき上げバング',
+              'オン眉',
+              'ワイドバング',
+              'フェイスレイヤー',
+              'うざバング',
+            ],
+          },
+          {
+            id: 'texture',
+            title: 'スタイリング・質感・形',
+            multiSelect: true,
+            tags: [
+              'ストレート',
+              'ゆるふわウェーブ',
+              '外ハネ',
+              'ウェット感（濡れ髪）',
+              'ひし形シルエット',
+              '切りっぱなし（ぷつんと）',
+              'くびれヘア',
+              '束感',
+              '無造作（ルーズ）',
+              'レイヤーカット',
+              'ウルフ',
+              'マッシュ',
+            ],
+          },
+          {
+            id: 'concerns',
+            title: 'カバーしたい悩み',
+            multiSelect: true,
+            tags: [
+              '小顔に見せたい',
+              '丸顔をカバー',
+              '面長をカバー',
+              'エラを隠したい',
+              'ボリュームを出したい',
+              'クセを抑えたい',
+              '絶壁をカバー',
+              '骨格を補正したい',
+              '髪をきれいに見せたい',
+              '似合わせ重視',
+            ],
+          },
+        ],
+        [APP_MODES.HAIR_COLOR]: [
+          {
+            id: 'baseColor',
+            title: 'ベースカラー系統',
+            multiSelect: true,
+            tags: [
+              'ブラウン系（ショコラ等）',
+              'アッシュ・グレー系',
+              'ピンク・レッド系（カシス等）',
+              'オレンジ系（アプリコット等）',
+              'ベージュ系（ミルクティー等）',
+              'グレージュ',
+              'ブラック（暗髪）',
+              'オリーブ・マット系',
+              'ブルー・ネイビー系',
+            ],
+          },
+          {
+            id: 'tone',
+            title: 'トーン（明るさ）',
+            multiSelect: false,
+            tags: [
+              '4〜5トーン（地毛・黒髪）',
+              '6〜7トーン（暗め・オフィスOK）',
+              '8〜9トーン（中間・自然な明るさ）',
+              '10〜12トーン（明るめ・ハイトーン）',
+              '13トーン以上（ブリーチ必須レベル）',
+            ],
+          },
+          {
+            id: 'design',
+            title: 'デザインカラー',
+            multiSelect: true,
+            tags: [
+              'ワンカラー（全体染め）',
+              'インナーカラー',
+              'イヤリングカラー',
+              'ハイライト',
+              'シークレットハイライト',
+              'グラデーション',
+              'バレイヤージュ',
+              'フェイスフレーミング',
+              'アンブレラカラー',
+              '裾カラー',
+              'ルーツカラー',
+            ],
+          },
+          {
+            id: 'colorTexture',
+            title: 'カラーの質感・テーマ',
+            multiSelect: true,
+            tags: [
+              '透明感',
+              'ツヤ感',
+              'くすみ感',
+              'まろやか',
+              '外国人風',
+              '艶髪',
+              '色落ちも綺麗',
+              '髪質改善カラー',
+              '白髪ぼかし',
+              'ダメージレス',
+            ],
+          },
+        ],
+      };
+
+      // 状態管理
+      let currentMode = APP_MODES.DIAGNOSIS;
+      let selectedTags = {};
+      let generatedText = '';
+
+      // DOM要素
+      const container = document.getElementById('categories-container');
+      const promptTextarea = document.getElementById('prompt-textarea');
+      const copyBtn = document.getElementById('copy-btn');
+      const btnDiagnosis = document.getElementById('btn-mode-diagnosis');
+      const btnColor = document.getElementById('btn-mode-color');
+
+      // 初期化
+      function init() {
+        renderCategories();
+      }
+      window.init = init;
+
+      // モード切替
+      function setMode(mode) {
+        currentMode = mode;
+        selectedTags = {};
+        generatedText = '';
+
+        // タブの見た目更新
+        if (mode === APP_MODES.DIAGNOSIS) {
+          btnDiagnosis.className =
+            'flex-1 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all bg-white shadow-sm text-indigo-600';
+          btnColor.className =
+            'flex-1 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-200';
+          promptTextarea.placeholder = 'タグを選択すると、ここにプロンプトが自動生成されます。';
+        } else {
+          btnDiagnosis.className =
+            'flex-1 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all text-gray-500 hover:text-gray-700 hover:bg-gray-200';
+          btnColor.className =
+            'flex-1 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all bg-white shadow-sm text-pink-600';
+          promptTextarea.placeholder =
+            'タグを選択すると、画像生成AI向けに最適化された英語プロンプトが生成されます。';
+        }
+
+        renderCategories();
+        updatePrompt();
+      }
+      window.setMode = setMode;
+
+      // リセット
+      function resetTags() {
+        selectedTags = {};
+        renderCategories();
+        updatePrompt();
+      }
+      window.resetTags = resetTags;
+
+      // タグクリック処理
+      window.handleTagClick = function (categoryId, tag, isMultiSelect) {
+        if (!selectedTags[categoryId]) {
+          selectedTags[categoryId] = [];
+        }
+
+        const isSelected = selectedTags[categoryId].includes(tag);
+
+        if (isMultiSelect) {
+          if (isSelected) {
+            selectedTags[categoryId] = selectedTags[categoryId].filter((t) => t !== tag);
+          } else {
+            selectedTags[categoryId].push(tag);
+          }
+        } else {
+          selectedTags[categoryId] = isSelected ? [] : [tag];
+        }
+
+        renderCategories();
+        updatePrompt();
+      };
+
+      // カテゴリとタグの描画
+      function renderCategories() {
+        container.innerHTML = '';
+        const categories = CATEGORIES[currentMode];
+
+        categories.forEach((category) => {
+          const categoryDiv = document.createElement('div');
+          categoryDiv.className = 'space-y-3';
+
+          const multiSelectLabel = !category.multiSelect
+            ? `<span class="text-xs text-gray-400 ml-2 font-normal">(1つだけ選択可)</span>`
+            : '';
+
+          let tagsHtml = category.tags
+            .map((tag) => {
+              const isSelected =
+                selectedTags[category.id] && selectedTags[category.id].includes(tag);
+
+              let baseClass =
+                'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border outline-none cursor-pointer ';
+              if (isSelected) {
+                baseClass +=
+                  currentMode === APP_MODES.DIAGNOSIS
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
+                    : 'bg-pink-50 border-pink-200 text-pink-700 shadow-sm';
+              } else {
+                baseClass +=
+                  'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50';
+              }
+
+              return `<button type="button" class="${baseClass}" onclick="handleTagClick('${category.id}', '${tag}', ${category.multiSelect})">${tag}</button>`;
+            })
+            .join('');
+
+          categoryDiv.innerHTML = `
+                    <h3 class="text-sm font-semibold text-gray-700 border-l-4 border-indigo-400 pl-2">
+                        ${category.title} ${multiSelectLabel}
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        ${tagsHtml}
+                    </div>
+                `;
+          container.appendChild(categoryDiv);
+        });
+      }
+
+      // プロンプト生成ロジック
+      function updatePrompt() {
+        const isEmpty =
+          Object.keys(selectedTags).length === 0 ||
+          Object.values(selectedTags).every((arr) => arr.length === 0);
+
+        if (isEmpty) {
+          generatedText = '';
+        } else if (currentMode === APP_MODES.DIAGNOSIS) {
+          let promptParts = [];
+          const length = selectedTags['length']?.[0];
+          const taste = selectedTags['taste']?.join('、');
+          const bangs = selectedTags['bangs']?.join('、');
+          const texture = selectedTags['texture']?.join('、');
+          const concerns = selectedTags['concerns']?.join('、');
+
+          if (length) promptParts.push(`レングスは「${length}」を希望します。`);
+          if (taste) promptParts.push(`雰囲気は「${taste}」なテイストにしたいです。`);
+          if (bangs) promptParts.push(`前髪や顔回りは「${bangs}」のスタイルにしてください。`);
+          if (texture) promptParts.push(`質感やスタイリングは「${texture}」を取り入れてください。`);
+          if (concerns)
+            promptParts.push(
+              `また、「${concerns}」という悩みをカバーできるような工夫をお願いします。`
+            );
+
+          if (promptParts.length > 0) {
+            promptParts.push('\nこれらを考慮して、私に最も似合うヘアスタイルを提案してください。');
+          }
+          generatedText = promptParts.join('\n');
+        } else {
+          const baseColorTags = selectedTags['baseColor'] || [];
+          const toneTag = selectedTags['tone']?.[0];
+          const designTags = selectedTags['design'] || [];
+          const textureTags = selectedTags['colorTexture'] || [];
+
+          const allSelectedTags = [...baseColorTags];
+          if (toneTag) allSelectedTags.push(toneTag);
+          allSelectedTags.push(...designTags, ...textureTags);
+
+          if (allSelectedTags.length > 0) {
+            const basePrompt =
+              'photorealistic portrait of a woman, highly detailed face, front view, salon lighting';
+            const translatedTags = allSelectedTags.map((tag) => EN_TRANSLATIONS[tag] || tag);
+            const finalPrompt = basePrompt + ', ' + translatedTags.join(', ');
+            generatedText = `【画像生成用プロンプト】\n\n${finalPrompt}`;
+          } else {
+            generatedText = '';
+          }
+        }
+
+        // UI反映
+        promptTextarea.value = generatedText;
+
+        if (generatedText) {
+          copyBtn.disabled = false;
+          copyBtn.className =
+            'mt-4 w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-all bg-gray-900 text-white hover:bg-gray-800 shadow-md';
+        } else {
+          copyBtn.disabled = true;
+          copyBtn.className =
+            'mt-4 w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-all bg-gray-100 text-gray-400 cursor-not-allowed';
+        }
+      }
+
+      // コピー処理
+      async function copyPrompt() {
+        if (!generatedText) return;
+
+        const textToCopy =
+          currentMode === APP_MODES.HAIR_COLOR
+            ? generatedText.replace('【画像生成用プロンプト】\n\n', '')
+            : generatedText;
+
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(textToCopy);
+          } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = textToCopy;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            textArea.remove();
+          }
+
+          // 成功UIの表示
+          copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> コピーしました！';
+          copyBtn.className =
+            'mt-4 w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-all bg-green-500 text-white shadow-md';
+
+          setTimeout(() => {
+            copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> プロンプトをコピー';
+            copyBtn.className =
+              'mt-4 w-full py-3 px-4 rounded-lg font-bold flex items-center justify-center gap-2 transition-all bg-gray-900 text-white hover:bg-gray-800 shadow-md';
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy text: ', err);
+          alert('コピーに失敗しました。');
+        }
+      }
+
+      // 実行
+      init();
+    </script>
+  </body>
+</html>
