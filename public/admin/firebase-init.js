@@ -1,13 +1,16 @@
 import liff from '@line/liff';
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
+import { connectFirestoreEmulator } from 'firebase/firestore';
 import {
   getAuth,
   signInWithCustomToken,
   onAuthStateChanged,
+  connectAuthEmulator,
+  signInAnonymously,
 } from 'firebase/auth';
-import { getStorage } from 'firebase/storage';
-import { getFunctions } from 'firebase/functions';
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -28,7 +31,18 @@ const storage = getStorage(app);
 const functions = getFunctions(app, 'asia-northeast1');
 
 // Cloud FunctionsのURL
-const CLOUD_FUNCTIONS_URL = 'https://asia-northeast1-yhd-db.cloudfunctions.net';
+const CLOUD_FUNCTIONS_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://127.0.0.1:5001/yhd-db/asia-northeast1'
+  : 'https://asia-northeast1-yhd-db.cloudfunctions.net';
+
+// エミュレータの設定
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  console.log('エミュレータに接続します。');
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099');
+  connectStorageEmulator(storage, '127.0.0.1', 9199);
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+}
 
 // --- ▼▼▼ 認証ロジックを修正 ▼▼▼ ---
 
@@ -55,6 +69,54 @@ const getFirebaseUser = () =>
  */
 const initializeLiffAndAuth = async (liffId) => {
   try {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isLocalhost) {
+      console.log('ローカル環境を検出しました。LINE認証をバイパスします。');
+
+      // モックのプロフィール情報を定義
+      const mockProfile = {
+        userId: 'U1234567890abcdef1234567890abcdef',
+        displayName: 'Local Admin (Dev)',
+        pictureUrl: 'https://placehold.jp/150x150.png',
+        statusMessage: 'Local development mode'
+      };
+
+      // 実ユーザーがいる場合はそれを使うが、いない場合はアノニマスログインを試行
+      let currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        try {
+          console.log('Firebaseにログインユーザーがないため、匿名ログインを試行します...');
+          const userCred = await signInAnonymously(auth);
+          currentUser = userCred.user;
+          console.log('匿名ログインに成功しました:', currentUser.uid);
+        } catch (authError) {
+          console.error('匿名ログインに失敗しました:', authError);
+          // 失敗してもダミーオブジェクトで続行を試みる（既存ロジック）
+          currentUser = {
+            uid: 'mock-admin-uid',
+            displayName: 'Local Admin',
+            email: 'admin@localhost',
+            isAnonymous: false,
+            getIdTokenResult: async () => ({ claims: { admin: true } }),
+            getIdToken: async () => 'mock-token'
+          };
+        }
+      }
+
+      // さらに、getIdTokenResult などをモック化（isAdmin()チェックを通すため）
+      const originalGetIdTokenResult = currentUser.getIdTokenResult;
+      currentUser.getIdTokenResult = async (force) => {
+        if (isLocalhost) {
+          return { claims: { admin: true } };
+        }
+        return originalGetIdTokenResult.call(currentUser, force);
+      };
+
+      return { user: currentUser, profile: mockProfile };
+    }
+
     console.log(`LIFFを初期化します。LIFF ID: ${liffId}`);
     await liff.init({ liffId });
     console.log('LIFFの初期化が完了しました。');
@@ -63,7 +125,7 @@ const initializeLiffAndAuth = async (liffId) => {
       console.log('LIFFにログインしていません。ログインページにリダイレクトします。');
       liff.login({ redirectUri: window.location.href });
       // リダイレクトするため解決を待機するPromiseを返すが、実際には遷移する
-      return new Promise(() => {});
+      return new Promise(() => { });
     }
     console.log('LIFFにログイン済みです。');
 
@@ -111,7 +173,7 @@ const firebaseLoginWithToken = async (accessToken) => {
         console.warn('アクセストークンが無効(401)です。LIFFの再ログインを試みます。');
         liff.login({ redirectUri: window.location.href });
         // リダイレクト待機
-        return new Promise(() => {});
+        return new Promise(() => { });
       }
       const errorText = await response.text();
       throw new Error(

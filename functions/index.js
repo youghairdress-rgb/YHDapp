@@ -173,7 +173,7 @@ exports.sendPushMessage = functions.region("asia-northeast1").https.onCall(async
 });
 
 // --- 5. analyzeHairstyle ---
-exports.analyzeHairstyle = functions.region("asia-northeast1").runWith({ timeoutSeconds: 300 }).https.onRequest((req, res) => {
+exports.analyzeHairstyle = functions.region("asia-northeast1").runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onRequest((req, res) => {
     cors(req, res, async () => {
         // AI Matching Controller Import (Lazy load)
         const { analyzeHairstyleController } = require("./src/controllers/aiMatching");
@@ -220,7 +220,7 @@ exports.requestDiagnosis = functions.region("asia-northeast1")
         });
     });
 
-exports.generateHairstyleImage = functions.region("asia-northeast1").runWith({ timeoutSeconds: 300 }).https.onRequest((req, res) => {
+exports.generateHairstyleImage = functions.region("asia-northeast1").runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onRequest((req, res) => {
     cors(req, res, async () => {
         await generateHairstyleImageController(req, res, {
             imageGenApiKey: GEMINI_API_KEY,
@@ -230,7 +230,7 @@ exports.generateHairstyleImage = functions.region("asia-northeast1").runWith({ t
     });
 });
 
-exports.refineHairstyleImage = functions.region("asia-northeast1").runWith({ timeoutSeconds: 300 }).https.onRequest((req, res) => {
+exports.refineHairstyleImage = functions.region("asia-northeast1").runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onRequest((req, res) => {
     cors(req, res, async () => {
         await refineHairstyleImageController(req, res, {
             imageGenApiKey: GEMINI_API_KEY,
@@ -246,7 +246,7 @@ exports.createFirebaseCustomTokenV2 = functions.region("asia-northeast1").https.
     });
 });
 
-exports.analyzeTrends = functions.region("asia-northeast1").runWith({ timeoutSeconds: 300 }).https.onRequest((req, res) => {
+exports.analyzeTrends = functions.region("asia-northeast1").runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onRequest((req, res) => {
     cors(req, res, async () => {
         await analyzeTrendsController(req, res, { imageGenApiKey: GEMINI_API_KEY });
     });
