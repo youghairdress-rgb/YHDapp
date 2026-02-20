@@ -82,37 +82,53 @@ const initializeLiffAndAuth = async (liffId) => {
         statusMessage: 'Local development mode'
       };
 
-      // 実ユーザーがいる場合はそれを使うが、いない場合はアノニマスログインを試行
+      // 実ユーザーがいる場合はそれを使うが、いない場合はローカル用のトークンを取得してログイン
       let currentUser = auth.currentUser;
 
       if (!currentUser) {
         try {
-          console.log('Firebaseにログインユーザーがないため、匿名ログインを試行します...');
-          const userCred = await signInAnonymously(auth);
-          currentUser = userCred.user;
-          console.log('匿名ログインに成功しました:', currentUser.uid);
+          console.log('ローカル開発用管理者トークンを生成中...');
+          // 本来のログインフローをシミュレートし、内部的に admin: true を持つトークンを取得
+          const response = await fetch(`${CLOUD_FUNCTIONS_URL}/createFirebaseCustomToken`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken: 'local-admin-dev-token' }),
+          });
+
+          if (response.ok) {
+            const { customToken } = await response.json();
+            const userCred = await signInWithCustomToken(auth, customToken);
+            currentUser = userCred.user;
+            console.log('ローカル管理者としてのログインに成功しました:', currentUser.uid);
+          } else {
+            throw new Error('管理者トークンの取得に失敗しました');
+          }
         } catch (authError) {
-          console.error('匿名ログインに失敗しました:', authError);
-          // 失敗してもダミーオブジェクトで続行を試みる（既存ロジック）
-          currentUser = {
-            uid: 'mock-admin-uid',
-            displayName: 'Local Admin',
-            email: 'admin@localhost',
-            isAnonymous: false,
-            getIdTokenResult: async () => ({ claims: { admin: true } }),
-            getIdToken: async () => 'mock-token'
-          };
+          console.error('ローカルログインに失敗しました。', authError);
         }
       }
 
       // さらに、getIdTokenResult などをモック化（isAdmin()チェックを通すため）
-      const originalGetIdTokenResult = currentUser.getIdTokenResult;
-      currentUser.getIdTokenResult = async (force) => {
-        if (isLocalhost) {
-          return { claims: { admin: true } };
-        }
-        return originalGetIdTokenResult.call(currentUser, force);
-      };
+      // ※ 上記のログインが失敗した場合に currentUser が null のままだとエラーになるため、
+      //    ログイン失敗時はダミーオブジェクトを割り当てる
+      if (!currentUser) {
+        currentUser = {
+          uid: 'mock-admin-uid',
+          displayName: 'Local Admin',
+          email: 'admin@localhost',
+          isAnonymous: false,
+          getIdTokenResult: async () => ({ claims: { admin: true } }),
+          getIdToken: async () => 'mock-token'
+        };
+      } else {
+        const originalGetIdTokenResult = currentUser.getIdTokenResult;
+        currentUser.getIdTokenResult = async (force) => {
+          if (isLocalhost) {
+            return { claims: { admin: true } };
+          }
+          return originalGetIdTokenResult.call(currentUser, force);
+        };
+      }
 
       return { user: currentUser, profile: mockProfile };
     }

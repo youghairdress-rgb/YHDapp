@@ -1,9 +1,10 @@
-const functions = require("firebase-functions");
+const { onRequest, onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const axios = require("axios");
-const cors = require("cors")({ origin: true });
+const corsLib = require("cors")({ origin: true });
 const { defineString } = require('firebase-functions/params');
-
 
 // --- YHD-DX Integrated Controllers & Services ---
 const { requestDiagnosisController } = require("./src/controllers/diagnosis");
@@ -21,8 +22,6 @@ const LINE_CHANNEL_ACCESS_TOKEN = configParams.lineChannelAccessToken;
 const ADMIN_LINE_USER_IDS = configParams.adminLineUserIds;
 const GEMINI_API_KEY = configParams.geminiApiKey;
 
-const { setGlobalOptions } = require("firebase-functions/v2");
-
 // --- Global Options for v2 ---
 setGlobalOptions({
     region: "asia-northeast1",
@@ -31,109 +30,111 @@ setGlobalOptions({
     concurrency: 10
 });
 
+// Helper to wrap onRequest with CORS
+const withCors = (handler) => (req, res) => {
+    return corsLib(req, res, () => handler(req, res));
+};
 
 // --- 1. createFirebaseCustomToken (Original) ---
-exports.createFirebaseCustomToken = functions.region("asia-northeast1").https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        if (req.method !== "POST") {
-            return res.status(405).send("Method Not Allowed");
-        }
-        const channelIdsString = LINE_CHANNEL_IDS.value();
-        if (!channelIdsString) {
-            console.error("LINE_CHANNEL_IDS is not set.");
-            return res.status(500).send("Server configuration error.");
-        }
-        const allowedChannelIds = channelIdsString.split(',').map(id => id.trim()).filter(id => id);
-        const { accessToken } = req.body;
-        if (!accessToken) return res.status(400).send("Access token is required");
+exports.createFirebaseCustomToken = onRequest(withCors(async (req, res) => {
+    if (req.method !== "POST") {
+        return res.status(405).send("Method Not Allowed");
+    }
+    const channelIdsString = LINE_CHANNEL_IDS.value();
+    if (!channelIdsString) {
+        console.error("LINE_CHANNEL_IDS is not set.");
+        return res.status(500).send("Server configuration error.");
+    }
+    const allowedChannelIds = channelIdsString.split(',').map(id => id.trim()).filter(id => id);
+    const { accessToken } = req.body;
+    if (!accessToken) return res.status(400).send("Access token is required");
 
-        try {
-            const verifyUrl = new URL("https://api.line.me/oauth2/v2.1/verify");
-            verifyUrl.searchParams.append("access_token", accessToken);
-            const verifyResponse = await axios.get(verifyUrl.toString());
-            const requestChannelId = verifyResponse.data.client_id;
-            if (!allowedChannelIds.includes(requestChannelId)) {
-                return res.status(401).send("Invalid LIFF app.");
-            }
-            const profileResponse = await axios.get("https://api.line.me/v2/profile", {
-                headers: { "Authorization": `Bearer ${accessToken}` },
-            });
-            const lineUserId = profileResponse.data.userId;
-            const adminIdsString = ADMIN_LINE_USER_IDS.value() || "";
-            const adminIds = adminIdsString.split(',').map(id => id.trim());
-            const isAdmin = adminIds.includes(lineUserId);
-            const customClaims = {};
-            if (isAdmin) customClaims.admin = true;
-            const customToken = await admin.auth().createCustomToken(lineUserId, customClaims);
-            return res.status(200).json({ customToken });
-        } catch (error) {
-            console.error("Error in createFirebaseCustomToken:", error.message);
-            return res.status(500).send("Authentication failed.");
+    try {
+        const verifyUrl = new URL("https://api.line.me/oauth2/v2.1/verify");
+        verifyUrl.searchParams.append("access_token", accessToken);
+        const verifyResponse = await axios.get(verifyUrl.toString());
+        const requestChannelId = verifyResponse.data.client_id;
+        if (!allowedChannelIds.includes(requestChannelId)) {
+            return res.status(401).send("Invalid LIFF app.");
         }
-    });
-});
+        const profileResponse = await axios.get("https://api.line.me/v2/profile", {
+            headers: { "Authorization": `Bearer ${accessToken}` },
+        });
+        const lineUserId = profileResponse.data.userId;
+        const adminIdsString = ADMIN_LINE_USER_IDS.value() || "";
+        const adminIds = adminIdsString.split(',').map(id => id.trim());
+        const isAdmin = adminIds.includes(lineUserId);
+        const customClaims = {};
+        if (isAdmin) customClaims.admin = true;
+        const customToken = await admin.auth().createCustomToken(lineUserId, customClaims);
+        return res.status(200).json({ customToken });
+    } catch (error) {
+        console.error("Error in createFirebaseCustomToken:", error.message);
+        return res.status(500).send("Authentication failed.");
+    }
+}));
 
 // --- 2. sendBookingConfirmation ---
-exports.sendBookingConfirmation = functions.region("asia-northeast1").firestore
-    .document("reservations/{reservationId}")
-    .onCreate(async (snap) => {
-        const booking = snap.data();
-        if (booking.createdBy === 'admin') return null;
-        if (!booking || !booking.customerName || !booking.startTime) return null;
+exports.sendBookingConfirmation = onDocumentCreated("reservations/{reservationId}", async (event) => {
+    const snap = event.data;
+    if (!snap) return null;
+    const booking = snap.data();
+    if (booking.createdBy === 'admin') return null;
+    if (!booking || !booking.customerName || !booking.startTime) return null;
 
-        const { customerId, customerName, startTime, selectedMenus, userRequests } = booking;
-        const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
-        if (!channelAccessToken) return null;
+    const { customerId, customerName, startTime, selectedMenus, userRequests } = booking;
+    const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
+    if (!channelAccessToken) return null;
 
-        const time = startTime.toDate();
-        const jstTime = new Date(time.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
-        const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-        const dayOfWeek = weekdays[jstTime.getDay()];
-        const formattedTime = `${jstTime.getFullYear()}年${String(jstTime.getMonth() + 1).padStart(2, "0")}月${String(jstTime.getDate()).padStart(2, "0")}日(${dayOfWeek}) ${String(jstTime.getHours()).padStart(2, "0")}:${String(jstTime.getMinutes()).padStart(2, "0")}`;
-        const menuNames = selectedMenus ? selectedMenus.map((m) => m.name).join("＋") : "";
-        const requestsText = userRequests || 'なし';
+    const time = startTime.toDate();
+    const jstTime = new Date(time.toLocaleString('en-US', { timeZone: 'Asia/Tokyo' }));
+    const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+    const dayOfWeek = weekdays[jstTime.getDay()];
+    const formattedTime = `${jstTime.getFullYear()}年${String(jstTime.getMonth() + 1).padStart(2, "0")}月${String(jstTime.getDate()).padStart(2, "0")}日(${dayOfWeek}) ${String(jstTime.getHours()).padStart(2, "0")}:${String(jstTime.getHours()).padStart(2, "0")}:${String(jstTime.getMinutes()).padStart(2, "0")}`;
+    const menuNames = selectedMenus ? selectedMenus.map((m) => m.name).join("＋") : "";
+    const requestsText = userRequests || 'なし';
 
-        if (customerId) {
-            const customerMessageText = `${customerName}様\nご予約ありがとうございます。\n日時：${formattedTime}\nメニュー：${menuNames}\nご要望：${requestsText}`;
+    if (customerId) {
+        const customerMessageText = `${customerName}様\nご予約ありがとうございます。\n日時：${formattedTime}\nメニュー：${menuNames}\nご要望：${requestsText}`;
+        try {
+            await axios.post("https://api.line.me/v2/bot/message/push", {
+                to: customerId,
+                messages: [{ type: "text", text: customerMessageText }],
+            }, {
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${channelAccessToken}` },
+            });
+        } catch (error) { console.error("Error sending message to customer:", error.message); }
+    }
+
+    const adminIdsString = ADMIN_LINE_USER_IDS.value();
+    if (adminIdsString) {
+        const adminIds = adminIdsString.split(',').map(id => id.trim()).filter(id => id);
+        if (adminIds.length > 0) {
+            const adminMessageText = `新規予約：${customerName} 様\n日時：${formattedTime}\nメニュー：${menuNames}`;
             try {
-                await axios.post("https://api.line.me/v2/bot/message/push", {
-                    to: customerId,
-                    messages: [{ type: "text", text: customerMessageText }],
+                await axios.post("https://api.line.me/v2/bot/message/multicast", {
+                    to: adminIds,
+                    messages: [{ type: "text", text: adminMessageText }],
                 }, {
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${channelAccessToken}` },
                 });
-            } catch (error) { console.error("Error sending message to customer:", error.message); }
+            } catch (error) { console.error("Failed to send admin notification:", error.message); }
         }
-
-        const adminIdsString = ADMIN_LINE_USER_IDS.value();
-        if (adminIdsString) {
-            const adminIds = adminIdsString.split(',').map(id => id.trim()).filter(id => id);
-            if (adminIds.length > 0) {
-                const adminMessageText = `新規予約：${customerName} 様\n日時：${formattedTime}\nメニュー：${menuNames}`;
-                try {
-                    await axios.post("https://api.line.me/v2/bot/message/multicast", {
-                        to: adminIds,
-                        messages: [{ type: "text", text: adminMessageText }],
-                    }, {
-                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${channelAccessToken}` },
-                    });
-                } catch (error) { console.error("Failed to send admin notification:", error.message); }
-            }
-        }
-        return null;
-    });
+    }
+    return null;
+});
 
 // --- 3. mergeUserData ---
-exports.mergeUserData = functions.region("asia-northeast1").https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required.");
-    const { oldUserId, newUserId, profile, newUserData } = data;
-    if (context.auth.uid !== newUserId) throw new functions.https.HttpsError("permission-denied", "Permission denied.");
+exports.mergeUserData = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Auth required.");
+    const { oldUserId, newUserId, profile, newUserData } = request.data;
+    if (request.auth.uid !== newUserId) throw new HttpsError("permission-denied", "Permission denied.");
 
     const db = admin.firestore();
     const batch = db.batch();
     const oldUserRef = db.doc(`users/${oldUserId}`);
     const oldUserSnap = await oldUserRef.get();
-    if (!oldUserSnap.exists) throw new functions.https.HttpsError("not-found", "Not found.");
+    if (!oldUserSnap.exists) throw new HttpsError("not-found", "Not found.");
 
     const oldUserData = oldUserSnap.data();
     const newUserRef = db.doc(`users/${newUserId}`);
@@ -154,13 +155,13 @@ exports.mergeUserData = functions.region("asia-northeast1").https.onCall(async (
 });
 
 // --- 4. sendPushMessage ---
-exports.sendPushMessage = functions.region("asia-northeast1").https.onCall(async (data, context) => {
-    if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Auth required.");
-    const { customerId, text } = data;
+exports.sendPushMessage = onCall(async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Auth required.");
+    const { customerId, text } = request.data;
     const db = admin.firestore();
     const userDoc = await db.doc(`users/${customerId}`).get();
     const lineUserId = userDoc.data()?.lineUserId;
-    if (!lineUserId) throw new functions.https.HttpsError("failed-precondition", "No LINE ID.");
+    if (!lineUserId) throw new HttpsError("failed-precondition", "No LINE ID.");
 
     const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
     await axios.post("https://api.line.me/v2/bot/message/push", {
@@ -173,84 +174,71 @@ exports.sendPushMessage = functions.region("asia-northeast1").https.onCall(async
 });
 
 // --- 5. analyzeHairstyle ---
-exports.analyzeHairstyle = functions.region("asia-northeast1").runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        // AI Matching Controller Import (Lazy load)
-        const { analyzeHairstyleController } = require("./src/controllers/aiMatching");
-        await analyzeHairstyleController(req, res, {
-            apiKey: GEMINI_API_KEY
+exports.analyzeHairstyle = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, withCors(async (req, res) => {
+    // AI Matching Controller Import (Lazy load)
+    const { analyzeHairstyleController } = require("./src/controllers/aiMatching");
+    await analyzeHairstyleController(req, res, {
+        apiKey: GEMINI_API_KEY
+    });
+}));
+
+exports.notifyAdminOnPhotoUpload = onDocumentCreated("users/{userId}/gallery/{photoId}", async (event) => {
+    const snap = event.data;
+    if (!snap) return null;
+    const newData = snap.data();
+
+    // ユーザーの手動アップロード以外は通知しない（isUserUploadフラグがない場合は無視）
+    if (!newData.isUserUpload) return null;
+
+    // 管理者が同期した写真は通知しない(念のため既存ロジックも維持)
+    if (newData.isSyncedPhoto) return null;
+
+    const db = admin.firestore();
+    const userDoc = await db.collection("users").doc(event.params.userId).get();
+    const userName = userDoc.data()?.name || "お客様";
+    const adminIds = (ADMIN_LINE_USER_IDS.value() || "").split(',').filter(id => id);
+    const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
+
+    if (adminIds.length > 0 && channelAccessToken) {
+        await axios.post("https://api.line.me/v2/bot/message/multicast", {
+            to: adminIds,
+            messages: [{ type: "text", text: `${userName}様から画像アップロードがありました` }],
+        }, {
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${channelAccessToken}` },
         });
-    });
-});
-exports.notifyAdminOnPhotoUpload = functions.region("asia-northeast1").firestore
-    .document("users/{userId}/gallery/{photoId}")
-    .onCreate(async (snap, context) => {
-        const newData = snap.data();
-
-        // ユーザーの手動アップロード以外は通知しない（isUserUploadフラグがない場合は無視）
-        if (!newData.isUserUpload) return null;
-
-        // 管理者が同期した写真は通知しない(念のため既存ロジックも維持)
-        if (newData.isSyncedPhoto) return null;
-
-        const db = admin.firestore();
-        const userDoc = await db.collection("users").doc(context.params.userId).get();
-        const userName = userDoc.data()?.name || "お客様";
-        const adminIds = (ADMIN_LINE_USER_IDS.value() || "").split(',').filter(id => id);
-        const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
-
-        if (adminIds.length > 0 && channelAccessToken) {
-            await axios.post("https://api.line.me/v2/bot/message/multicast", {
-                to: adminIds,
-                messages: [{ type: "text", text: `${userName}様から画像アップロードがありました` }],
-            }, {
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${channelAccessToken}` },
-            });
-        }
-        return null;
-    });
-
-// --- YHD-DX Integrated Functions (Gen 1 for URL consistency) ---
-
-exports.requestDiagnosis = functions.region("asia-northeast1")
-    .runWith({ timeoutSeconds: 540, memory: "4GB" })
-    .https.onRequest((req, res) => {
-        cors(req, res, async () => {
-            await requestDiagnosisController(req, res, { llmApiKey: GEMINI_API_KEY });
-        });
-    });
-
-exports.generateHairstyleImage = functions.region("asia-northeast1").runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        await generateHairstyleImageController(req, res, {
-            imageGenApiKey: GEMINI_API_KEY,
-            storage: storage,
-            defaultBucketName: defaultBucketName,
-        });
-    });
+    }
+    return null;
 });
 
-exports.refineHairstyleImage = functions.region("asia-northeast1").runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        await refineHairstyleImageController(req, res, {
-            imageGenApiKey: GEMINI_API_KEY,
-            storage: storage,
-            defaultBucketName: defaultBucketName,
-        });
-    });
-});
+// --- YHD-DX Integrated Functions (Gen 2) ---
 
-exports.createFirebaseCustomTokenV2 = functions.region("asia-northeast1").https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        await createFirebaseCustomTokenController(req, res, { auth: auth });
-    });
-});
+exports.requestDiagnosis = onRequest({ timeoutSeconds: 540, memory: "4GiB" }, withCors(async (req, res) => {
+    await requestDiagnosisController(req, res, { llmApiKey: GEMINI_API_KEY });
+}));
 
-exports.analyzeTrends = functions.region("asia-northeast1").runWith({ timeoutSeconds: 540, memory: "2GB" }).https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        await analyzeTrendsController(req, res, { imageGenApiKey: GEMINI_API_KEY });
+exports.generateHairstyleImage = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, withCors(async (req, res) => {
+    await generateHairstyleImageController(req, res, {
+        imageGenApiKey: GEMINI_API_KEY,
+        storage: storage,
+        defaultBucketName: defaultBucketName,
     });
-});
+}));
+
+exports.refineHairstyleImage = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, withCors(async (req, res) => {
+    await refineHairstyleImageController(req, res, {
+        imageGenApiKey: GEMINI_API_KEY,
+        storage: storage,
+        defaultBucketName: defaultBucketName,
+    });
+}));
+
+exports.createFirebaseCustomTokenV2 = onRequest(withCors(async (req, res) => {
+    await createFirebaseCustomTokenController(req, res, { auth: auth });
+}));
+
+exports.analyzeTrends = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, withCors(async (req, res) => {
+    await analyzeTrendsController(req, res, { imageGenApiKey: GEMINI_API_KEY });
+}));
 
 // --- Error Monitoring & Dashboard ---
 const { getRecentErrors, getErrorStats } = require("./src/utils/errorMonitor");
@@ -258,81 +246,77 @@ const { getRecentErrors, getErrorStats } = require("./src/utils/errorMonitor");
 /**
  * 最近のエラーログを取得（管理者のみ）
  */
-exports.getErrorLogs = functions.region("asia-northeast1").https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        try {
-            // 認証チェック
-            const authHeader = req.headers.authorization;
-            if (!authHeader || !authHeader.startsWith('Bearer ')) {
-                return res.status(401).json({ error: "Unauthorized" });
-            }
-
-            const token = authHeader.substring(7);
-            let decodedToken;
-            try {
-                decodedToken = await admin.auth().verifyIdToken(token);
-            } catch (err) {
-                return res.status(401).json({ error: "Invalid token" });
-            }
-
-            // 管理者権限チェック
-            if (!decodedToken.admin) {
-                return res.status(403).json({ error: "Forbidden: Admin only" });
-            }
-
-            const days = req.query.days ? parseInt(req.query.days) : 7;
-            const errors = await getRecentErrors(days);
-
-            res.status(200).json({
-                success: true,
-                count: errors.length,
-                errors: errors,
-                requestedDays: days
-            });
-        } catch (error) {
-            console.error("[getErrorLogs]", error);
-            res.status(500).json({ error: "Internal Server Error" });
+exports.getErrorLogs = onRequest(withCors(async (req, res) => {
+    try {
+        // 認証チェック
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: "Unauthorized" });
         }
-    });
-});
+
+        const token = authHeader.substring(7);
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(token);
+        } catch (err) {
+            return res.status(401).json({ error: "Invalid token" });
+        }
+
+        // 管理者権限チェック
+        if (!decodedToken.admin) {
+            return res.status(403).json({ error: "Forbidden: Admin only" });
+        }
+
+        const days = req.query.days ? parseInt(req.query.days) : 7;
+        const errors = await getRecentErrors(days);
+
+        res.status(200).json({
+            success: true,
+            count: errors.length,
+            errors: errors,
+            requestedDays: days
+        });
+    } catch (error) {
+        console.error("[getErrorLogs]", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}));
 
 /**
  * エラー統計を取得（管理者のみ）
  */
-exports.getErrorStats = functions.region("asia-northeast1").https.onRequest((req, res) => {
-    cors(req, res, async () => {
-        try {
-            // 認証チェック
-            const authHeader = req.headers.authorization;
-            if (!authHeader || !authHeader.startsWith('Bearer ')) {
-                return res.status(401).json({ error: "Unauthorized" });
-            }
-
-            const token = authHeader.substring(7);
-            let decodedToken;
-            try {
-                decodedToken = await admin.auth().verifyIdToken(token);
-            } catch (err) {
-                return res.status(401).json({ error: "Invalid token" });
-            }
-
-            // 管理者権限チェック
-            if (!decodedToken.admin) {
-                return res.status(403).json({ error: "Forbidden: Admin only" });
-            }
-
-            const days = req.query.days ? parseInt(req.query.days) : 7;
-            const stats = await getErrorStats(days);
-
-            res.status(200).json({
-                success: true,
-                stats: stats,
-                requestedDays: days
-            });
-        } catch (error) {
-            console.error("[getErrorStats]", error);
-            res.status(500).json({ error: "Internal Server Error" });
+exports.getErrorStats = onRequest(withCors(async (req, res) => {
+    try {
+        // 認証チェック
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: "Unauthorized" });
         }
-    });
-});
+
+        const token = authHeader.substring(7);
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(token);
+        } catch (err) {
+            return res.status(401).json({ error: "Invalid token" });
+        }
+
+        // 管理者権限チェック
+        if (!decodedToken.admin) {
+            return res.status(403).json({ error: "Forbidden: Admin only" });
+        }
+
+        const days = req.query.days ? parseInt(req.query.days) : 7;
+        const stats = await getErrorStats(days);
+
+        res.status(200).json({
+            success: true,
+            stats: stats,
+            requestedDays: days
+        });
+    } catch (error) {
+        console.error("[getErrorStats]", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}));
 
