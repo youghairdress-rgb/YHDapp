@@ -51,9 +51,9 @@ export const runAdminPage = (mainFunction, pageLiffId = null) => {
 
       const { user } = await initializeLiffAndAuth(liffId);
 
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const isLocal = import.meta.env.DEV;
 
-      if (isLocalhost) {
+      if (import.meta.env.DEV) {
         console.log('ローカル環境のため、詳細な認証チェックをバイパスします。');
       } else {
         showLoading('管理者権限を確認中...');

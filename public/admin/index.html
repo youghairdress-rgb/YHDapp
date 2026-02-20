@@ -79,197 +79,193 @@
                 -->
             </div>
 
-        <!-- 1. 予約詳細表示モーダル -->
-                <div id="booking-detail-modal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2 id="detail-modal-title">予約詳細</h2>
-                        </div>
-                        <div class="modal-body">
-                            <div id="normal-booking-details">
-                                <p><strong>お客様:</strong> <span id="detail-customer-name"></span></p>
-                                <p><strong>日時:</strong> <span id="detail-datetime"></span></p>
-                                <p><strong>メニュー:</strong> <span id="detail-menus"></span></p>
-                                <div id="detail-requests-wrapper" style="display: none;">
-                                    <p><strong>ご要望:</strong> <span id="detail-requests"></span></p>
-                                </div>
-                                <div id="detail-admin-notes-wrapper" style="display: none;">
-                                    <p><strong>管理者メモ:</strong> <span id="detail-admin-notes"
-                                            style="white-space: pre-wrap;"></span></p>
-                                </div>
+            <!-- 1. 予約詳細表示モーダル -->
+            <div id="booking-detail-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="detail-modal-title">予約詳細</h2>
+                    </div>
+                    <div class="modal-body">
+                        <div id="normal-booking-details">
+                            <p><strong>お客様:</strong> <span id="detail-customer-name"></span></p>
+                            <p><strong>日時:</strong> <span id="detail-datetime"></span></p>
+                            <p><strong>メニュー:</strong> <span id="detail-menus"></span></p>
+                            <div id="detail-requests-wrapper" style="display: none;">
+                                <p><strong>ご要望:</strong> <span id="detail-requests"></span></p>
+                            </div>
+                            <div id="detail-admin-notes-wrapper" style="display: none;">
+                                <p><strong>管理者メモ:</strong> <span id="detail-admin-notes"
+                                        style="white-space: pre-wrap;"></span></p>
                             </div>
                         </div>
-                        <div id="normal-booking-actions" class="modal-footer grid-buttons">
-                            <!-- ▼▼▼ 追加: AIアクションボタン (横並び) ▼▼▼ -->
-                            <div class="ai-actions-row"
-                                style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 10px;">
-                                <button class="icon-button camera-btn" id="detail-camera-btn" title="写真"><i
-                                        class="fa-solid fa-camera"></i></button>
-                                <!-- ▼▼▼ 追加: 画像素材アップロード (mobile_upload.html) ▼▼▼ -->
-                                <a href="#" target="_blank" class="icon-button" id="detail-mobile-upload-link"
-                                    title="画像素材"><i class="fa-solid fa-images"></i></a>
-                                <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
-                                <!-- New Hair App Links -->
-                                <a href="#" target="_blank" class="icon-button" id="detail-hair-upload-link"
-                                    title="髪色アプリ(撮影)"><i class="fa-solid fa-mobile-screen"></i></a>
-                                <a href="#" target="_blank" class="icon-button" id="detail-hair-edit-link"
-                                    title="髪色アプリ(編集)"><i class="fa-solid fa-palette"></i></a>
+                    </div>
+                    <div id="normal-booking-actions" class="modal-footer grid-buttons">
+                        <!-- ▼▼▼ 追加: AIアクションボタン (横並び) ▼▼▼ -->
+                        <div class="ai-actions-row"
+                            style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 10px;">
+                            <button class="icon-button camera-btn" id="detail-camera-btn" title="写真"><i
+                                    class="fa-solid fa-camera"></i></button>
+                            <!-- ▼▼▼ 追加: 画像素材アップロード (mobile_upload.html) ▼▼▼ -->
+                            <a href="#" target="_blank" class="icon-button" id="detail-mobile-upload-link"
+                                title="画像素材"><i class="fa-solid fa-images"></i></a>
+                            <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+                            <!-- New Hair App Links -->
+                            <a href="#" target="_blank" class="icon-button" id="detail-hair-upload-link"
+                                title="髪色アプリ(撮影)"><i class="fa-solid fa-mobile-screen"></i></a>
+                            <a href="#" target="_blank" class="icon-button" id="detail-hair-edit-link"
+                                title="髪色アプリ(編集)"><i class="fa-solid fa-palette"></i></a>
 
-                                <a href="#" target="_blank" class="icon-button" id="detail-counseling-link"
-                                    title="AIカウンセリング"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
-                                <a href="#" target="_blank" class="icon-button" id="detail-matching-link"
-                                    title="AIヘアスタイル診断"><i class="fa-solid fa-scissors"></i></a>
+                            <a href="#" target="_blank" class="icon-button" id="detail-counseling-link"
+                                title="AIカウンセリング"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
+                            <a href="#" target="_blank" class="icon-button" id="detail-matching-link"
+                                title="AIヘアスタイル診断"><i class="fa-solid fa-scissors"></i></a>
+                        </div>
+                        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
+                        <a href="#" id="detail-pos-link" class="button-primary"><i
+                                class="fa-solid fa-cash-register"></i> 会計へ進む</a>
+                        <button id="detail-edit-btn" class="button-secondary"><i class="fa-solid fa-pen-to-square"></i>
+                            編集</button>
+                        <a href="#" id="detail-customer-link" class="button-secondary"><i class="fa-solid fa-user"></i>
+                            顧客情報</a>
+                        <button id="detail-cancel-btn" class="button-danger"><i class="fa-solid fa-trash"></i>
+                            キャンセル</button>
+                    </div>
+                    <div id="unavailable-booking-actions" class="modal-footer" style="display: none;">
+                        <button id="unavailable-delete-btn" class="button-danger"><i class="fa-solid fa-trash"></i>
+                            予約不可を解除</button>
+                    </div>
+                    <div class="form-actions" style="justify-content: center;">
+                        <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 空き時間クリック時のアクション選択モーダル -->
+            <div id="timeslot-action-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="timeslot-action-title"></h2>
+                    </div>
+                    <div class="modal-body" style="text-align: center;">
+                        <button id="action-add-booking" class="button-primary large-btn"><i
+                                class="fa-solid fa-plus"></i> 予約を追加</button>
+                        <button id="action-set-unavailable" class="button-secondary large-btn"><i
+                                class="fa-solid fa-ban"></i> 予約不可に設定</button>
+                    </div>
+                    <div class="form-actions" style="justify-content: center;">
+                        <button type="button" class="button-secondary close-modal-btn">キャンセル</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 予約追加/編集モーダル -->
+            <div id="booking-edit-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="edit-modal-title">新規予約追加</h2>
+                    </div>
+                    <form id="booking-form">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="customer-input">顧客:</label>
+                                <!-- ▼▼▼ 修正 ▼▼▼ -->
+                                <input type="text" id="customer-input" list="customer-datalist" class="input-field"
+                                    placeholder="名前を入力または選択" inputmode="kana" required>
+                                <!-- ▲▲▲ 修正 ▲▲▲ -->
+                                <datalist id="customer-datalist"></datalist>
+                            </div>
+
+                            <!-- ★★★ 新規顧客用の入力欄を追加 ★★★ -->
+                            <div id="new-customer-fields"
+                                style="display: none; border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
+                                <p style="font-size: 0.9rem; color: var(--light-text-color); margin-top: 0;">
+                                    新規顧客として登録します。
+                                </p>
+                                <div class="form-group">
+                                    <label for="new-customer-kana">ふりがな <span class="required">*</span></label>
+                                    <!-- ▼▼▼ 修正 ▼▼▼ -->
+                                    <input type="text" id="new-customer-kana" class="input-field" inputmode="kana">
+                                    <!-- ▲▲▲ 修正 ▲▲▲ -->
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-customer-phone">電話番号</label>
+                                    <input type="tel" id="new-customer-phone" class="input-field">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>メニュー (複数選択可):</label>
+                                <div id="menu-accordion-container"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="start-time">開始時間:</label>
+                                <select id="start-time" class="input-field" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="end-time">終了時間:</label>
+                                <select id="end-time" class="input-field" required></select>
+                            </div>
+                            <!-- ★★★ 追加: 管理者メモ入力欄 ★★★ -->
+                            <div class="form-group">
+                                <label for="admin-notes">管理者メモ:</label>
+                                <textarea id="admin-notes" class="input-field" placeholder="予約に関するメモを入力..."
+                                    rows="3"></textarea>
                             </div>
                             <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
-
-                            <a href="#" id="detail-pos-link" class="button-primary"><i
-                                    class="fa-solid fa-cash-register"></i> 会計へ進む</a>
-                            <button id="detail-edit-btn" class="button-secondary"><i
-                                    class="fa-solid fa-pen-to-square"></i> 編集</button>
-                            <a href="#" id="detail-customer-link" class="button-secondary"><i
-                                    class="fa-solid fa-user"></i> 顧客情報</a>
-                            <button id="detail-cancel-btn" class="button-danger"><i class="fa-solid fa-trash"></i>
-                                キャンセル</button>
                         </div>
-                        <div id="unavailable-booking-actions" class="modal-footer" style="display: none;">
-                            <button id="unavailable-delete-btn" class="button-danger"><i class="fa-solid fa-trash"></i>
-                                予約不可を解除</button>
-                        </div>
-                        <div class="form-actions" style="justify-content: center;">
+                        <div class="form-actions">
+                            <button type="button" id="delete-booking-btn" class="button-danger"
+                                style="display: none;">削除</button>
                             <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                            <button type="submit" class="button-primary">保存</button>
                         </div>
-                    </div>
+                    </form>
                 </div>
-
-                <!-- 2. 空き時間クリック時のアクション選択モーダル -->
-                <div id="timeslot-action-modal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2 id="timeslot-action-title"></h2>
-                        </div>
-                        <div class="modal-body" style="text-align: center;">
-                            <button id="action-add-booking" class="button-primary large-btn"><i
-                                    class="fa-solid fa-plus"></i> 予約を追加</button>
-                            <button id="action-set-unavailable" class="button-secondary large-btn"><i
-                                    class="fa-solid fa-ban"></i> 予約不可に設定</button>
-                        </div>
-                        <div class="form-actions" style="justify-content: center;">
-                            <button type="button" class="button-secondary close-modal-btn">キャンセル</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. 予約追加/編集モーダル -->
-                <div id="booking-edit-modal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2 id="edit-modal-title">新規予約追加</h2>
-                        </div>
-                        <form id="booking-form">
-                            <div class="modal-body">
-                                <div class="form-group">
-                                    <label for="customer-input">顧客:</label>
-                                    <!-- ▼▼▼ 修正 ▼▼▼ -->
-                                    <input type="text" id="customer-input" list="customer-datalist" class="input-field"
-                                        placeholder="名前を入力または選択" inputmode="kana" required>
-                                    <!-- ▲▲▲ 修正 ▲▲▲ -->
-                                    <datalist id="customer-datalist"></datalist>
-                                </div>
-
-                                <!-- ★★★ 新規顧客用の入力欄を追加 ★★★ -->
-                                <div id="new-customer-fields"
-                                    style="display: none; border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
-                                    <p style="font-size: 0.9rem; color: var(--light-text-color); margin-top: 0;">
-                                        新規顧客として登録します。
-                                    </p>
-                                    <div class="form-group">
-                                        <label for="new-customer-kana">ふりがな <span class="required">*</span></label>
-                                        <!-- ▼▼▼ 修正 ▼▼▼ -->
-                                        <input type="text" id="new-customer-kana" class="input-field" inputmode="kana">
-                                        <!-- ▲▲▲ 修正 ▲▲▲ -->
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="new-customer-phone">電話番号</label>
-                                        <input type="tel" id="new-customer-phone" class="input-field">
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>メニュー (複数選択可):</label>
-                                    <div id="menu-accordion-container"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="start-time">開始時間:</label>
-                                    <select id="start-time" class="input-field" required></select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="end-time">終了時間:</label>
-                                    <select id="end-time" class="input-field" required></select>
-                                </div>
-                                <!-- ★★★ 追加: 管理者メモ入力欄 ★★★ -->
-                                <div class="form-group">
-                                    <label for="admin-notes">管理者メモ:</label>
-                                    <textarea id="admin-notes" class="input-field" placeholder="予約に関するメモを入力..."
-                                        rows="3"></textarea>
-                                </div>
-                                <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
-                            </div>
-                            <div class="form-actions">
-                                <button type="button" id="delete-booking-btn" class="button-danger"
-                                    style="display: none;">削除</button>
-                                <button type="button" class="button-secondary close-modal-btn">閉じる</button>
-                                <button type="submit" class="button-primary">保存</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- ▼▼▼ 4. 予約不可設定モーダル (新規追加) ▼▼▼ -->
-                <div id="unavailable-modal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h2 id="unavailable-modal-title">予約不可時間を設定</h2>
-                        </div>
-                        <form id="unavailable-form">
-                            <div class="modal-body">
-                                <div class="form-group">
-                                    <label for="unavailable-start-time">開始時間:</label>
-                                    <select id="unavailable-start-time" class="input-field" required></select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="unavailable-end-time">終了時間:</label>
-                                    <select id="unavailable-end-time" class="input-field" required></select>
-                                </div>
-                            </div>
-                            <div class="form-actions">
-                                <button type="button" class="button-secondary close-modal-btn">閉じる</button>
-                                <button type="submit" class="button-primary">保存</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
-
             </div>
-            <!-- /.dashboard-main -->
-        </main>
 
-        <div id="loading-container" style="display: flex;">
-            <div class="spinner"></div>
-            <p id="loading-text">読み込み中...</p>
-        </div>
-        <div id="error-container" style="display: none;">
-            <h2>エラー</h2>
-            <p id="error-message"></p>
-            <button id="retry-button" class="button-primary">再読み込み</button>
-        </div>
+            <!-- ▼▼▼ 4. 予約不可設定モーダル (新規追加) ▼▼▼ -->
+            <div id="unavailable-modal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="unavailable-modal-title">予約不可時間を設定</h2>
+                    </div>
+                    <form id="unavailable-form">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="unavailable-start-time">開始時間:</label>
+                                <select id="unavailable-start-time" class="input-field" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="unavailable-end-time">終了時間:</label>
+                                <select id="unavailable-end-time" class="input-field" required></select>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="button-secondary close-modal-btn">閉じる</button>
+                            <button type="submit" class="button-primary">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
+
+    </div>
+    <!-- /.dashboard-main -->
+    </main>
+
+    <div id="loading-container" style="display: flex;">
+        <div class="spinner"></div>
+        <p id="loading-text">読み込み中...</p>
+    </div>
+    <div id="error-container" style="display: none;">
+        <h2>エラー</h2>
+        <p id="error-message"></p>
+        <button id="retry-button" class="button-primary">再読み込み</button>
+    </div>
     </div>
 
     <!-- 写真アップロード用隠し入力 -->
-    <input type="file" id="photo-upload-input" accept="image/*" style="display: none;">
-
-    <script type="module" src="./firebase-init.js"></script>
-    <script type="module" src="./admin-auth.js"></script>
     <script type="module" src="./admin.js"></script>
 </body>
 

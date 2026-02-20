@@ -48,7 +48,7 @@ const auth = getAuth(app);
 // Mock AppState for API usage
 appState.firebase = { app, auth, storage, firestore: db };
 
-if (window.location.hostname === 'localhost') {
+if (import.meta.env.DEV) {
   // appState.apiBaseUrl = "http://127.0.0.1:5001/yhd-db/us-central1"; // Example
 }
 
@@ -418,8 +418,8 @@ async function saveToGallery(canvas) {
     // PC will use: pc_generated
     const storagePath = `pc_generated/${currentCustomer.id}/${filename}`;
 
-    // Use the imported storageRef correctly
-    const sRef = storageRef(storage, storagePath);
+    // Use the correctly imported ref from firebase/storage
+    const sRef = ref(storage, storagePath);
 
     // Upload to Storage (Dedicated Folder)
     await uploadBytes(sRef, blob);

@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MENU</title>
-        <link rel="icon" href="../img/YHDlogo2.png" type="image/png">
+    <link rel="icon" href="../img/YHDlogo2.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
+
 <body>
     <div id="app-container">
         <header>
@@ -29,14 +31,15 @@
         <main id="content-container" style="display: none;">
             <div class="card">
                 <div class="toolbar" style="margin-bottom: 1.5rem;">
-                    <button id="add-category-btn" class="button-primary"><i class="fa-solid fa-plus"></i> 新規カテゴリー追加</button>
+                    <button id="add-category-btn" class="button-primary"><i class="fa-solid fa-plus"></i>
+                        新規カテゴリー追加</button>
                 </div>
                 <div id="categories-container">
                     <!-- カテゴリーとメニューがここに動的に追加されます -->
                 </div>
             </div>
         </main>
-        
+
         <!-- カテゴリー追加/編集モーダル -->
         <div id="category-modal" class="modal">
             <div class="modal-content">
@@ -63,7 +66,7 @@
         <!-- メニュー追加/編集モーダル -->
         <div id="menu-modal" class="modal">
             <div class="modal-content">
-                 <div class="modal-header">
+                <div class="modal-header">
                     <h2 id="menu-modal-title">新規メニュー追加</h2>
                 </div>
                 <form id="menu-form">
@@ -124,9 +127,7 @@
             <button id="retry-button" class="button-primary">再読み込み</button>
         </div>
     </div>
-    <script type="module" src="./firebase-init.js"></script>
-    <script type="module" src="./admin-auth.js"></script>
     <script type="module" src="./menu.js"></script>
 </body>
-</html>
 
+</html>

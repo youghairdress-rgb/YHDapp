@@ -5,8 +5,8 @@
  * ★ AI機能は YHD-DX を使用
  */
 
-export const IS_DEV_MODE = false;
-export const USE_MOCK_AUTH = false;
+export const IS_DEV_MODE = import.meta.env.DEV;
+export const USE_MOCK_AUTH = import.meta.env.DEV;
 
 export const appState = {
   // 1. アプリケーション設定
@@ -29,7 +29,9 @@ export const appState = {
   // AI機能（診断・画像生成）は統合された YHD-db のFunctionsを使用
   // 3. API設定
   // HostingのRewriteが不安定なため、Cloud FunctionsのURLを直接指定します
-  apiBaseUrl: 'https://asia-northeast1-yhd-db.cloudfunctions.net',
+  apiBaseUrl: import.meta.env.DEV
+    ? 'http://127.0.0.1:5001/yhd-db/asia-northeast1'
+    : 'https://asia-northeast1-yhd-db.cloudfunctions.net',
   // apiBaseUrl: "", // Hosting Rewriteを使用する場合は空文字
 
   // 2. Firebase インスタンス

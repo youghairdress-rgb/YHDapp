@@ -124,11 +124,9 @@
             <button id="retry-button" class="button-primary">再読み込み</button>
         </div>
     </div>
-    <script type="module" src="./firebase-init.js"></script>
-    <script type="module" src="./admin-auth.js"></script>
     <script type="module">
         import { renderErrorDashboard, startAutoRefresh } from './errorDashboard.js';
-        
+
         // ページ読み込み時にエラーダッシュボードを初期化
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {

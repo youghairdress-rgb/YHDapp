@@ -31,12 +31,12 @@ const storage = getStorage(app);
 const functions = getFunctions(app, 'asia-northeast1');
 
 // Cloud FunctionsのURL
-const CLOUD_FUNCTIONS_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+const CLOUD_FUNCTIONS_URL = import.meta.env.DEV
   ? 'http://127.0.0.1:5001/yhd-db/asia-northeast1'
   : 'https://asia-northeast1-yhd-db.cloudfunctions.net';
 
 // エミュレータの設定
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+if (import.meta.env.DEV) {
   console.log('エミュレータに接続します。');
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   connectAuthEmulator(auth, 'http://127.0.0.1:9099');
@@ -69,10 +69,8 @@ const getFirebaseUser = () =>
  */
 const initializeLiffAndAuth = async (liffId) => {
   try {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-    if (isLocalhost) {
-      console.log('ローカル環境を検出しました。LINE認証をバイパスします。');
+    if (import.meta.env.DEV) {
+      console.log('ローカル開発環境を検出しました(DEVモード)。LINE認証をバイパスします。');
 
       // モックのプロフィール情報を定義
       const mockProfile = {
@@ -123,7 +121,7 @@ const initializeLiffAndAuth = async (liffId) => {
       } else {
         const originalGetIdTokenResult = currentUser.getIdTokenResult;
         currentUser.getIdTokenResult = async (force) => {
-          if (isLocalhost) {
+          if (import.meta.env.DEV) {
             return { claims: { admin: true } };
           }
           return originalGetIdTokenResult.call(currentUser, force);
