@@ -11,6 +11,7 @@ const config = require("../config");
 const { fetchAsBase64 } = require("../utils/fetchHelper");
 const { sendSuccess, sendError } = require("../utils/responseHelper");
 const { sanitizeObject } = require("../utils/sanitizer");
+const { handleError } = require("../utils/errorMonitor");
 
 /**
  * 診断リクエストのメインコントローラー
@@ -68,6 +69,16 @@ async function requestDiagnosisController(req, res, dependencies) {
     parts.push(...fetchedParts);
 
   } catch (fetchError) {
+    await handleError(fetchError, 'requestDiagnosis', {
+      context: {
+        userId: userProfile?.userId,
+        customerId: userProfile?.firebaseUid,
+        stage: 'FILE_FETCH',
+        fileUrls: Object.keys(fileUrls || {})
+      },
+      notifyLine: true,
+      throwError: false
+    });
     return sendError(res, 500, "File Fetch Error", `ファイル取得失敗: ${fetchError.message}`);
   }
 
@@ -124,6 +135,17 @@ async function requestDiagnosisController(req, res, dependencies) {
     return sendSuccess(res, sanitizedJson);
 
   } catch (apiError) {
+    await handleError(apiError, 'requestDiagnosis', {
+      context: {
+        userId: userProfile?.userId,
+        customerId: userProfile?.firebaseUid,
+        stage: 'GEMINI_API_CALL',
+        gender,
+        model: config.models.diagnosis
+      },
+      notifyLine: true,
+      throwError: false
+    });
     return sendError(res, 500, "Gemini API Error", `AI診断失敗: ${apiError.message}`, {
       model: config.models.diagnosis
     });

@@ -1,0 +1,22 @@
+{
+  "name": "yhd-app-liff",
+  "version": "1.0.0",
+  "description": "YOU-G HAIR Dress - AI Personal Diagnosis & Image Generation LIFF App",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "emulators": "firebase emulators:start --import=./emulator-data --export-on-exit",
+    "emulators:ui": "firebase emulators:start --only ui",
+    "functions:dev": "npm run build --prefix functions && firebase emulators:start --only functions",
+    "lint": "eslint public",
+    "format": "prettier --write \"public/**/*.js\"",
+    "deploy": "firebase deploy"
+  },
+  "devDependencies": {
+    "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "vite": "^5.0.0"
+  }
+}

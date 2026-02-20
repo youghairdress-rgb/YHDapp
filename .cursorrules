@@ -1,0 +1,23 @@
+# LIFF App AI Coding Rules
+
+## 1. LIFF & Browser Cache Management
+- **Cache Busting**: LINE LIFF has a very strong cache. For all frontend assets (JS/CSS), always consider versioning or hash-based filenames.
+- **Vite Integration**: Once migrated to Vite, ensure `build.rollupOptions` is configured to include hashes in filenames.
+- **Service Workers**: Use caution with Service Workers as they can make cache updates even more difficult in LIFF.
+
+## 2. Firestore Optimization
+- **Read & Write Cost**: Minimize reads by using `getDoc` only when necessary and leverage Firestore's real-time listeners (`onSnapshot`) carefully.
+- **Indexing**: Always use the `firestore.indexes.json` file for complex queries. Do not write queries that would require missing indexes.
+- **Batch Processing**: Use `writeBatch` for multiple operations to ensure atomicity and potentially reduce overhead.
+
+## 3. Cloud Functions (Gemini & AI Processing)
+- **Timeouts**: AI processing (Image Gen, Matching) often takes 30s-60s+. Always set `timeoutSeconds` to at least 120-300 in v2 options.
+- **Memory**: Vertex AI / Gemini interactions may require higher memory. Default to 1GB or 2GB for AI functions.
+- **Error Handling**:
+    - Implement retry logic with exponential backoff for AI API failures.
+    - Always return meaningful error codes to the frontend (e.g., 504 for timeout, 429 for rate limit).
+    - Log detailed errors to Cloud Logging including prompt snippets for debugging (avoiding PII).
+
+## 4. UI/UX for LIFF
+- **Loading States**: Since AI processing is slow, UI must show progress (Skeleton screens or Progress bars).
+- **Responsive Design**: Assume 9:16 (Tall) aspect ratio as default for mobile LIFF view.

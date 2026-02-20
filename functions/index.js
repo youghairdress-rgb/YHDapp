@@ -21,7 +21,15 @@ const LINE_CHANNEL_ACCESS_TOKEN = configParams.lineChannelAccessToken;
 const ADMIN_LINE_USER_IDS = configParams.adminLineUserIds;
 const GEMINI_API_KEY = configParams.geminiApiKey;
 
+const { setGlobalOptions } = require("firebase-functions/v2");
 
+// --- Global Options for v2 ---
+setGlobalOptions({
+    region: "asia-northeast1",
+    memory: "1GiB",
+    timeoutSeconds: 300,
+    concurrency: 10
+});
 
 
 // --- 1. createFirebaseCustomToken (Original) ---
@@ -244,4 +252,87 @@ exports.analyzeTrends = functions.region("asia-northeast1").runWith({ timeoutSec
     });
 });
 
+// --- Error Monitoring & Dashboard ---
+const { getRecentErrors, getErrorStats } = require("./src/utils/errorMonitor");
+
+/**
+ * 最近のエラーログを取得（管理者のみ）
+ */
+exports.getErrorLogs = functions.region("asia-northeast1").https.onRequest((req, res) => {
+    cors(req, res, async () => {
+        try {
+            // 認証チェック
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const token = authHeader.substring(7);
+            let decodedToken;
+            try {
+                decodedToken = await admin.auth().verifyIdToken(token);
+            } catch (err) {
+                return res.status(401).json({ error: "Invalid token" });
+            }
+
+            // 管理者権限チェック
+            if (!decodedToken.admin) {
+                return res.status(403).json({ error: "Forbidden: Admin only" });
+            }
+
+            const days = req.query.days ? parseInt(req.query.days) : 7;
+            const errors = await getRecentErrors(days);
+
+            res.status(200).json({
+                success: true,
+                count: errors.length,
+                errors: errors,
+                requestedDays: days
+            });
+        } catch (error) {
+            console.error("[getErrorLogs]", error);
+            res.status(500).json({ error: "Internal Server Error" });
+        }
+    });
+});
+
+/**
+ * エラー統計を取得（管理者のみ）
+ */
+exports.getErrorStats = functions.region("asia-northeast1").https.onRequest((req, res) => {
+    cors(req, res, async () => {
+        try {
+            // 認証チェック
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ error: "Unauthorized" });
+            }
+
+            const token = authHeader.substring(7);
+            let decodedToken;
+            try {
+                decodedToken = await admin.auth().verifyIdToken(token);
+            } catch (err) {
+                return res.status(401).json({ error: "Invalid token" });
+            }
+
+            // 管理者権限チェック
+            if (!decodedToken.admin) {
+                return res.status(403).json({ error: "Forbidden: Admin only" });
+            }
+
+            const days = req.query.days ? parseInt(req.query.days) : 7;
+            const stats = await getErrorStats(days);
+
+            res.status(200).json({
+                success: true,
+                stats: stats,
+                requestedDays: days
+            });
+        } catch (error) {
+            console.error("[getErrorStats]", error);
+            res.status(500).json({ error: "Internal Server Error" });
+        }
+    });
+});
 

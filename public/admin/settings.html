@@ -29,6 +29,12 @@
         <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
 
         <main id="content-container" style="display: none;">
+            <!-- ▼▼▼ 追加: エラーモニタリング セクション ▼▼▼ -->
+            <section id="error-dashboard-section" style="margin-bottom: 2rem;">
+                <!-- errorDashboard.js でレンダリング -->
+            </section>
+            <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
             <form id="settings-form">
                 <div class="card">
                     <h2 class="card-subtitle">営業時間・定休日</h2>
@@ -121,6 +127,18 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script type="module" src="./firebase-init.js"></script>
     <script type="module" src="./admin-auth.js"></script>
+    <script type="module">
+        import { renderErrorDashboard, startAutoRefresh } from './errorDashboard.js';
+        
+        // ページ読み込み時にエラーダッシュボードを初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                renderErrorDashboard('error-dashboard-section');
+                // 5分ごとに自動更新
+                startAutoRefresh(300);
+            }, 500);
+        });
+    </script>
     <script type="module" src="./settings.js"></script>
 </body>
 
