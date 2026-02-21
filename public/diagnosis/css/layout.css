@@ -1,96 +1,151 @@
-/* layout.css - Containers, Grid, Phase Structure */
+/* layout.css - Optimized Landscape Architecture for 1920x1080 */
 
-/* Phase Container - All phases are fullscreen fixed (no scroll) */
+:root {
+    --side-gap: 50px;
+    --card-padding: 60px;
+}
+
+/* Phase Container Base */
 .phase-container {
     display: none;
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100vw;
     height: 100vh;
-    height: 100dvh;
     overflow: hidden;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease-in-out, visibility 0s 0.3s;
+    background-color: #f1f5f9;
     box-sizing: border-box;
-    background-color: var(--bg-color);
+    padding: var(--side-gap);
     z-index: 50;
+    opacity: 0;
+    transition: opacity 0.5s ease;
 }
 
 .phase-container.active {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     opacity: 1;
-    visibility: visible;
-    transition: opacity 0.3s ease-in-out, visibility 0s 0s;
 }
 
-/* Card */
-.card {
-    background-color: var(--card-bg);
-    padding: 35px 20px;
-    border-radius: 24px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+/* Landscape Card Structure */
+.landscape-card {
     width: 100%;
-    text-align: center;
-    box-sizing: border-box;
-    position: relative;
-    max-width: 1000px;
-    /* Default max-width for cards */
-    margin: 0 auto;
-}
-
-/* Grid Layouts */
-.result-grid,
-.proposal-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-}
-
-.makeup-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-/* Split Containers (Phase 4, 5) */
-.split-container {
+    height: 100%;
+    max-width: 1760px;
+    max-height: 960px;
+    background-color: #fff;
+    border-radius: 40px;
+    padding: var(--card-padding);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
-    gap: 30px;
-}
-
-@media (min-width: 768px) {
-    .split-container {
-        flex-direction: row;
-        align-items: flex-start;
-    }
-
-    .split-column-left,
-    .split-column-right {
-        flex: 1;
-        width: 50%;
-    }
-}
-
-/* Phase 1 Specific Layout */
-#phase1 {
-    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdfa 50%, #fff 100%);
-    z-index: 100;
-}
-
-.phase1-content {
-    text-align: center;
-    width: 100%;
-    max-width: 900px;
-    padding: 20px;
     box-sizing: border-box;
+    border: 1px solid #e2e8f0;
+}
+
+/* Phase 1: Opening (More balanced 50/50 split and Centered) */
+.p1-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    max-width: 1400px;
+    /* Constrain width to center the content area */
+    height: 100%;
+    align-items: center;
+    margin: 0 auto;
+    /* Center the entire block in the viewport */
+}
+
+.p1-left {
+    display: flex;
+    justify-content: flex-end;
+    /* Push logo towards center */
+    padding-right: 60px;
+}
+
+.p1-logo {
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+    border: 12px solid #fff;
+}
+
+.p1-right {
+    padding-left: 60px;
+    display: flex;
+    justify-content: flex-start;
+    /* Push text towards center */
+}
+
+/* Phase 2: Profile (Grid Layout) */
+.p2-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    grid-template-rows: auto 1fr;
+    gap: 40px 80px;
+    height: 100%;
+}
+
+.p2-header {
+    grid-column: 1 / span 2;
+}
+
+.p2-left {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    justify-content: flex-start;
+}
+
+.p2-right {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.p2-footer {
+    margin-top: auto;
+    padding-top: 40px;
+    display: flex;
+    justify-content: center;
+    /* Center the button in left column */
+}
+
+/* Phase 3: Materials (5-Column Center) */
+.p3-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.p3-header {
+    margin-bottom: 50px;
+}
+
+.p3-grid-5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 30px;
+    flex: 1;
+    align-items: center;
+}
+
+.p3-footer {
+    margin-top: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 60px;
+}
+
+.p3-actions-main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    gap: 15px;
 }

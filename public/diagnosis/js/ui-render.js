@@ -166,9 +166,9 @@ export function renderGenerationConfigUI() {
     const id = `${groupName}-${value}`;
     const formattedLabel = labelText.replace(/：/g, '：<br>');
     return `
-            <div class="radio-option" style="margin-bottom: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #fff;">
+            <div class="radio-option">
                 <input type="radio" name="${groupName}" id="${id}" value="${value}" ${isChecked ? 'checked' : ''}>
-                <label for="${id}" style="font-size: 11px; font-weight: bold; margin-left: 5px; display: inline-block; vertical-align: top; line-height: 1.4;">${formattedLabel}</label>
+                <label for="${id}">${formattedLabel}</label>
             </div>
         `;
   };

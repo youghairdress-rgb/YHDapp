@@ -25,12 +25,17 @@ export const appState = {
   // LIFF ID (YHD-DX用)
   liffId: '2008345232-zq4A3Vg3',
 
-  // 2. Firebase インスタンス
+  // 2. Firebase インスタンス (main.js で初期化)
   firebase: {
+    /** @type {import('firebase/app').FirebaseApp | null} */
     app: null,
+    /** @type {import('firebase/auth').Auth | null} */
     auth: null,
+    /** @type {import('firebase/storage').FirebaseStorage | null} */
     storage: null,
+    /** @type {import('firebase/firestore').Firestore | null} */
     firestore: null,
+    /** @type {import('firebase/functions').Functions | null} */
     functions: null,
   },
 

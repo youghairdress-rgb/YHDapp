@@ -188,8 +188,8 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "firebase/app";
-        import { getAuth, signInAnonymously } from "firebase/auth";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+        import { getAuth, signInAnonymously, connectAuthEmulator } from "firebase/auth";
+        import { getStorage, ref, uploadBytes, getDownloadURL, connectStorageEmulator } from "firebase/storage";
         import { appState, IS_DEV_MODE } from './js/state.js'; // Import config
         // NOTE: We need a simplified state or config here. 
         // For simplicity, we'll inline minimal config logic if imports fail, 
@@ -201,6 +201,21 @@
         const app = initializeApp(appState.firebaseConfig);
         const auth = getAuth(app);
         const storage = getStorage(app, "gs://yhd-db.firebasestorage.app");
+
+        // --- Emulator Setup ---
+        const isLocalhost =
+            import.meta.env.DEV ||
+            ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) ||
+            window.location.hostname.startsWith('192.168.') ||
+            window.location.hostname.startsWith('10.') ||
+            window.location.hostname.startsWith('172.');
+
+        if (isLocalhost) {
+            console.log('[mobile_upload] Connecting to emulators...');
+            const emuHost = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+            connectAuthEmulator(auth, `http://${emuHost}:9099`);
+            connectStorageEmulator(storage, emuHost, 9199);
+        }
 
         // Get User ID from URL
         const params = new URLSearchParams(window.location.search);
@@ -229,9 +244,9 @@
             if (!file) return;
             if (!customerId) return;
 
-            const titleEl = input.closest('.upload-card').querySelector('.item-title'); 
+            const titleEl = input.closest('.upload-card').querySelector('.item-title');
             const statusEl = document.getElementById(`status-${itemId.replace('item-', '')}`);
-            
+
             // UI update: Uploading start
             if (statusEl) statusEl.textContent = "準備中...";
 

@@ -70,7 +70,10 @@ class MockLiff {
 // 開発モードの判別
 const isLocalhost =
   import.meta.env.DEV ||
-  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) ||
+  window.location.hostname.startsWith('192.168.') ||
+  window.location.hostname.startsWith('10.') ||
+  window.location.hostname.startsWith('172.');
 
 const isDev = isLocalhost;
 
@@ -81,10 +84,11 @@ const effectiveLiff = isLocalhost ? new MockLiff() : actualLiff;
 // エミュレータの設定
 if (isLocalhost) {
   console.log('開発モード(isLocalhost)を検出しました。エミュレータに接続します。');
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099');
-  connectStorageEmulator(storage, '127.0.0.1', 9199);
-  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+  const emuHost = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+  connectFirestoreEmulator(db, emuHost, 8080);
+  connectAuthEmulator(auth, `http://${emuHost}:9099`);
+  connectStorageEmulator(storage, emuHost, 9199);
+  connectFunctionsEmulator(functions, emuHost, 5001);
 }
 
 // onAuthStateChanged を Promise 化し、現在の認証状態を取得するヘルパー

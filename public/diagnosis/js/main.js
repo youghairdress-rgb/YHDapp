@@ -72,12 +72,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const storage = getStorage(app);
     const functions = getFunctions(app, 'asia-northeast1');
 
-    appState.firebase = { app, auth, storage, firestore: db, functions };
+    // ★重要: オブジェクトを丸ごと上書きせず、個別に代入することで参照を維持する
+    appState.firebase.app = app;
+    appState.firebase.auth = auth;
+    appState.firebase.firestore = db;
+    appState.firebase.storage = storage;
+    appState.firebase.functions = functions;
 
+    console.log('[main.js] Firebase instances initialized (Reference preserved)');
     // 環境判定とエミュレータ接続
     const isLocalhost =
       import.meta.env.DEV ||
-      ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) ||
+      window.location.hostname.startsWith('192.168.') ||
+      window.location.hostname.startsWith('10.') ||
+      window.location.hostname.startsWith('172.');
 
     if (isLocalhost) {
       const { connectAuthEmulator } = await import('firebase/auth');
@@ -85,11 +94,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const { connectStorageEmulator } = await import('firebase/storage');
       const { connectFunctionsEmulator } = await import('firebase/functions');
 
-      connectAuthEmulator(auth, 'http://127.0.0.1:9099');
-      connectFirestoreEmulator(db, '127.0.0.1', 8080);
-      connectStorageEmulator(storage, '127.0.0.1', 9199);
-      connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-      console.log('[diagnosis] Emulators connected');
+      const emuHost = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+      connectAuthEmulator(auth, `http://${emuHost}:9099`);
+      connectFirestoreEmulator(db, emuHost, 8080);
+      connectStorageEmulator(storage, emuHost, 9199);
+      connectFunctionsEmulator(functions, emuHost, 5001);
+      console.log('[diagnosis] Emulators connected to:', emuHost);
     }
     const params = new URLSearchParams(window.location.search);
     if (params.get('customerId')) {

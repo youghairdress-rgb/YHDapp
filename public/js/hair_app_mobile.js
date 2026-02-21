@@ -34,12 +34,16 @@ const auth = getAuth(app);
 
 const isLocalhost =
   import.meta.env.DEV ||
-  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) ||
+  window.location.hostname.startsWith('192.168.') ||
+  window.location.hostname.startsWith('10.') ||
+  window.location.hostname.startsWith('172.');
 if (isLocalhost) {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099');
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectStorageEmulator(storage, '127.0.0.1', 9199);
-  console.log('[hair_app_mobile] Emulators connected');
+  const emuHost = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+  connectAuthEmulator(auth, `http://${emuHost}:9099`);
+  connectFirestoreEmulator(db, emuHost, 8080);
+  connectStorageEmulator(storage, emuHost, 9199);
+  console.log('[hair_app_mobile] Emulators connected to:', emuHost);
 }
 
 let currentCustomerId = null;

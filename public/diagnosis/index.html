@@ -1,8 +1,430 @@
 <!DOCTYPE html>
-<html>
-<head><title>Test</title></head>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>YHD AI Diagnosis</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/style.css?v=37">
+    <link rel="stylesheet" href="css/components.css">
+
+    <!-- LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" charset="utf-8"></script>
+
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+        xintegrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tYHuRgEXEBOBS6qqSL9KxXfGPRCRHpTAfUuiQQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Global Helper Functions -->
+    <script>
+        const escapeHtmlFallback = function (unsafe) {
+            if (typeof unsafe !== 'string') return '';
+            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;").replace(/\//g, "&#x2F;");
+        };
+
+        function initializeAppFailureFallback(errorMessage) {
+            console.error("[initializeAppFailureFallback] Triggered with:", errorMessage);
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) loadingScreen.style.display = 'none';
+            const bodyElement = document.body || document.createElement('body');
+            const safeErrorMessage = escapeHtmlFallback(errorMessage || "不明なエラー");
+            bodyElement.innerHTML = `<div style="padding: 20px; text-align: center; color: red; background-color: #fff0f0; border: 1px solid red; border-radius: 8px; max-width: 600px; margin: 20px auto;"><h2>アプリケーションエラー</h2><p>${safeErrorMessage}</p><p>時間をおいて再度お試しください。</p></div>`;
+            if (!document.body) document.documentElement.appendChild(bodyElement);
+            bodyElement.style.cssText = `display: flex; justify-content: center; align-items: flex-start; padding-top: 50px; min-height: 100vh; background-color: #f8fafc;`;
+        }
+    </script>
+
+</head>
+
 <body>
-  <h1>Test</h1>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <!-- ローディング画面 -->
+    <div id="loading-screen" class="loading-container active">
+        <div class="spinner"></div>
+        <p>アプリを準備しています...</p>
+    </div>
+
+    <!-- Phase 1: Opening -->
+    <div id="phase1" class="phase-container">
+        <div class="p1-layout">
+            <div class="p1-left">
+                <img src="images/YHDlogo2.gif" alt="YHD AI Diagnosis Logo" class="p1-logo">
+            </div>
+            <div class="p1-right">
+                <div class="p1-text-group">
+                    <h1 class="logo-text-1">YHD × AI</h1>
+                    <h2 class="logo-text-2">『似合わせ診断』</h2>
+                    <p id="user-greeting" class="user-greeting"></p>
+                    <p class="p1-description">
+                        お客様の『似合う』を実現するために<br>
+                        AIが分析し、最適なアドバイスを伝えます✨
+                    </p>
+                    <button id="start-btn" class="btn-primary">診断を始める</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 2: Profile Input -->
+    <div id="phase2" class="phase-container">
+        <div class="card landscape-card">
+            <div class="p2-layout">
+                <div class="p2-header">
+                    <h2 class="form-title">Profile</h2>
+                </div>
+
+                <div class="p2-left">
+                    <div class="form-group">
+                        <label for="display-name">お名前</label>
+                        <input type="text" id="display-name" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>性別</label>
+                        <div class="gender-selection">
+                            <input type="radio" id="female" name="gender" value="female" checked>
+                            <label for="female">女性</label>
+
+                            <input type="radio" id="male" name="gender" value="male">
+                            <label for="male">男性</label>
+
+                            <input type="radio" id="other" name="gender" value="other">
+                            <label for="other">その他</label>
+                        </div>
+                    </div>
+                    <div class="p2-footer">
+                        <button id="next-to-upload-btn" class="btn-primary">For Materials</button>
+                    </div>
+                </div>
+
+                <div class="p2-right">
+                    <div class="form-group">
+                        <label for="user-requests">ご希望のメニューやご要望 (任意)</label>
+                        <textarea id="user-requests" class="form-control" rows="6"
+                            placeholder="（例）カットとカラー希望。赤みが出ないようにしたい。"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inspiration-image-input">ご希望のスタイル写真 (任意)</label>
+                        <input type="file" id="inspiration-image-input" class="file-input visually-hidden"
+                            accept="image/*">
+                        <div id="inspiration-upload-container" class="inspiration-upload-container">
+                            <div class="inspiration-preview-area">
+                                <img id="inspiration-image-preview" src="images/AI.png" alt="プレビュー">
+                            </div>
+                            <div class="inspiration-upload-info">
+                                <h3 id="inspiration-upload-title">写真を選択</h3>
+                                <p id="inspiration-upload-status">タップして画像を選択</p>
+                                <button id="inspiration-upload-btn" class="btn-outline-small">選択</button>
+                            </div>
+                            <button id="inspiration-delete-btn" class="btn-delete" style="display: none;">削除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 3: Materials -->
+    <div id="phase3" class="phase-container">
+        <div class="card landscape-card">
+            <div class="p3-layout">
+                <div class="p3-header">
+                    <h2 class="form-title-center">Materials</h2>
+                </div>
+
+                <div class="p3-grid-5" id="phase3-viewer-grid">
+                    <div class="p3-item" id="view-item-front-photo">
+                        <div class="p3-label">Photo:Front</div>
+                        <div class="viewer-thumbnail" id="thumb-item-front-photo"></div>
+                        <span class="p3-status status-badge">Pending</span>
+                    </div>
+                    <div class="p3-item" id="view-item-side-photo">
+                        <div class="p3-label">Photo:Side</div>
+                        <div class="viewer-thumbnail" id="thumb-item-side-photo"></div>
+                        <span class="p3-status status-badge">Pending</span>
+                    </div>
+                    <div class="p3-item" id="view-item-back-photo">
+                        <div class="p3-label">Photo:Back</div>
+                        <div class="viewer-thumbnail" id="thumb-item-back-photo"></div>
+                        <span class="p3-status status-badge">Pending</span>
+                    </div>
+                    <div class="p3-item" id="view-item-front-video">
+                        <div class="p3-label">Video:Front</div>
+                        <div class="viewer-thumbnail" id="thumb-item-front-video"></div>
+                        <span class="p3-status status-badge">Pending</span>
+                    </div>
+                    <div class="p3-item" id="view-item-back-video">
+                        <div class="p3-label">Video:Back</div>
+                        <div class="viewer-thumbnail" id="thumb-item-back-video"></div>
+                        <span class="p3-status status-badge">Pending</span>
+                    </div>
+                </div>
+
+                <div class="p3-footer">
+                    <button id="reload-viewer-btn" class="btn-outline">Reload</button>
+                    <div class="p3-actions-main">
+                        <button id="request-diagnosis-btn-viewer" class="btn-primary" disabled>Start Diagnosis</button>
+                        <p class="status-note">※Waiting for all materials</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+    </div>
+
+    <!-- Phase 3.5: Loading -->
+    <div id="phase3.5" class="phase-container">
+        <div class="card">
+            <div class="spinner"></div>
+            <h2 class="form-title" style="margin-top: 25px; margin-bottom: 10px;">AIが診断中です</h2>
+            <p class="description" id="diagnosis-status-text">しばらくお待ちください...</p>
+        </div>
+    </div>
+
+    <!-- Phase 4: Diagnosis Result -->
+    <div id="phase4" class="phase-container">
+        <div class="card">
+            <h2 class="form-title">AI Diagnosis</h2>
+
+            <div class="split-container">
+                <div class="split-column-left">
+                    <div class="result-section">
+                        <h3 class="result-title"><img src="images/顔診断.png" alt="" class="result-icon"> お顔の特徴</h3>
+                        <div id="face-results" class="result-grid"></div>
+                    </div>
+                    <div class="result-section">
+                        <h3 class="result-title"><img src="images/骨格診断.png" alt="" class="result-icon"> 骨格・ボディ</h3>
+                        <div id="skeleton-results" class="result-grid"></div>
+                    </div>
+                </div>
+                <div class="split-column-right">
+                    <div class="result-section">
+                        <h3 class="result-title"><img src="images/ヘアスタイル.png" alt="" class="result-icon"> 現在の髪の状態</h3>
+                        <div id="hair-condition-results" class="result-grid"></div>
+                    </div>
+                    <div class="result-section">
+                        <h3 class="result-title"><img src="images/パーソナルカラー.png" alt="" class="result-icon"> パーソナルカラー
+                        </h3>
+                        <div id="personal-color-results" class="result-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="capture-boundary">
+            <div class="phase4-button-container">
+                <button id="next-to-proposal-btn" class="btn-dark">AI提案を見る</button>
+                <button id="save-phase4-btn" class="btn-secondary no-print">画像保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 5: Proposal -->
+    <div id="phase5" class="phase-container">
+        <div class="card">
+            <h2 class="form-title">AI Style Proposal</h2>
+
+            <div class="split-container">
+                <div class="split-column-left">
+                    <div class="proposal-section">
+                        <h3 class="proposal-title"><img src="images/ヘアスタイル.png" alt="" class="proposal-icon"> 似合うヘアスタイル
+                        </h3>
+                        <div id="hairstyle-proposal" class="proposal-grid"></div>
+                    </div>
+                    <div class="proposal-section spacer-top">
+                        <h3 class="proposal-title"><img src="images/ヘアカラー.png" alt="" class="proposal-icon"> 似合うヘアカラー
+                        </h3>
+                        <div id="haircolor-proposal" class="proposal-grid"></div>
+                    </div>
+                    <div class="proposal-section">
+                        <h3 class="proposal-title"><img src="images/カラーパターン.png" alt="" class="proposal-icon"> 相性ベストカラー
+                        </h3>
+                        <div id="best-colors-proposal" class="best-colors-grid"></div>
+                    </div>
+                </div>
+
+                <div class="split-column-right">
+                    <div class="proposal-section spacer-top">
+                        <h3 class="proposal-title"><img src="images/メイク.png" alt="" class="proposal-icon"> 似合うメイク</h3>
+                        <div id="makeup-proposal" class="makeup-grid"></div>
+                    </div>
+                    <div class="proposal-section">
+                        <h3 class="proposal-title"><img src="images/骨格診断.png" alt="" class="proposal-icon"> 似合うファッション
+                        </h3>
+                        <div id="fashion-proposal" class="makeup-grid"></div>
+                    </div>
+                    <div class="proposal-section">
+                        <h3 class="proposal-title"><img src="images/AI美容師.png" alt="" class="proposal-icon"> AIからのアドバイス
+                        </h3>
+                        <div class="top-stylist-comment">
+                            <p id="top-stylist-comment-text"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ★ 変更: 設定へ進むボタン -->
+            <hr class="capture-boundary">
+            <div class="phase5-button-container">
+                <button id="back-to-diagnosis-btn" class="btn-secondary btn-secondary-white no-print">戻る</button>
+                <button id="save-phase5-btn" class="btn-secondary no-print">画像保存</button>
+                <button id="move-to-phase6-btn" class="btn-dark">合成画像を生成</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phase 6: Generated Image (Style Selection) -->
+    <div id="phase6" class="container-fluid phase-container" style="display:none;">
+        <div class="phase-header">
+            <h2 class="phase-title">Style Selection</h2>
+        </div>
+
+        <div class="phase6-layout-grid">
+            <!-- Col 1: Style List -->
+            <div class="p6-col-style">
+                <h3 class="refinement-title"><img src="images/AI美容師.png" alt="" class="proposal-icon"> スタイル</h3>
+                <div id="style-selection-group" class="form-group scroll-y"></div>
+            </div>
+            <!-- Col 2: Color List -->
+            <div class="p6-col-color">
+                <h3 class="refinement-title"><img src="images/ヘアカラー.png" alt="" class="proposal-icon"> カラー</h3>
+                <div id="color-selection-group" class="form-group scroll-y"></div>
+            </div>
+            <!-- Col 3: Tone & Start -->
+            <div class="p6-col-action">
+                <h3 class="refinement-title"><img src="images/ヘアカラー.png" alt="" class="proposal-icon"> 明るさ</h3>
+                <div class="form-group">
+                    <select id="hair-tone-select" class="form-control">
+                        <option value="">現在の髪色</option>
+                        <option value="Tone 5">Tone 5</option>
+                        <option value="Tone 7">Tone 7</option>
+                        <option value="Tone 9">Tone 9</option>
+                        <option value="Tone 11">Tone 11</option>
+                        <option value="Tone 13">Tone 13</option>
+                        <option value="Tone 15">Tone 15</option>
+                        <option value="Tone 18">Tone 18</option>
+                    </select>
+                </div>
+                <div class="phase6-bottom-buttons">
+                    <button id="back-to-proposal-btn-p6" class="btn-secondary">戻る</button>
+                    <button id="generate-image-btn" class="btn-primary">Composite START</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PHASE 7: Refinement (Composite) -->
+    <div id="phase7" class="container-fluid phase-container" style="display:none;">
+        <div class="phase-header">
+            <h2 class="phase-title">Refinement</h2>
+        </div>
+
+        <div class="phase7-layout">
+            <!-- Left: Controls -->
+            <div id="phase7-adjustment-container" class="p7-comp-left">
+                <!-- Debug Status for iPad -->
+                <div id="segmentation-status" style="display:none !important;">Ready
+                </div>
+                <div class="adjustment-controls horizontal-faders">
+                    <!-- Brightness -->
+                    <div class="fader-container">
+                        <div class="fader-title">Brightness <span id="label-brightness-val"
+                                style="font-weight:normal; margin-left:5px;">(10tone)</span></div>
+                        <div class="control-item fader-group">
+                            <span class="fader-icon">💡</span>
+                            <button class="fader-btn-down" data-target="range-brightness" data-step="-1">◀</button>
+                            <input type="range" id="range-brightness" min="5" max="20" value="10"
+                                class="horizontal-fader">
+                            <button class="fader-btn-up" data-target="range-brightness" data-step="1">▶</button>
+                        </div>
+                    </div>
+
+                    <!-- Hue -->
+                    <div class="fader-container">
+                        <div class="fader-title">Hue <span id="label-hue-val"
+                                style="font-weight:normal; margin-left:5px;">(180°)</span></div>
+                        <div class="control-item fader-group">
+                            <span class="fader-icon">🎨</span>
+                            <button class="fader-btn-down" data-target="range-hue" data-step="-10">◀</button>
+                            <input type="range" id="range-hue" min="0" max="360" value="180" class="horizontal-fader">
+                            <button class="fader-btn-up" data-target="range-hue" data-step="10">▶</button>
+                        </div>
+                    </div>
+
+                    <!-- Saturate -->
+                    <div class="fader-container">
+                        <div class="fader-title">Saturation <span id="label-saturate-val"
+                                style="font-weight:normal; margin-left:5px;">(0%)</span></div>
+                        <div class="control-item fader-group">
+                            <span class="fader-icon">💧</span>
+                            <button class="fader-btn-down" data-target="range-saturate" data-step="-10">◀</button>
+                            <input type="range" id="range-saturate" min="0" max="100" value="0"
+                                class="horizontal-fader">
+                            <button class="fader-btn-up" data-target="range-saturate" data-step="10">▶</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right: Image -->
+            <div class="p7-comp-right">
+                <div class="image-preview-wrapper">
+                    <img id="main-diagnosis-image" src="" alt="Diagnosis Result" style="display:none;"
+                        crossorigin="anonymous">
+                    <canvas id="phase6-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Buttons Area (Moved to root for easier layout) -->
+            <div class="comp-buttons-area">
+                <div class="save-buttons-group">
+                    <button id="btn-back-style" class="btn-outline">Styleに戻る</button>
+                    <button id="btn-save" class="btn-primary">保存</button>
+                    <button id="btn-reset" class="btn-dark-outline">リセット</button>
+                </div>
+                <!-- Hidden but kept if ref needed logic -->
+                <button id="save-generated-image-to-db-btn" class="btn-success" style="display:none;">DB保存</button>
+                <button id="back-to-proposal-btn" class="btn-outline" style="display:none;">提案に戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- カスタムモーダル (共通) -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">お知らせ</h3>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-ok-btn" class="btn-primary modal-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MediaPipe Vision (Global Bundle) -->
+    <!-- MediaPipe Vision (ESM Import) -->
+    <script type="module">
+        import { FilesetResolver, ImageSegmenter } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/+esm";
+        window.MediaPipeVision = { FilesetResolver, ImageSegmenter };
+    </script>
+
+    <script src="js/main.js?v=6" type="module"></script>
 </body>
+
 </html>

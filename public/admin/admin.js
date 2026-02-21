@@ -349,7 +349,7 @@ const adminMain = async (auth, user) => {
 
       // 画像素材アップロード
       if (detailMobileUploadLink) {
-        detailMobileUploadLink.href = `/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        detailMobileUploadLink.href = `/diagnosis/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
 
       // AIカウンセリング (診断)

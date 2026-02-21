@@ -457,10 +457,10 @@ const bookingMain = async (auth, user) => {
         `/admin/customers.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
 
       // AI Action Links Logic (すべてルート相対パスかつ動的パラメータ付き)
-      
+
       // 画像素材アップロード
       if (detailMobileUploadLink) {
-        detailMobileUploadLink.href = `/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        detailMobileUploadLink.href = `/diagnosis/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
 
       // AIカウンセリング (診断)

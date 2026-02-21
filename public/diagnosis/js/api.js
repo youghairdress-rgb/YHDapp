@@ -15,15 +15,50 @@ import {
   addDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable, getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { appState } from './state.js';
 import { logger } from './helpers.js';
 
 // --- Generic Fetch Wrapper ---
 
+/**
+ * Firebase Functions インスタンスを安全に取得する
+ * (main.js での初期化漏れやタイミング問題を解消するための自己修復ロジック)
+ */
+function getFunctionsInstance() {
+  // 1. 既にインスタンスがあればそれを返す
+  if (appState.firebase.functions) return appState.firebase.functions;
+
+  // 2. インスタンスがない場合、app があればその場で初期化を試みる
+  if (appState.firebase.app) {
+    logger.log('[API] Initializing Functions on-demand...');
+    const functions = getFunctions(appState.firebase.app, 'asia-northeast1');
+
+    // エミュレータ接続が必要か判定
+    const isLocalhost =
+      import.meta.env.DEV ||
+      ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) ||
+      window.location.hostname.startsWith('192.168.') ||
+      window.location.hostname.startsWith('10.') ||
+      window.location.hostname.startsWith('172.');
+
+    if (isLocalhost) {
+      const emuHost = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+      connectFunctionsEmulator(functions, emuHost, 5001);
+      logger.log(`[API] Connected to Functions Emulator: ${emuHost}:5001`);
+    }
+
+    appState.firebase.functions = functions;
+    return functions;
+  }
+
+  return null;
+}
+
 async function fetchInternal(endpointName, body) {
-  const functions = appState.firebase.functions;
+  const functions = getFunctionsInstance();
   if (!functions) {
+    logger.error('[API] Critical Error: Firebase app is not initialized yet.');
     throw new Error('Firebase Functions is not initialized.');
   }
 
