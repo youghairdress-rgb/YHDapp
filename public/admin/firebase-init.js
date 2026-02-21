@@ -11,6 +11,7 @@ import {
   connectAuthEmulator,
   signInAnonymously,
 } from 'firebase/auth';
+import { httpsCallable } from 'firebase/functions';
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -33,13 +34,7 @@ const functions = getFunctions(app, 'asia-northeast1');
 // 開発モードの判定（重要: 店舗PC環境での判定漏れを防ぐためにホスト名もチェック）
 const isDev =
   import.meta.env.DEV ||
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1';
-
-// Cloud FunctionsのURL
-const CLOUD_FUNCTIONS_URL = isDev
-  ? 'http://127.0.0.1:5001/yhd-db/asia-northeast1'
-  : 'https://asia-northeast1-yhd-db.cloudfunctions.net';
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
 // エミュレータの設定
 if (isDev) {
@@ -143,26 +138,10 @@ const initializeLiffAndAuth = async (liffId) => {
 // カスタムトークンを使用してFirebaseにログインする関数
 const firebaseLoginWithToken = async (accessToken) => {
   try {
-    const response = await fetch(`${CLOUD_FUNCTIONS_URL}/createFirebaseCustomToken`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken }),
-    });
+    const createTokenCall = httpsCallable(functions, 'createFirebaseCustomTokenCall');
+    const result = await createTokenCall({ accessToken });
+    const { customToken } = result.data;
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        console.warn('アクセストークンが無効(401)です。LIFFの再ログインを試みます。');
-        liff.login({ redirectUri: window.location.href });
-        // リダイレクト待機
-        return new Promise(() => { });
-      }
-      const errorText = await response.text();
-      throw new Error(
-        `カスタムトークンの取得に失敗しました。ステータス: ${response.status}, サーバー応答: ${errorText}`
-      );
-    }
-
-    const { customToken } = await response.json();
     console.log('カスタムトークンを正常に取得しました。');
 
     const userCredential = await signInWithCustomToken(auth, customToken);
@@ -174,6 +153,12 @@ const firebaseLoginWithToken = async (accessToken) => {
     return { user: userCredential.user, profile };
   } catch (error) {
     console.error('Firebaseログイン処理中にエラーが発生しました:', error);
+    // 401エラー（アクセストークン無効）の場合は再ログイン
+    if (error.code === 'unauthenticated' || (error.details && error.details.status === 401)) {
+      console.warn('アクセストークンが無効です。LIFFの再ログインを試みます。');
+      liff.login({ redirectUri: window.location.href });
+      return new Promise(() => { });
+    }
     throw error; // エラーを呼び出し元に投げる
   }
 };

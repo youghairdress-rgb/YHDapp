@@ -1,9 +1,10 @@
 import liff from '@line/liff';
 import html2canvas from 'html2canvas';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously } from 'firebase/auth';
+import { getAuth, signInWithCustomToken, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 
 import { appState, IS_DEV_MODE, USE_MOCK_AUTH } from './state.js';
 import {
@@ -66,13 +67,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     const app = initializeApp(appState.firebaseConfig);
-    appState.firebase = {
-      app,
-      auth: getAuth(app),
-      storage: getStorage(app),
-      firestore: getFirestore(app),
-    };
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const functions = getFunctions(app, 'asia-northeast1');
 
+    appState.firebase = { app, auth, storage, firestore: db, functions };
+
+    // 環境判定とエミュレータ接続
+    const isDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    if (isDev) {
+      const { connectAuthEmulator } = await import('firebase/auth');
+      const { connectFirestoreEmulator } = await import('firebase/firestore');
+      const { connectStorageEmulator } = await import('firebase/storage');
+      const { connectFunctionsEmulator } = await import('firebase/functions');
+
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099');
+      connectFirestoreEmulator(db, '127.0.0.1', 8080);
+      connectStorageEmulator(storage, '127.0.0.1', 9199);
+      connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+      console.log('[diagnosis] Emulators connected');
+    }
     const params = new URLSearchParams(window.location.search);
     if (params.get('customerId')) {
       appState.userProfile.viaAdmin = true;

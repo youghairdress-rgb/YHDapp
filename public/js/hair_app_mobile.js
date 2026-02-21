@@ -8,6 +8,7 @@ import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   signInAnonymously,
+  connectAuthEmulator,
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -15,12 +16,14 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
+  connectFirestoreEmulator,
 } from 'firebase/firestore';
 import {
   getStorage,
   ref,
   uploadBytes,
   getDownloadURL,
+  connectStorageEmulator,
 } from 'firebase/storage';
 import { appState } from '../diagnosis/js/state.js';
 
@@ -28,6 +31,14 @@ const app = initializeApp(appState.firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
+
+const isDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+if (isDev) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099');
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectStorageEmulator(storage, '127.0.0.1', 9199);
+  console.log('[hair_app_mobile] Emulators connected');
+}
 
 let currentCustomerId = null;
 

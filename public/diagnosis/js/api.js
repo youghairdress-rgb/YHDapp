@@ -15,51 +15,33 @@ import {
   addDoc,
   serverTimestamp,
 } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { appState } from './state.js';
 import { logger } from './helpers.js';
 
 // --- Generic Fetch Wrapper ---
 
 async function fetchInternal(endpointName, body) {
-  if (appState.apiBaseUrl === undefined || appState.apiBaseUrl === null) {
-    throw new Error('API Base URL is not configured.');
+  const functions = appState.firebase.functions;
+  if (!functions) {
+    throw new Error('Firebase Functions is not initialized.');
   }
-  // If apiBaseUrl is set, use it. Otherwise use relative path (starts with /)
-  const url = appState.apiBaseUrl ? `${appState.apiBaseUrl}/${endpointName}` : `/${endpointName}`;
 
-  logger.log(`[API] Calling ${endpointName}...`);
+  logger.log(`[API] Calling ${endpointName} via httpsCallable...`);
 
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      let errorData = {};
-      try {
-        errorData = await response.json();
-      } catch (e) {
-        // If not JSON, try text
-        const text = await response.text();
-        errorData = { message: text || `HTTP Error ${response.status}` };
-      }
-
-      const error = new Error(errorData.message || errorData.error || 'Unknown Server Error');
-      error.status = response.status;
-      error.details = errorData;
-      throw error;
-    }
-
-    const data = await response.json();
+    const callable = httpsCallable(functions, `${endpointName}Call`);
+    const result = await callable(body);
     logger.log(`[API] ${endpointName} success`);
-    return data; // Result is usually { ...data } or just data
+    return result.data;
   } catch (error) {
     logger.error(`[API] ${endpointName} failed:`, error);
-    throw error;
+    // HttpsError の情報を抽出
+    const message = error.message || 'Unknown Server Error';
+    const err = new Error(message);
+    err.status = error.code;
+    err.details = error.details;
+    throw err;
   }
 }
 

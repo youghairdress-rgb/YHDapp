@@ -25,15 +25,6 @@ export const appState = {
   // LIFF ID (YHD-DX用)
   liffId: '2008345232-zq4A3Vg3',
 
-  // API Base URL
-  // AI機能（診断・画像生成）は統合された YHD-db のFunctionsを使用
-  // 3. API設定
-  // HostingのRewriteが不安定なため、Cloud FunctionsのURLを直接指定します
-  apiBaseUrl: import.meta.env.DEV
-    ? 'http://127.0.0.1:5001/yhd-db/asia-northeast1'
-    : 'https://asia-northeast1-yhd-db.cloudfunctions.net',
-  // apiBaseUrl: "", // Hosting Rewriteを使用する場合は空文字
-
   // 2. Firebase インスタンス
   firebase: {
     app: null,

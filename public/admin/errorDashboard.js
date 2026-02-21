@@ -7,28 +7,16 @@
  */
 
 import { httpsCallable } from 'firebase/functions';
-
-const CLOUD_FUNCTIONS_URL = 'https://asia-northeast1-yhd-db.cloudfunctions.net';
+import { functions } from './firebase-init.js';
 
 /**
  * エラーログを取得
  */
-export async function fetchErrorLogs(days = 7, token) {
+export async function fetchErrorLogs(days = 7) {
   try {
-    const response = await fetch(`${CLOUD_FUNCTIONS_URL}/getErrorLogs?days=${days}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.errors || [];
+    const getLogsCall = httpsCallable(functions, 'getErrorLogs');
+    const result = await getLogsCall({ days });
+    return result.data.errors || [];
   } catch (error) {
     console.error('[fetchErrorLogs]', error);
     return [];
@@ -38,22 +26,11 @@ export async function fetchErrorLogs(days = 7, token) {
 /**
  * エラー統計を取得
  */
-export async function fetchErrorStats(days = 7, token) {
+export async function fetchErrorStats(days = 7) {
   try {
-    const response = await fetch(`${CLOUD_FUNCTIONS_URL}/getErrorStats?days=${days}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.stats || {};
+    const getStatsCall = httpsCallable(functions, 'getErrorStats');
+    const result = await getStatsCall({ days });
+    return result.data.stats || {};
   } catch (error) {
     console.error('[fetchErrorStats]', error);
     return {};
@@ -160,12 +137,10 @@ async function loadErrorData(days = 7) {
       return;
     }
 
-    const token = await auth.currentUser.getIdToken();
-
     // データ取得
     const [statsData, logsData] = await Promise.all([
-      fetchErrorStats(days, token),
-      fetchErrorLogs(days, token),
+      fetchErrorStats(days),
+      fetchErrorLogs(days),
     ]);
 
     // 統計情報をレンダリング

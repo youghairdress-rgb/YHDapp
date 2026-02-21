@@ -282,23 +282,10 @@ window.startDiagnosis = async () => {
     };
     console.log('Sending to AI:', inputData); // デバッグ用ログ
 
-    // httpsCallable -> fetch に変更 (onRequest利用のため)
-    // Hosting rewriteが不安定なため、絶対パス（Cloud Function URL）を直接指定
-    const response = await fetch(
-      'https://asia-northeast1-yhd-db.cloudfunctions.net/analyzeHairstyle',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inputData),
-      }
-    );
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.message || `Server Error: ${response.status}`);
-    }
-
-    const analysisData = await response.json();
+    // httpsCallable (URLハードコードを排除)
+    const analyzeCall = httpsCallable(functions, 'analyzeHairstyleCall');
+    const result = await analyzeCall(inputData);
+    const analysisData = result.data;
 
     // 結果表示用ステート更新 (再利用のため)
     appState.uploadedUrls = latestImages;

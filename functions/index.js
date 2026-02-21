@@ -173,7 +173,6 @@ exports.sendPushMessage = onCall(async (request) => {
     return { success: true };
 });
 
-// --- 5. analyzeHairstyle ---
 exports.analyzeHairstyle = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, withCors(async (req, res) => {
     // AI Matching Controller Import (Lazy load)
     const { analyzeHairstyleController } = require("./src/controllers/aiMatching");
@@ -181,6 +180,26 @@ exports.analyzeHairstyle = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, wi
         apiKey: GEMINI_API_KEY
     });
 }));
+
+// --- onCall Versions (for httpsCallable) ---
+
+exports.analyzeHairstyleCall = onCall({ timeoutSeconds: 540, memory: "2GiB" }, async (request) => {
+    const { analyzeHairstyleController } = require("./src/controllers/aiMatching");
+    // Mock req/res for controller compatibility
+    let result = null;
+    const req = { body: request.data, method: "POST" };
+    const res = {
+        status: (code) => ({
+            json: (data) => { result = { status: code, ...data }; return res; },
+            send: (data) => { result = { status: code, body: data }; return res; }
+        })
+    };
+    await analyzeHairstyleController(req, res, { apiKey: GEMINI_API_KEY });
+    if (result && result.status >= 400) {
+        throw new HttpsError("internal", result.message || "AI Analysis failed", result);
+    }
+    return result;
+});
 
 exports.notifyAdminOnPhotoUpload = onDocumentCreated("users/{userId}/gallery/{photoId}", async (event) => {
     const snap = event.data;
@@ -210,35 +229,88 @@ exports.notifyAdminOnPhotoUpload = onDocumentCreated("users/{userId}/gallery/{ph
     return null;
 });
 
-// --- YHD-DX Integrated Functions (Gen 2) ---
-
-exports.requestDiagnosis = onRequest({ timeoutSeconds: 540, memory: "4GiB" }, withCors(async (req, res) => {
-    await requestDiagnosisController(req, res, { llmApiKey: GEMINI_API_KEY });
+exports.createFirebaseCustomTokenV2 = onRequest(withCors(async (req, res) => {
+    await createFirebaseCustomTokenController(req, res, { auth: auth });
 }));
 
-exports.generateHairstyleImage = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, withCors(async (req, res) => {
+// onCall versions for integrated AI functions
+exports.requestDiagnosisCall = onCall({ timeoutSeconds: 540, memory: "4GiB" }, async (request) => {
+    let result = null;
+    const req = { body: request.data, method: "POST" };
+    const res = {
+        status: (code) => ({
+            json: (data) => { result = { status: code, ...data }; return res; },
+            send: (data) => { result = { status: code, body: data }; return res; }
+        })
+    };
+    await requestDiagnosisController(req, res, { llmApiKey: GEMINI_API_KEY });
+    if (result && result.status >= 400) throw new HttpsError("internal", result.message || "Diagnosis failed", result);
+    return result;
+});
+
+exports.generateHairstyleImageCall = onCall({ timeoutSeconds: 540, memory: "2GiB" }, async (request) => {
+    let result = null;
+    const req = { body: request.data, method: "POST" };
+    const res = {
+        status: (code) => ({
+            json: (data) => { result = { status: code, ...data }; return res; },
+            send: (data) => { result = { status: code, body: data }; return res; }
+        })
+    };
     await generateHairstyleImageController(req, res, {
         imageGenApiKey: GEMINI_API_KEY,
         storage: storage,
         defaultBucketName: defaultBucketName,
     });
-}));
+    if (result && result.status >= 400) throw new HttpsError("internal", result.message || "Generation failed", result);
+    return result;
+});
 
-exports.refineHairstyleImage = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, withCors(async (req, res) => {
+exports.refineHairstyleImageCall = onCall({ timeoutSeconds: 540, memory: "2GiB" }, async (request) => {
+    let result = null;
+    const req = { body: request.data, method: "POST" };
+    const res = {
+        status: (code) => ({
+            json: (data) => { result = { status: code, ...data }; return res; },
+            send: (data) => { result = { status: code, body: data }; return res; }
+        })
+    };
     await refineHairstyleImageController(req, res, {
         imageGenApiKey: GEMINI_API_KEY,
         storage: storage,
         defaultBucketName: defaultBucketName,
     });
-}));
+    if (result && result.status >= 400) throw new HttpsError("internal", result.message || "Refinement failed", result);
+    return result;
+});
 
-exports.createFirebaseCustomTokenV2 = onRequest(withCors(async (req, res) => {
+exports.createFirebaseCustomTokenCall = onCall(async (request) => {
+    let result = null;
+    const req = { body: request.data, method: "POST" };
+    const res = {
+        status: (code) => ({
+            json: (data) => { result = { status: code, ...data }; return res; },
+            send: (data) => { result = { status: code, body: data }; return res; }
+        })
+    };
     await createFirebaseCustomTokenController(req, res, { auth: auth });
-}));
+    if (result && result.status >= 400) throw new HttpsError("unauthenticated", result.message || "Auth failed", result);
+    return result;
+});
 
-exports.analyzeTrends = onRequest({ timeoutSeconds: 540, memory: "2GiB" }, withCors(async (req, res) => {
+exports.analyzeTrendsCall = onCall({ timeoutSeconds: 540, memory: "2GiB" }, async (request) => {
+    let result = null;
+    const req = { body: request.data, method: "POST" };
+    const res = {
+        status: (code) => ({
+            json: (data) => { result = { status: code, ...data }; return res; },
+            send: (data) => { result = { status: code, body: data }; return res; }
+        })
+    };
     await analyzeTrendsController(req, res, { imageGenApiKey: GEMINI_API_KEY });
-}));
+    if (result && result.status >= 400) throw new HttpsError("internal", result.message || "Trend analysis failed", result);
+    return result;
+});
 
 // --- Error Monitoring & Dashboard ---
 const { getRecentErrors, getErrorStats } = require("./src/utils/errorMonitor");
@@ -246,77 +318,24 @@ const { getRecentErrors, getErrorStats } = require("./src/utils/errorMonitor");
 /**
  * 最近のエラーログを取得（管理者のみ）
  */
-exports.getErrorLogs = onRequest(withCors(async (req, res) => {
-    try {
-        // 認証チェック
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
-
-        const token = authHeader.substring(7);
-        let decodedToken;
-        try {
-            decodedToken = await admin.auth().verifyIdToken(token);
-        } catch (err) {
-            return res.status(401).json({ error: "Invalid token" });
-        }
-
-        // 管理者権限チェック
-        if (!decodedToken.admin) {
-            return res.status(403).json({ error: "Forbidden: Admin only" });
-        }
-
-        const days = req.query.days ? parseInt(req.query.days) : 7;
-        const errors = await getRecentErrors(days);
-
-        res.status(200).json({
-            success: true,
-            count: errors.length,
-            errors: errors,
-            requestedDays: days
-        });
-    } catch (error) {
-        console.error("[getErrorLogs]", error);
-        res.status(500).json({ error: "Internal Server Error" });
+exports.getErrorLogs = onCall(async (request) => {
+    if (!request.auth || !request.auth.token.admin) {
+        throw new HttpsError("permission-denied", "Admin only.");
     }
-}));
+    const days = request.data.days || 7;
+    const errors = await getRecentErrors(days);
+    return { success: true, count: errors.length, errors: errors };
+});
 
 /**
  * エラー統計を取得（管理者のみ）
  */
-exports.getErrorStats = onRequest(withCors(async (req, res) => {
-    try {
-        // 認証チェック
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
-
-        const token = authHeader.substring(7);
-        let decodedToken;
-        try {
-            decodedToken = await admin.auth().verifyIdToken(token);
-        } catch (err) {
-            return res.status(401).json({ error: "Invalid token" });
-        }
-
-        // 管理者権限チェック
-        if (!decodedToken.admin) {
-            return res.status(403).json({ error: "Forbidden: Admin only" });
-        }
-
-        const days = req.query.days ? parseInt(req.query.days) : 7;
-        const stats = await getErrorStats(days);
-
-        res.status(200).json({
-            success: true,
-            stats: stats,
-            requestedDays: days
-        });
-    } catch (error) {
-        console.error("[getErrorStats]", error);
-        res.status(500).json({ error: "Internal Server Error" });
+exports.getErrorStats = onCall(async (request) => {
+    if (!request.auth || !request.auth.token.admin) {
+        throw new HttpsError("permission-denied", "Admin only.");
     }
-}));
+    const days = request.data.days || 7;
+    const stats = await getErrorStats(days);
+    return { success: true, stats: stats };
+});
 

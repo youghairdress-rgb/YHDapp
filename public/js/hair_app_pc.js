@@ -7,6 +7,7 @@ import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   signInAnonymously,
+  connectAuthEmulator,
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -18,13 +19,16 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
+  connectFirestoreEmulator,
 } from 'firebase/firestore';
 import {
   getStorage,
   ref,
   getDownloadURL,
   uploadBytes,
+  connectStorageEmulator,
 } from 'firebase/storage';
+import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { FilesetResolver, ImageSegmenter } from '@mediapipe/tasks-vision';
 
 // Reusing existing API logic helper (simplified)
@@ -44,12 +48,18 @@ const app = initializeApp(appState.firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
+const functions = getFunctions(app, 'asia-northeast1');
 
 // Mock AppState for API usage
-appState.firebase = { app, auth, storage, firestore: db };
+appState.firebase = { app, auth, storage, firestore: db, functions };
 
-if (import.meta.env.DEV) {
-  // appState.apiBaseUrl = "http://127.0.0.1:5001/yhd-db/us-central1"; // Example
+const isDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+if (isDev) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099');
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectStorageEmulator(storage, '127.0.0.1', 9199);
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+  console.log('[hair_app_pc] Emulators connected');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
