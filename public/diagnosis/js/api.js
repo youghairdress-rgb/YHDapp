@@ -3,6 +3,7 @@
  * Handles communication with Cloud Functions (HTTP) and Firebase Storage
  */
 
+import { getApp, getApps } from 'firebase/app';
 import {
   getStorage,
   ref,
@@ -21,15 +22,17 @@ import { logger } from './helpers.js';
 
 // --- Generic Fetch Wrapper ---
 
-/**
- * Firebase Functions インスタンスを安全に取得する
- * (main.js での初期化漏れやタイミング問題を解消するための自己修復ロジック)
- */
 function getFunctionsInstance() {
   // 1. 既にインスタンスがあればそれを返す
   if (appState.firebase.functions) return appState.firebase.functions;
 
-  // 2. インスタンスがない場合、app があればその場で初期化を試みる
+  // 2. appState.firebase.app が null の場合、既存のアプリがあれば救出する (HMR対策)
+  if (!appState.firebase.app && getApps().length > 0) {
+    logger.log('[API] Recovering Firebase App from existing instance (HMR detected)');
+    appState.firebase.app = getApp();
+  }
+
+  // 3. インスタンスがない場合、app があればその場で初期化を試みる
   if (appState.firebase.app) {
     logger.log('[API] Initializing Functions on-demand...');
     const functions = getFunctions(appState.firebase.app, 'asia-northeast1');
@@ -44,8 +47,17 @@ function getFunctionsInstance() {
 
     if (isLocalhost) {
       const emuHost = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
-      connectFunctionsEmulator(functions, emuHost, 5001);
-      logger.log(`[API] Connected to Functions Emulator: ${emuHost}:5001`);
+      try {
+        connectFunctionsEmulator(functions, emuHost, 5001);
+        logger.log(`[API] Connected to Functions Emulator: ${emuHost}:5001`);
+      } catch (e) {
+        // HMRなどで既に接続済みの場合は無視する
+        if (e.code === 'failed-precondition' || (e.message && e.message.includes('already been started'))) {
+          logger.log('[API] Functions Emulator already connected, skipping...');
+        } else {
+          logger.error('[API] Emulator connection error:', e);
+        }
+      }
     }
 
     appState.firebase.functions = functions;
@@ -59,7 +71,7 @@ async function fetchInternal(endpointName, body) {
   const functions = getFunctionsInstance();
   if (!functions) {
     logger.error('[API] Critical Error: Firebase app is not initialized yet.');
-    throw new Error('Firebase Functions is not initialized.');
+    throw new Error('システムエラー: 通信の準備ができていません。画面を再読み込みしてください。');
   }
 
   logger.log(`[API] Calling ${endpointName} via httpsCallable...`);
@@ -71,7 +83,6 @@ async function fetchInternal(endpointName, body) {
     return result.data;
   } catch (error) {
     logger.error(`[API] ${endpointName} failed:`, error);
-    // HttpsError の情報を抽出
     const message = error.message || 'Unknown Server Error';
     const err = new Error(message);
     err.status = error.code;
