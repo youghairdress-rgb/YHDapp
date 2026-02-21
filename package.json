@@ -4,7 +4,7 @@
   "description": "YOU-G HAIR Dress - AI Personal Diagnosis & Image Generation LIFF App",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --config vite.config.prod.mjs",
+    "build": "vite build",
     "preview": "vite preview",
     "emulators": "firebase emulators:start --import=./emulator-data --export-on-exit",
     "emulators:ui": "firebase emulators:start --only ui",
@@ -17,6 +17,7 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",
+    "glob": "^13.0.6",
     "globals": "^17.3.0",
     "prettier": "^3.8.1",
     "vite": "^5.4.21"

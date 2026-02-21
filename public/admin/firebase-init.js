@@ -31,12 +31,52 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 const functions = getFunctions(app, 'asia-northeast1');
 
-// 開発モードの判別（ViteのDEVフラグとホスト名の両方をチェック）
+// --- Mock LIFF オブジェクトの定義 ---
+class MockLiff {
+  constructor() {
+    this.id = null;
+    console.log('[MockLiff] Mock LIFF instance created.');
+  }
+  async init({ liffId }) {
+    this.id = liffId;
+    console.log(`[MockLiff] liff.init called with ID: ${liffId}`);
+    return Promise.resolve();
+  }
+  isLoggedIn() {
+    console.log('[MockLiff] liff.isLoggedIn called (returns true)');
+    return true;
+  }
+  login() {
+    console.log('[MockLiff] liff.login called (skipped)');
+  }
+  getAccessToken() {
+    console.log('[MockLiff] liff.getAccessToken called');
+    return 'dummy-access-token';
+  }
+  async getProfile() {
+    console.log('[MockLiff] liff.getProfile called');
+    return {
+      displayName: 'Local Admin',
+      userId: 'dummy-admin-id',
+      pictureUrl: 'https://via.placeholder.com/150',
+      statusMessage: 'Developer Mode'
+    };
+  }
+  closeWindow() {
+    console.log('[MockLiff] liff.closeWindow called');
+  }
+}
+
+// 開発モードの判別
 const isLocalhost =
   import.meta.env.DEV ||
   ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
 const isDev = isLocalhost;
+
+// ローカル環境なら liff をモックに差し替える
+const actualLiff = liff;
+const effectiveLiff = isLocalhost ? new MockLiff() : actualLiff;
 
 // エミュレータの設定
 if (isLocalhost) {
@@ -47,16 +87,14 @@ if (isLocalhost) {
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
 }
 
-// --- ▼▼▼ 認証ロジックを修正 ▼▼▼ ---
-
 // onAuthStateChanged を Promise 化し、現在の認証状態を取得するヘルパー
 const getFirebaseUser = () =>
   new Promise((resolve, reject) => {
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
-        unsubscribe(); // 最初の状態変更でリスナーを解除
-        resolve(user); // ユーザー情報（ログインしていなければ null）を解決
+        unsubscribe();
+        resolve(user);
       },
       (error) => {
         unsubscribe();
@@ -67,73 +105,67 @@ const getFirebaseUser = () =>
 
 /**
  * LIFFの初期化とFirebaseへの認証を行う共通関数
- * @param {string} liffId - 初期化するLIFFアプリのID
- * @returns {Promise<{user: import("firebase/auth").User, profile: any}>} 認証済みユーザーとLINEプロフィール
  */
 const initializeLiffAndAuth = async (liffId) => {
-  // --- 超・強制スキップモード (localhost時はLINEを一切無視) ---
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    console.log('強制スキップモード起動: Authエミュレータへの匿名ログインを実行します');
+  // --- ローカル開発環境の完全分離 ---
+  if (isLocalhost) {
+    console.log('ローカル開発モード: LINE LIFF APIを遮断し、ダミー認証を実行します');
     try {
+      await effectiveLiff.init({ liffId });
+
+      // Firebase Auth エミュレータへの匿名ログイン
       const userCredential = await signInAnonymously(auth);
-      // さらに、getIdTokenResult をモック化（isAdmin()チェックを確実に通すため）
       const user = userCredential.user;
+
+      // 重要: 管理者権限チェックをバイパスするために getIdTokenResult をモック化
       const originalGetIdTokenResult = user.getIdTokenResult;
       user.getIdTokenResult = async (force) => {
+        console.log('[MockAuth] user.getIdTokenResult called (returns admin: true)');
         return { claims: { admin: true } };
       };
 
-      return { user: user, profile: { displayName: 'Local Admin (Dev)' } };
+      const profile = await effectiveLiff.getProfile();
+      return { user: user, profile };
     } catch (error) {
-      console.error('匿名ログインに失敗しました:', error);
-      // 失敗してもダミーを返して続行を試みる
-      return { user: { uid: 'mock-admin-uid', email: 'admin@example.com' } };
+      console.error('ローカル認証プロセスでエラーが発生しました:', error);
+      return {
+        user: { uid: 'mock-admin-uid', getIdTokenResult: async () => ({ claims: { admin: true } }) },
+        profile: { displayName: 'Local Admin (Error fallback)' }
+      };
     }
   }
 
+  // --- プロダクション環境 (本物の LIFF) ---
   try {
-    // 従来の DEV 判定等は上記で包括されるが、念のため残すか、整理する
-    // ...
-
     console.log(`LIFFを初期化します。LIFF ID: ${liffId}`);
-    await liff.init({ liffId });
+    await actualLiff.init({ liffId });
     console.log('LIFFの初期化が完了しました。');
 
-    if (!liff.isLoggedIn()) {
+    if (!actualLiff.isLoggedIn()) {
       console.log('LIFFにログインしていません。ログインページにリダイレクトします。');
-      liff.login({ redirectUri: window.location.href });
-      // リダイレクトするため解決を待機するPromiseを返すが、実際には遷移する
+      actualLiff.login({ redirectUri: window.location.href });
       return new Promise(() => { });
     }
     console.log('LIFFにログイン済みです。');
 
-    // まずローカルのFirebaseセッションを確認
     let currentUser = await getFirebaseUser();
 
     if (currentUser && !currentUser.isAnonymous) {
       console.log(`Firebaseセッションが有効です。ユーザー: ${currentUser.uid}`);
-      // セッションは有効だが、念のためLINEプロフィールを取得
-      try {
-        const profile = await liff.getProfile();
-        return { user: currentUser, profile };
-      } catch (profileError) {
-        throw new Error(`LINEプロフィールの取得に失敗しました: ${profileError.message}`, {
-          cause: profileError,
-        });
-      }
+      const profile = await actualLiff.getProfile();
+      return { user: currentUser, profile };
     }
 
-    // Firebaseセッションが無効、または初回ログインの場合
     console.log('Firebaseセッションが無効です。カスタムトークンを取得します。');
-    const accessToken = liff.getAccessToken();
+    const accessToken = actualLiff.getAccessToken();
     if (!accessToken) {
-      throw new Error('LIFFアクセストークンが取得できませんでした。ログインし直してください。');
+      throw new Error('LIFFアクセストークンが取得できませんでした。');
     }
 
     return await firebaseLoginWithToken(accessToken);
   } catch (error) {
     console.error('LIFFの初期化または認証プロセスでエラーが発生しました:', error);
-    throw new Error(`LIFFの処理中にエラーが発生しました: ${error.message}`, { cause: error });
+    throw new Error(`LIFFの処理中にエラーが発生しました: ${error.message}`);
   }
 };
 

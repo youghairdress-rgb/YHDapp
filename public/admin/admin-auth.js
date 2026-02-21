@@ -48,36 +48,22 @@ export const runAdminPage = (mainFunction, pageLiffId = null) => {
     try {
       const liffId = pageLiffId || ADMIN_DEFAULT_LIFF_ID;
 
-      // --- 超・強制スキップモード (localhost時は認証・権限チェックを一切無視) ---
-      if (isLocalhost) {
-        console.log('認証バイパスモード起動');
-        const { user } = await initializeLiffAndAuth(liffId);
-        showLoading('ページを構成中...');
-        await mainFunction(user);
-        showContent();
-        return;
-      }
-
-      showLoading('LIFFを初期化中...');
+      // --- 認証・権限チェック ---
+      showLoading('LIFF・認証ステータスを確認中...');
       const { user } = await initializeLiffAndAuth(liffId);
 
-      showLoading('管理者権限を確認中...');
       if (!user) {
         throw new Error('ユーザー情報の取得に失敗しました。');
       }
 
-      // --- Firebaseトークン（管理者権限）の確認 ---
-      let idTokenResult = await user.getIdTokenResult();
-      if (!idTokenResult.claims.admin) {
-        console.log('Admin claim missing in cached token, forcing refresh...');
-        idTokenResult = await user.getIdTokenResult(true);
-      }
-
+      // 管理者権限（Claims）の確認
+      // initializeLiffAndAuth 内でローカル時は admin: true が返されるようにモック化されている
+      const idTokenResult = await user.getIdTokenResult();
       if (!idTokenResult.claims.admin) {
         throw new Error('管理者権限がありません。');
       }
-      console.log('管理者権限を確認しました。');
 
+      console.log('管理者権限を確認しました。');
       showLoading('ページを読み込み中...');
       await mainFunction(user);
       showContent();
