@@ -58,6 +58,11 @@ const bookingMain = async (auth, user) => {
   const unavailableEndTimeSelect = document.getElementById('unavailable-end-time');
   const unavailableTitle = document.getElementById('unavailable-modal-title');
 
+  // AI Action Elements
+  const detailMobileUploadLink = document.getElementById('detail-mobile-upload-link');
+  const detailCounselingLink = document.getElementById('detail-counseling-link');
+  const detailMatchingLink = document.getElementById('detail-matching-link');
+
   // State
   let salonSettings = {};
   let currentDate = new Date();
@@ -449,7 +454,35 @@ const bookingMain = async (auth, user) => {
       }
       const customerNameEncoded = encodeURIComponent(booking.customerName);
       document.getElementById('detail-customer-link').href =
-        `./customers.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        `/admin/customers.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+
+      // AI Action Links Logic (すべてルート相対パスかつ動的パラメータ付き)
+      
+      // 画像素材アップロード
+      if (detailMobileUploadLink) {
+        detailMobileUploadLink.href = `/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
+      // AIカウンセリング (診断)
+      if (detailCounselingLink) {
+        detailCounselingLink.href = `/diagnosis/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
+      // AIヘアスタイル診断
+      if (detailMatchingLink) {
+        detailMatchingLink.href = `/ai-matching/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
+      // 髪色アプリ (撮影/編集)
+      const detailHairUploadLink = document.getElementById('detail-hair-upload-link');
+      const detailHairEditLink = document.getElementById('detail-hair-edit-link');
+
+      if (detailHairUploadLink) {
+        detailHairUploadLink.href = `/hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+      if (detailHairEditLink) {
+        detailHairEditLink.href = `/hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
     }
     openModal(detailModal);
   };

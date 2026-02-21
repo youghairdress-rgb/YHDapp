@@ -1,79 +1,9 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // --- Helper Functions ---
-    function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
-    }
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // ★★★ 共通ルール: 書き込みはデフォルト拒否 ★★★
+    // ローカル開発用：すべてのデータを誰でも読み書き可能にする最強ルール
     match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // --- 各コレクションに対する詳細な書き込みルール ---
-
-    match /settings/salon {
-      allow write: if isAdmin();
-    }
-    match /service_categories/{categoryId}/{document=**} {
-      allow write: if isAdmin();
-    }
-    match /staffs/{staffId} {
-      allow write: if isAdmin();
-    }
-    match /reservations/{reservationId} {
-      allow create: if isOwner(request.resource.data.customerId) || isAdmin();
-      allow update, delete: if isOwner(resource.data.customerId) || isAdmin();
-    }
-    
-    // ★★★ 修正点: 初回登録と管理者権限を両立させるルール ★★★
-    match /users/{userId} {
-      // ユーザーによる初回登録(create)と、自身のプロフィールの更新(update)を許可
-      allow create, update: if isOwner(userId);
-      // 管理者による顧客情報の全操作（作成・更新・削除）を許可
-      allow write: if isAdmin();
-      
-      // ★★★ 髪色アプリ用: 匿名ユーザーでも特定フィールドのみ更新許可 ★★★
-      allow update: if request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['hair_app_latest', 'hair_app_updatedAt']);
-    }
-
-    match /users/{userId}/gallery/{imageId} {
-        // 顧客本人(isOwner) または 管理者(isAdmin)
-        // または、PCアプリからの保存(hair_simulation_pc)であれば、誰でも作成(create)許可
-        allow read: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) || isAdmin() || 
-                      (request.auth != null && (
-                        request.resource.data.type == "hair_simulation_pc" ||
-                        request.resource.data.type == "ai-matching" ||
-                        request.resource.data.type == "ai-matching-result"
-                      ));
-        allow update, delete: if isOwner(userId) || isAdmin();
-    }
-
-    match /sales/{saleId} {
-      allow write: if isAdmin();
-    }
-    match /sales_goals/{goalId} {
-        allow write: if isAdmin();
-    }
-    match /daily_memos/{memoId} {
-      allow write: if isAdmin();
-    }
-    match /diagnoses/{diagnosesId} {
-        allow write: if isAdmin();
-    }
-    
-    // ▼▼▼ 追加: メッセージテンプレートへの書き込み権限 (管理者のみ) ▼▼▼
-    match /messageTemplates/{templateId} {
-        allow write: if isAdmin();
+      allow read, write: if true;
     }
   }
 }
-

@@ -343,38 +343,34 @@ const adminMain = async (auth, user) => {
 
       const customerNameEncoded = encodeURIComponent(booking.customerName);
       document.getElementById('detail-customer-link').href =
-        `./customers.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        `/admin/customers.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
 
-      // AI Action Links Logic
-      const dxLiffId = '2008345232-zq4A3Vg3';
-
-      // Image Material Upload Link
+      // AI Action Links Logic (すべてルート相対パスかつ動的パラメータ付き)
+      
+      // 画像素材アップロード
       if (detailMobileUploadLink) {
-        detailMobileUploadLink.href = `https://yhd-dx.web.app/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
-      } else {
-        console.warn('detailMobileUploadLink element not found');
+        detailMobileUploadLink.href = `/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
 
+      // AIカウンセリング (診断)
       if (detailCounselingLink) {
-        detailCounselingLink.href = `https://liff.line.me/${dxLiffId}?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
-      } else {
-        console.warn('detailCounselingLink element not found');
-      }
-      if (detailMatchingLink) {
-        detailMatchingLink.href = `../ai-matching/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
-      } else {
-        console.warn('detailMatchingLink element not found');
+        detailCounselingLink.href = `/diagnosis/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
 
-      // Hair App Links
+      // AIヘアスタイル診断
+      if (detailMatchingLink) {
+        detailMatchingLink.href = `/ai-matching/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
+      // 髪色アプリ (撮影/編集)
       const detailHairUploadLink = document.getElementById('detail-hair-upload-link');
       const detailHairEditLink = document.getElementById('detail-hair-edit-link');
 
       if (detailHairUploadLink) {
-        detailHairUploadLink.href = `../hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        detailHairUploadLink.href = `/hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
       if (detailHairEditLink) {
-        detailHairEditLink.href = `../hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        detailHairEditLink.href = `/hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
     }
     openModal(detailModal);

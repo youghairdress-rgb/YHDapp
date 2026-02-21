@@ -746,13 +746,8 @@ const customersMain = async (auth, user) => {
 
       const encodedName = encodeURIComponent(customer.name);
 
-      // ▼▼▼ 修正: リンク先を YHD-DX のLIFF IDに変更 ▼▼▼
-      // ▼▼▼ 修正: リンク先を YHD-DX の直接URLに変更（LIFF ID経由だと予約画面に飛ぶため） ▼▼▼
-      // const dxLiffId = "2008345232-zq4A3Vg3";
-      // const counselingLiffUrl = `https://liff.line.me/${dxLiffId}?customerId=${customer.id}&customerName=${encodedName}`;
-      // ▼ 修正: YHD-db統合版URLに変更
-      const counselingLiffUrl = `https://yhd-db.web.app/diagnosis/?customerId=${customer.id}&customerName=${encodedName}`;
-      // ▲▲▲ 修正ここまで ▲▲▲
+      // ▼▼▼ 修正: 全てのリンクをルート相対パスに変更し、動的に生成 ▼▼▼
+      const counselingLiffUrl = `/diagnosis/index.html?customerId=${customer.id}&customerName=${encodedName}`;
       // ▲▲▲ 修正ここまで ▲▲▲
 
       // ▼▼▼ 修正: LINEアイコンと注意事項アイコンのロジックを変更 ▼▼▼
@@ -775,16 +770,16 @@ const customersMain = async (auth, user) => {
                     <button class="icon-button camera-btn" title="写真(Admin)"><i class="fa-solid fa-camera"></i></button>
                     
                     <!-- Hair App Links -->
-                    <a href="../hair_upload.html?customerId=${customer.id}" class="icon-button" title="髪色アプリ(撮影)" target="_blank"><i class="fa-solid fa-mobile-screen"></i></a>
-                    <a href="../hair_transform.html?customerId=${customer.id}" class="icon-button" title="髪色アプリ(編集)" target="_blank"><i class="fa-solid fa-palette"></i></a>
+                    <a href="/hair_upload.html?customerId=${customer.id}" class="icon-button" title="髪色アプリ(撮影)" target="_blank"><i class="fa-solid fa-mobile-screen"></i></a>
+                    <a href="/hair_transform.html?customerId=${customer.id}" class="icon-button" title="髪色アプリ(編集)" target="_blank"><i class="fa-solid fa-palette"></i></a>
 
                     <button class="icon-button msg-btn" title="LINEメッセージ"><i class="fa-regular fa-envelope"></i></button>
 
                     <a href="${counselingLiffUrl}" class="icon-button" title="AIカウンセリング" target="_blank"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
                     
-                    <a href="../ai-matching/index.html?customerId=${customer.id}&customerName=${encodedName}" class="icon-button" title="AIヘアスタイル診断" target="_blank"><i class="fa-solid fa-scissors"></i></a>
+                    <a href="/ai-matching/index.html?customerId=${customer.id}&customerName=${encodedName}" class="icon-button" title="AIヘアスタイル診断" target="_blank"><i class="fa-solid fa-scissors"></i></a>
 
-                    <a href="./pos.html?customerId=${customer.id}&customerName=${encodedName}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
+                    <a href="/admin/pos.html?customerId=${customer.id}&customerName=${encodedName}" class="icon-button" title="会計"><i class="fa-solid fa-cash-register"></i></a>
                     <button class="icon-button delete-btn" title="削除"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
