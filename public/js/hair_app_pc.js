@@ -53,8 +53,10 @@ const functions = getFunctions(app, 'asia-northeast1');
 // Mock AppState for API usage
 appState.firebase = { app, auth, storage, firestore: db, functions };
 
-const isDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
-if (isDev) {
+const isLocalhost =
+  import.meta.env.DEV ||
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+if (isLocalhost) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099');
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   connectStorageEmulator(storage, '127.0.0.1', 9199);

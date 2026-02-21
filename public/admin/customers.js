@@ -280,16 +280,15 @@ const customersMain = async (auth, user) => {
                             <button class="button-secondary save-staff-note-btn" data-sale-id="${sale.id}" data-field-type="staffNote">専用メモを保存</button>
                         </div>
 
-                        ${
-                          sale.customerNote
-                            ? `
+                        ${sale.customerNote
+            ? `
                         <div class="customer-note-section">
                             <strong>お客様からのコメント:</strong>
                             <p>${sale.customerNote}</p>
                         </div>
                         `
-                            : ''
-                        }
+            : ''
+          }
                     </div>
                 `;
         // ▲▲▲ 修正ここまで ▲▲▲

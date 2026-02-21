@@ -31,14 +31,16 @@ const auth = getAuth(app);
 const storage = getStorage(app);
 const functions = getFunctions(app, 'asia-northeast1');
 
-// 開発モードの判定（重要: 店舗PC環境での判定漏れを防ぐためにホスト名もチェック）
-const isDev =
+// 開発モードの判別（ViteのDEVフラグとホスト名の両方をチェック）
+const isLocalhost =
   import.meta.env.DEV ||
   ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
+const isDev = isLocalhost;
+
 // エミュレータの設定
-if (isDev) {
-  console.log('開発モード(isDev)を検出しました。エミュレータに接続します。');
+if (isLocalhost) {
+  console.log('開発モード(isLocalhost)を検出しました。エミュレータに接続します。');
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   connectAuthEmulator(auth, 'http://127.0.0.1:9099');
   connectStorageEmulator(storage, '127.0.0.1', 9199);
@@ -80,7 +82,7 @@ const initializeLiffAndAuth = async (liffId) => {
       user.getIdTokenResult = async (force) => {
         return { claims: { admin: true } };
       };
-      
+
       return { user: user, profile: { displayName: 'Local Admin (Dev)' } };
     } catch (error) {
       console.error('匿名ログインに失敗しました:', error);
@@ -167,4 +169,4 @@ const firebaseLoginWithToken = async (accessToken) => {
 
 // --- ▲▲▲ 認証ロジックを修正 ▲▲▲ ---
 
-export { db, auth, storage, functions, initializeLiffAndAuth };
+export { db, auth, storage, functions, initializeLiffAndAuth, isDev, isLocalhost };

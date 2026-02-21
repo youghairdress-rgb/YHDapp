@@ -75,8 +75,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     appState.firebase = { app, auth, storage, firestore: db, functions };
 
     // 環境判定とエミュレータ接続
-    const isDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
-    if (isDev) {
+    const isLocalhost =
+      import.meta.env.DEV ||
+      ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+    if (isLocalhost) {
       const { connectAuthEmulator } = await import('firebase/auth');
       const { connectFirestoreEmulator } = await import('firebase/firestore');
       const { connectStorageEmulator } = await import('firebase/storage');

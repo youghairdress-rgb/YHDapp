@@ -338,7 +338,7 @@ const adminMain = async (auth, user) => {
         posLink.style.display = 'none';
       } else {
         posLink.style.display = 'flex';
-        posLink.href = `./pos.html?bookingId=${booking.id}`;
+        posLink.href = `/admin/pos.html?bookingId=${booking.id}`;
       }
 
       const customerNameEncoded = encodeURIComponent(booking.customerName);
@@ -346,7 +346,7 @@ const adminMain = async (auth, user) => {
         `/admin/customers.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
 
       // AI Action Links Logic (すべてルート相対パスかつ動的パラメータ付き)
-      
+
       // 画像素材アップロード
       if (detailMobileUploadLink) {
         detailMobileUploadLink.href = `/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;

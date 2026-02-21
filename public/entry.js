@@ -1,4 +1,4 @@
-import { db, initializeLiffAndAuth, functions } from './admin/firebase-init.js'; // ★ functions をインポート
+import { db, initializeLiffAndAuth, functions, isLocalhost } from '/admin/firebase-init.js'; // ★ functions, isLocalhost をインポート
 import {
   doc,
   getDoc,
@@ -46,7 +46,7 @@ const main = async () => {
 
     if (userDocSnap.exists()) {
       // 登録済みの場合はマイページへリダイレクト
-      window.location.href = './mypage.html';
+      window.location.href = '/mypage.html';
     } else {
       // 未登録の場合は登録フォームを表示
       setupRegistrationForm(profile);
@@ -144,7 +144,7 @@ const setupRegistrationForm = (profile) => {
         });
       }
 
-      window.location.href = './mypage.html';
+      window.location.href = '/mypage.html';
     } catch (error) {
       console.error('登録または統合処理に失敗しました:', error);
       showError(`登録に失敗しました: ${error.message}`);

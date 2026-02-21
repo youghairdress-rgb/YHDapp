@@ -32,8 +32,10 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
-const isDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
-if (isDev) {
+const isLocalhost =
+  import.meta.env.DEV ||
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+if (isLocalhost) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099');
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   connectStorageEmulator(storage, '127.0.0.1', 9199);

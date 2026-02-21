@@ -1,4 +1,4 @@
-import { initializeLiffAndAuth } from './firebase-init.js';
+import { auth, db, initializeLiffAndAuth, isLocalhost } from './firebase-init.js';
 
 // --- DOM操作ヘルパー関数 (エクスポート) ---
 export const showLoading = (text) => {
@@ -31,7 +31,7 @@ export const showError = (text) => {
 
     const retryButton = document.getElementById('retry-button');
     if (retryButton) {
-      retryButton.addEventListener('click', () => window.location.reload());
+      retryButton.addEventListener('click', () => window.location.href = '/admin/index.html');
     }
   }
   const container = document.getElementById('loading-container');
@@ -47,9 +47,9 @@ export const runAdminPage = (mainFunction, pageLiffId = null) => {
   const start = async () => {
     try {
       const liffId = pageLiffId || ADMIN_DEFAULT_LIFF_ID;
-      
+
       // --- 超・強制スキップモード (localhost時は認証・権限チェックを一切無視) ---
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      if (isLocalhost) {
         console.log('認証バイパスモード起動');
         const { user } = await initializeLiffAndAuth(liffId);
         showLoading('ページを構成中...');
@@ -60,7 +60,7 @@ export const runAdminPage = (mainFunction, pageLiffId = null) => {
 
       showLoading('LIFFを初期化中...');
       const { user } = await initializeLiffAndAuth(liffId);
-      
+
       showLoading('管理者権限を確認中...');
       if (!user) {
         throw new Error('ユーザー情報の取得に失敗しました。');
