@@ -1,0 +1,19 @@
+{
+  "name": "guest_uploads/qcnsbCyN6YlKMaQjHKm5/item-back-photo",
+  "bucket": "yhd-db.firebasestorage.app",
+  "metageneration": 1,
+  "generation": 1771681676429,
+  "contentType": "image/jpeg",
+  "storageClass": "STANDARD",
+  "contentDisposition": "inline",
+  "downloadTokens": [
+    "cc500a95-ede6-42c3-a6f6-6b102ab6d535"
+  ],
+  "etag": "44hniOMXa5c0rv5VAYiW06ROXH0",
+  "customMetadata": {},
+  "timeCreated": "2026-02-21T13:47:56.429Z",
+  "updated": "2026-02-21T13:47:56.429Z",
+  "size": 146449,
+  "md5Hash": "ZQ8y1VDaplZy1oJ87gt2pQ==",
+  "crc32c": "1729279787"
+}

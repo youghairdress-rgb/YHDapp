@@ -149,3 +149,150 @@
     align-items: center;
     gap: 15px;
 }
+
+/* Phase 3.5: AI Loading (2-column Rich Layout) */
+.p35-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    max-width: 1400px;
+    height: 100%;
+    align-items: center;
+    margin: 0 auto;
+}
+
+.p35-left {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 80px;
+}
+
+.p35-logo {
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.1);
+    border: 12px solid #fff;
+    animation: pulseLogo 3s infinite ease-in-out;
+}
+
+.p35-right {
+    padding-left: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.spinner-large {
+    width: 120px;
+    height: 120px;
+    border: 12px solid rgba(45, 212, 191, 0.1);
+    border-top: 12px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 40px;
+}
+
+.p35-status-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.p35-title {
+    font-size: 64px;
+    font-weight: 800;
+    color: #000;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.p35-subtitle {
+    font-size: 28px;
+    color: #64748b;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Phase 4: Diagnosis Results (Optimized for 1080p No-Scroll) */
+.p4-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 2vh 4vw;
+    height: 100%;
+    max-height: calc(100vh - 220px);
+    overflow: hidden;
+}
+
+.p4-header {
+    grid-column: 1 / span 2;
+    margin-bottom: 1vh;
+}
+
+.p4-left,
+.p4-right {
+    display: flex;
+    flex-direction: column;
+    gap: 2vh;
+    height: 100%;
+    min-height: 0;
+    /* Allow shrinking */
+}
+
+.p4-footer {
+    grid-column: 1 / span 2;
+    margin-top: auto;
+    padding-top: 2vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Result Section Refinement */
+.result-section.no-margin {
+    margin-bottom: 0;
+    padding: 2vh 2vw;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.result-grid-vertical {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5vh 1.5vw;
+    flex: 1;
+    overflow-y: auto;
+    /* Just in case, but target is no-scroll */
+}
+
+/* Vertical Item Content */
+.result-item {
+    padding: 1.5vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 1vh !important;
+    background: #f8fafc;
+    border-radius: 16px;
+}
+
+.result-title {
+    font-size: clamp(24px, 3.5vh, 32px) !important;
+    margin-bottom: 2vh !important;
+}
+
+.result-item-label {
+    font-size: clamp(14px, 1.8vh, 18px) !important;
+}
+
+.result-item-value {
+    font-size: clamp(20px, 2.8vh, 26px) !important;
+}

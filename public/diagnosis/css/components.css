@@ -78,6 +78,26 @@
     min-width: 400px;
 }
 
+.btn-tiffany {
+    background-color: #0ABAB5;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 700;
+    padding: 30px 60px;
+    border-radius: 20px;
+    border: 1px solid #089b96;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(10, 186, 181, 0.3);
+    min-width: 450px;
+    transition: all 0.3s ease;
+}
+
+.btn-tiffany:hover {
+    background-color: #089b96;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(10, 186, 181, 0.4);
+}
+
 .btn-outline {
     background-color: #fff;
     color: var(--primary-color);
@@ -193,19 +213,6 @@
     background: #fff;
 }
 
-/* Inspiration Upload reproduction */
-.inspiration-upload-container {
-    display: flex;
-    align-items: center;
-    /* Vertical alignment */
-    gap: 30px;
-    padding: 30px;
-    border: 1px solid #94a3b8;
-    border-radius: 15px;
-    background: #fff;
-    flex: 1;
-    /* Allow it to occupy space in right column */
-}
 
 .inspiration-preview-area {
     width: 200px;

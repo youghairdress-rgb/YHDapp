@@ -185,48 +185,57 @@
     </div>
     </div>
 
-    <!-- Phase 3.5: Loading -->
+    <!-- Phase 3.5: AI Loading (Redesigned for 23" Monitor) -->
     <div id="phase3.5" class="phase-container">
-        <div class="card">
-            <div class="spinner"></div>
-            <h2 class="form-title" style="margin-top: 25px; margin-bottom: 10px;">AIが診断中です</h2>
-            <p class="description" id="diagnosis-status-text">しばらくお待ちください...</p>
+        <div class="p35-layout">
+            <div class="p35-left">
+                <img src="images/YHDlogo2.gif" alt="YHD AI Diagnosis Loading" class="p35-logo">
+            </div>
+            <div class="p35-right">
+                <div class="spinner-large"></div>
+                <div class="p35-status-group">
+                    <h2 class="p35-title">AIが診断中です</h2>
+                    <p class="p35-subtitle" id="diagnosis-status-text">しばらくお待ちください...</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Phase 4: Diagnosis Result -->
+    <!-- Phase 4: Diagnosis Result (Refined No-Scroll for 23" Monitor) -->
     <div id="phase4" class="phase-container">
-        <div class="card">
-            <h2 class="form-title">AI Diagnosis</h2>
+        <div class="card landscape-card no-scroll-container">
+            <div class="p4-layout">
+                <div class="p4-header">
+                    <h2 class="form-title-center">AI Diagnosis</h2>
+                </div>
 
-            <div class="split-container">
-                <div class="split-column-left">
-                    <div class="result-section">
+                <div class="p4-left">
+                    <div class="result-section no-margin">
                         <h3 class="result-title"><img src="images/顔診断.png" alt="" class="result-icon"> お顔の特徴</h3>
-                        <div id="face-results" class="result-grid"></div>
+                        <div id="face-results" class="result-grid-vertical"></div>
                     </div>
-                    <div class="result-section">
+                    <div class="result-section no-margin">
                         <h3 class="result-title"><img src="images/骨格診断.png" alt="" class="result-icon"> 骨格・ボディ</h3>
-                        <div id="skeleton-results" class="result-grid"></div>
+                        <div id="skeleton-results" class="result-grid-vertical"></div>
                     </div>
                 </div>
-                <div class="split-column-right">
-                    <div class="result-section">
+
+                <div class="p4-right">
+                    <div class="result-section no-margin">
                         <h3 class="result-title"><img src="images/ヘアスタイル.png" alt="" class="result-icon"> 現在の髪の状態</h3>
-                        <div id="hair-condition-results" class="result-grid"></div>
+                        <div id="hair-condition-results" class="result-grid-vertical"></div>
                     </div>
-                    <div class="result-section">
+                    <div class="result-section no-margin">
                         <h3 class="result-title"><img src="images/パーソナルカラー.png" alt="" class="result-icon"> パーソナルカラー
                         </h3>
-                        <div id="personal-color-results" class="result-grid"></div>
+                        <div id="personal-color-results" class="result-grid-vertical"></div>
                     </div>
                 </div>
-            </div>
 
-            <hr class="capture-boundary">
-            <div class="phase4-button-container">
-                <button id="next-to-proposal-btn" class="btn-dark">AI提案を見る</button>
-                <button id="save-phase4-btn" class="btn-secondary no-print">画像保存</button>
+                <div class="p4-footer">
+                    <button id="save-phase4-btn" class="btn-outline">画像保存</button>
+                    <button id="next-to-proposal-btn" class="btn-tiffany">AI提案を見る</button>
+                </div>
             </div>
         </div>
     </div>
