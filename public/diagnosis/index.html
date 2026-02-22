@@ -239,100 +239,77 @@
         </div>
     </div>
 
-    <!-- Phase 5: AI Style Proposal (Hair Focused) -->
+    <!-- Phase 5: AI Style Proposal (Hair Focused - 2 Columns) -->
     <div id="phase5" class="phase-container">
         <div class="card landscape-card no-scroll-container">
-            <div class="p5-layout">
+            <div class="p5-layout-2col">
                 <div class="p5-header">
                     <h2 class="form-title-center">AI Style Proposal</h2>
                 </div>
 
-                <!-- Hair Style Box (Wide) -->
-                <div class="proposal-column col-left">
-                    <div class="proposal-section no-margin">
-                        <h3 class="result-title-center"><img src="images/ヘアスタイル.png" alt="" class="result-icon">
-                            似合うヘアスタイル</h3>
+                <!-- Left Column: Hair Style -->
+                <div class="p5-col-left">
+                    <div class="proposal-section-2col">
+                        <h3 class="result-title-center">似合うヘアスタイル</h3>
                         <div id="hairstyle-proposal" class="proposal-grid-list"></div>
                     </div>
                 </div>
 
-                <!-- Hair Color Box (Wide) -->
-                <div class="proposal-column col-center">
-                    <div class="proposal-section no-margin shadow-inner">
-                        <h3 class="result-title-center"><img src="images/ヘアカラー.png" alt="" class="result-icon"> 似合うヘアカラー
-                        </h3>
+                <!-- Right Column: Hair Color -->
+                <div class="p5-col-right">
+                    <div class="proposal-section-2col shadow-inner">
+                        <h3 class="result-title-center">似合うヘアカラー</h3>
                         <div id="haircolor-proposal" class="proposal-grid-list"></div>
                     </div>
                 </div>
 
-                <!-- Dummy/Spacer Box (Empty in P5) -->
-                <div class="proposal-column col-right">
-                    <div class="proposal-section no-margin"
-                        style="background: transparent; border: 1px dashed #e2e8f0; justify-content: center; align-items: center; opacity: 0.5;">
-                        <p style="font-size: 14px; color: #94a3b8; text-align: center;">次のページに<br>メイク・ファッションのアドバイスが続きます
-                        </p>
-                    </div>
-                </div>
-
-                <div class="p5-footer">
-                    <button id="back-to-diagnosis-btn" class="btn-outline-wide">戻る</button>
-                    <button id="save-phase5-btn" class="btn-outline-wide">画像保存</button>
-                    <button id="next-to-phase5-2-btn" class="btn-tiffany-wide">次へ進む</button>
+                <div class="p5-footer-2col">
+                    <button id="back-to-diagnosis-btn" class="btn-outline-2col">戻る</button>
+                    <button id="save-phase5-btn" class="btn-outline-2col">画像保存</button>
+                    <button id="next-to-phase5-2-btn" class="btn-outline-2col">アドバイス</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Phase 5-2: AI Looks good Advice (Others Focused) -->
+    <!-- Phase 5-2: AI Looks good Advice (Others Focused - 2 Columns) -->
     <div id="phase5-2" class="phase-container" style="display:none;">
         <div class="card landscape-card no-scroll-container">
-            <div class="p5-layout">
+            <div class="p5-layout-2col">
                 <div class="p5-header">
                     <h2 class="form-title-center">AI Looks good Advice</h2>
                 </div>
 
-                <!-- Column 1: Makeup -->
-                <div class="proposal-column col-left">
-                    <div class="proposal-section no-margin">
-                        <h3 class="result-title-center"><img src="images/メイク.png" alt="" class="result-icon"> 似合うメイク
-                        </h3>
+                <!-- Left Column: Makeup & Fashion -->
+                <div class="p5-col-left">
+                    <div class="proposal-section-2col">
+                        <h3 class="result-title-center">似合うメイク</h3>
                         <div id="makeup-proposal" class="proposal-grid-list"></div>
                     </div>
-                </div>
-
-                <!-- Column 2: Fashion -->
-                <div class="proposal-column col-center">
-                    <div class="proposal-section no-margin">
-                        <h3 class="result-title-center"><img src="images/骨格診断.png" alt="" class="result-icon"> 似合うファッション
-                        </h3>
+                    <div class="proposal-section-2col" style="margin-top: 2vh;">
+                        <h3 class="result-title-center">似合うファッション</h3>
                         <div id="fashion-proposal" class="proposal-grid-list"></div>
                     </div>
                 </div>
 
-                <!-- Column 3: Best Colors -->
-                <div class="proposal-column col-right">
-                    <div class="proposal-section no-margin best-colors-box">
-                        <h3 class="result-title-center"><img src="images/カラーパターン.png" alt="" class="result-icon">
-                            相性ベストカラー</h3>
+                <!-- Right Column: Best Colors & Advice -->
+                <div class="p5-col-right">
+                    <div class="proposal-section-2col">
+                        <h3 class="result-title-center">相性ベストカラー</h3>
                         <div id="best-colors-proposal" class="best-colors-row"></div>
                     </div>
-                </div>
-
-                <!-- Bottom Row: Advice (Wide) -->
-                <div class="p5-row-bottom" style="grid-column: 1 / span 3;">
-                    <div class="proposal-section no-margin advice-box">
-                        <h3 class="result-title-center"><img src="images/AI美容師.png" alt="" class="result-icon">
-                            AIからのアドバイス</h3>
+                    <div class="proposal-section-2col" style="margin-top: 2vh;">
+                        <h3 class="result-title-center">AIからのアドバイス</h3>
                         <div class="stylist-advice-container">
                             <p id="top-stylist-comment-text"></p>
                         </div>
                     </div>
                 </div>
 
-                <div class="p5-footer">
-                    <button id="back-to-phase5-btn" class="btn-outline-wide">戻る</button>
-                    <button id="save-phase5-2-btn" class="btn-outline-wide">画像保存</button>
-                    <button id="move-to-phase6-btn" class="btn-tiffany-wide">合成画像を生成</button>
+                <div class="p5-footer-2col">
+                    <button id="back-to-phase5-btn" class="btn-outline-2col">戻る</button>
+                    <button id="save-phase5-2-btn" class="btn-outline-2col">画像保存</button>
+                    <button id="move-to-phase6-btn" class="btn-outline-2col">合成画像を生成</button>
                 </div>
             </div>
         </div>
