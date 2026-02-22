@@ -222,6 +222,15 @@ function setupEventListeners() {
     changePhase('phase5');
   });
 
+  // Navigation between Phase 5 and Phase 5-2
+  document.getElementById('next-to-phase5-2-btn')?.addEventListener('click', () => {
+    changePhase('phase5-2');
+  });
+
+  document.getElementById('back-to-phase5-btn')?.addEventListener('click', () => {
+    changePhase('phase5');
+  });
+
   document.getElementById('move-to-phase6-btn')?.addEventListener('click', () => {
     renderGenerationConfigUI();
     changePhase('phase6');
@@ -246,10 +255,10 @@ function setupEventListeners() {
     ?.addEventListener('click', () => changePhase('phase4'));
   document
     .getElementById('back-to-proposal-btn')
-    ?.addEventListener('click', () => changePhase('phase5'));
+    ?.addEventListener('click', () => changePhase('phase5-2'));
   document
     .getElementById('back-to-proposal-btn-p6')
-    ?.addEventListener('click', () => changePhase('phase5'));
+    ?.addEventListener('click', () => changePhase('phase5-2'));
   document.getElementById('close-liff-btn')?.addEventListener('click', () => liff?.closeWindow());
 
   // Screenshot Buttons
@@ -258,7 +267,10 @@ function setupEventListeners() {
     ?.addEventListener('click', () => captureAndSave('#phase4 .card', 'AI診断結果'));
   document
     .getElementById('save-phase5-btn')
-    ?.addEventListener('click', () => captureAndSave('#phase5 .card', 'AI提案内容'));
+    ?.addEventListener('click', () => captureAndSave('#phase5 .card', 'AI提案内容1'));
+  document
+    .getElementById('save-phase5-2-btn')
+    ?.addEventListener('click', () => captureAndSave('#phase5-2 .card', 'AI提案内容2'));
 
   // Fader / Adjustment Listeners
   setupAdustmentListeners();

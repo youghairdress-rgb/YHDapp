@@ -149,58 +149,70 @@ body {
     line-height: 1.5;
 }
 
-.best-colors-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
+/* Phase 5: Proposal Items (Maximum Density for 3-Column) */
+.proposal-grid-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.proposal-item {
+    padding: 10px 15px;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.best-colors-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
 }
 
 .color-swatch-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 4px;
 }
 
 .color-swatch-circle {
-    width: 70px;
-    height: 70px;
+    width: 50px;
+    /* Reduced from 60px */
+    height: 50px;
     border-radius: 50%;
-    border: 3px solid #fff;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 2px solid #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 .color-swatch-name {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
-    color: var(--text-color-light);
-    text-align: center;
-}
-
-.makeup-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
 }
 
 .makeup-item-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
-    background: #f8fafc;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
+    padding: 10px 12px;
+    background: #fff;
+    border-radius: 8px;
+    margin-bottom: 4px;
 }
 
 .makeup-label {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--primary-color);
 }
 
 .makeup-value {
-    font-size: 20px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--text-color);
 }
