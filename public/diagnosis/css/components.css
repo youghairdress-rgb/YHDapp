@@ -10,11 +10,12 @@
 }
 
 .form-title-center {
-    font-size: 96px;
+    font-size: 56px;
     font-weight: 800;
     color: #000;
     text-align: center;
     margin: 0;
+    padding: 0;
 }
 
 /* Forms Mapping */

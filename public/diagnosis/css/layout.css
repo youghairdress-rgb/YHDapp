@@ -216,83 +216,119 @@
     margin: 0;
 }
 
-/* Phase 4: Diagnosis Results (Optimized for 1080p No-Scroll) */
+/* Phase 4: Diagnosis Results (Ideal 2x2 Landscape Balance) */
+#phase4 .landscape-card {
+    padding: 30px 60px 40px;
+    /* Reduced vertical card padding */
+}
+
 .p4-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr auto;
-    gap: 2vh 4vw;
+    grid-template-rows: auto 1fr 1fr auto;
+    gap: 1vh 3vw;
+    /* Tighter gap */
     height: 100%;
-    max-height: calc(100vh - 220px);
-    overflow: hidden;
+    max-height: calc(100vh - 100px);
+    /* Use more screen height */
 }
 
 .p4-header {
     grid-column: 1 / span 2;
-    margin-bottom: 1vh;
+    margin-bottom: 0.5vh;
 }
 
-.p4-left,
-.p4-right {
+.result-section.no-margin {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 1vh 2vw;
+    /* Tighter internal padding */
     display: flex;
     flex-direction: column;
-    gap: 2vh;
     height: 100%;
+    box-sizing: border-box;
+}
+
+.result-title-center {
+    font-size: clamp(18px, 2.5vh, 26px);
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 1vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    color: var(--dark-color);
+}
+
+.result-grid-split {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8vh;
+    /* Tight line spacing */
+    flex: 1;
     min-height: 0;
-    /* Allow shrinking */
+}
+
+/* Vertical Stacking for Content but Horizontal Split for Label/Value */
+.result-item {
+    display: grid !important;
+    grid-template-columns: 140px 1fr !important;
+    /* Shift value further right */
+    align-items: flex-start !important;
+    gap: 15px !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.result-item-label {
+    font-size: clamp(13px, 1.6vh, 17px) !important;
+    font-weight: 700 !important;
+    color: #475569 !important;
+    text-align: left !important;
+}
+
+.result-item-value {
+    font-size: clamp(15px, 2.1vh, 20px) !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    line-height: 1.2 !important;
+    /* Tight line height */
+    text-align: left !important;
 }
 
 .p4-footer {
     grid-column: 1 / span 2;
-    margin-top: auto;
-    padding-top: 2vh;
+    margin-top: 1.5vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 40px;
-    border-top: 1px solid #e2e8f0;
+    gap: 30px;
 }
 
-/* Result Section Refinement */
-.result-section.no-margin {
-    margin-bottom: 0;
-    padding: 2vh 2vw;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
+/* Specific wide buttons for Phase 4 footer */
+.btn-outline-wide {
+    background-color: #fff;
+    color: var(--primary-color);
+    font-size: 24px;
+    font-weight: 700;
+    padding: 20px 60px;
+    border-radius: 12px;
+    border: 1px solid #94a3b8;
+    cursor: pointer;
+    min-width: 300px;
 }
 
-.result-grid-vertical {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5vh 1.5vw;
-    flex: 1;
-    overflow-y: auto;
-    /* Just in case, but target is no-scroll */
-}
-
-/* Vertical Item Content */
-.result-item {
-    padding: 1.5vh !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    text-align: center !important;
-    gap: 1vh !important;
-    background: #f8fafc;
-    border-radius: 16px;
-}
-
-.result-title {
-    font-size: clamp(24px, 3.5vh, 32px) !important;
-    margin-bottom: 2vh !important;
-}
-
-.result-item-label {
-    font-size: clamp(14px, 1.8vh, 18px) !important;
-}
-
-.result-item-value {
-    font-size: clamp(20px, 2.8vh, 26px) !important;
+.btn-tiffany-wide {
+    background-color: #0ABAB5;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 700;
+    padding: 25px 80px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(10, 186, 181, 0.2);
+    min-width: 450px;
 }
