@@ -236,14 +236,16 @@ function setupEventListeners() {
     changePhase('phase6');
   });
 
-  // Generation
+  // Generation (Integrated in Phase 6)
   document.getElementById('generate-image-btn')?.addEventListener('click', async () => {
-    changePhase('phase7');
+    // We stay in Phase 6 now, the canvas is on the same screen
     await handleImageGenerationRequest();
   });
 
-  // Adjustments (Phase 7)
-  document.getElementById('btn-back-style')?.addEventListener('click', () => changePhase('phase6'));
+  // Adjustments (Integrated in Phase 6)
+  document.getElementById('btn-back-style')?.addEventListener('click', () => {
+    // This button might be removed or hidden, but keeping for compatibility
+  });
   document
     .getElementById('refine-image-btn')
     ?.addEventListener('click', handleImageRefinementRequest);

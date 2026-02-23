@@ -315,119 +315,90 @@
         </div>
     </div>
 
-    <!-- Phase 6: Generated Image (Style Selection) -->
-    <div id="phase6" class="container-fluid phase-container" style="display:none;">
-        <div class="phase-header">
-            <h2 class="phase-title">Style Selection</h2>
-        </div>
-
-        <div class="phase6-layout-grid">
-            <!-- Col 1: Style List -->
-            <div class="p6-col-style">
-                <h3 class="refinement-title"><img src="images/AI美容師.png" alt="" class="proposal-icon"> スタイル</h3>
-                <div id="style-selection-group" class="form-group scroll-y"></div>
-            </div>
-            <!-- Col 2: Color List -->
-            <div class="p6-col-color">
-                <h3 class="refinement-title"><img src="images/ヘアカラー.png" alt="" class="proposal-icon"> カラー</h3>
-                <div id="color-selection-group" class="form-group scroll-y"></div>
-            </div>
-            <!-- Col 3: Tone & Start -->
-            <div class="p6-col-action">
-                <h3 class="refinement-title"><img src="images/ヘアカラー.png" alt="" class="proposal-icon"> 明るさ</h3>
-                <div class="form-group">
-                    <select id="hair-tone-select" class="form-control">
-                        <option value="">現在の髪色</option>
-                        <option value="Tone 5">Tone 5</option>
-                        <option value="Tone 7">Tone 7</option>
-                        <option value="Tone 9">Tone 9</option>
-                        <option value="Tone 11">Tone 11</option>
-                        <option value="Tone 13">Tone 13</option>
-                        <option value="Tone 15">Tone 15</option>
-                        <option value="Tone 18">Tone 18</option>
-                    </select>
+    <!-- Phase 6: Integrated Style Selection & Refinement (3-Column Layout) -->
+    <div id="phase6" class="phase-container" style="display:none;">
+        <div class="card landscape-card no-scroll-container">
+            <div class="p6-integrated-layout">
+                <!-- Page Title -->
+                <div class="p6-header">
+                    <h2 class="form-title-center">Generated & Refinement</h2>
                 </div>
-                <div class="phase6-bottom-buttons">
-                    <button id="back-to-proposal-btn-p6" class="btn-secondary">戻る</button>
-                    <button id="generate-image-btn" class="btn-primary">Composite START</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- PHASE 7: Refinement (Composite) -->
-    <div id="phase7" class="container-fluid phase-container" style="display:none;">
-        <div class="phase-header">
-            <h2 class="phase-title">Refinement</h2>
-        </div>
-
-        <div class="phase7-layout">
-            <!-- Left: Controls -->
-            <div id="phase7-adjustment-container" class="p7-comp-left">
-                <!-- Debug Status for iPad -->
-                <div id="segmentation-status" style="display:none !important;">Ready
-                </div>
-                <div class="adjustment-controls horizontal-faders">
-                    <!-- Brightness -->
-                    <div class="fader-container">
-                        <div class="fader-title">Brightness <span id="label-brightness-val"
-                                style="font-weight:normal; margin-left:5px;">(10tone)</span></div>
-                        <div class="control-item fader-group">
-                            <span class="fader-icon">💡</span>
-                            <button class="fader-btn-down" data-target="range-brightness" data-step="-1">◀</button>
-                            <input type="range" id="range-brightness" min="5" max="20" value="10"
-                                class="horizontal-fader">
-                            <button class="fader-btn-up" data-target="range-brightness" data-step="1">▶</button>
+                <!-- Column 1: Selection (Left) -->
+                <div class="p6-col-selection">
+                    <div class="selection-container-p6">
+                        <div class="selection-section">
+                            <h3 class="refinement-title">Style Selection</h3>
+                            <div id="style-selection-group" class="selection-grid-p6"></div>
+                        </div>
+                        <div class="selection-section">
+                            <h3 class="refinement-title">Color Selection</h3>
+                            <div id="color-selection-group" class="selection-grid-p6"></div>
+                        </div>
+                        <div class="selection-section">
+                            <h3 class="refinement-title">Brightness</h3>
+                            <select id="hair-tone-select" class="form-control-p6">
+                                <option value="">現在の髪色</option>
+                                <option value="Tone 5">Tone 5</option>
+                                <option value="Tone 7">Tone 7</option>
+                                <option value="Tone 9">Tone 9</option>
+                                <option value="Tone 11">Tone 11</option>
+                                <option value="Tone 13">Tone 13</option>
+                                <option value="Tone 15">Tone 15</option>
+                                <option value="Tone 18">Tone 18</option>
+                            </select>
                         </div>
                     </div>
-
-                    <!-- Hue -->
-                    <div class="fader-container">
-                        <div class="fader-title">Hue <span id="label-hue-val"
-                                style="font-weight:normal; margin-left:5px;">(180°)</span></div>
-                        <div class="control-item fader-group">
-                            <span class="fader-icon">🎨</span>
-                            <button class="fader-btn-down" data-target="range-hue" data-step="-10">◀</button>
-                            <input type="range" id="range-hue" min="0" max="360" value="180" class="horizontal-fader">
-                            <button class="fader-btn-up" data-target="range-hue" data-step="10">▶</button>
-                        </div>
-                    </div>
-
-                    <!-- Saturate -->
-                    <div class="fader-container">
-                        <div class="fader-title">Saturation <span id="label-saturate-val"
-                                style="font-weight:normal; margin-left:5px;">(0%)</span></div>
-                        <div class="control-item fader-group">
-                            <span class="fader-icon">💧</span>
-                            <button class="fader-btn-down" data-target="range-saturate" data-step="-10">◀</button>
-                            <input type="range" id="range-saturate" min="0" max="100" value="0"
-                                class="horizontal-fader">
-                            <button class="fader-btn-up" data-target="range-saturate" data-step="10">▶</button>
-                        </div>
+                    <!-- Composite START Button at the bottom of Column 1 -->
+                    <div class="selection-footer-p6">
+                        <button id="generate-image-btn" class="btn-tiffany-p6">Composite START</button>
                     </div>
                 </div>
 
-            </div>
+                <!-- Column 2: Refinement (Center) -->
+                <div class="p6-col-refinement">
+                    <h3 class="refinement-title">Refinement</h3>
+                    <div class="adjustment-controls-p6">
+                        <!-- Brightness -->
+                        <div class="fader-container-p6">
+                            <div class="fader-title-p6">Brightness <span id="label-brightness-val">(10tone)</span></div>
+                            <div class="fader-group-p6">
+                                <input type="range" id="range-brightness" min="5" max="20" value="10" class="p6-fader">
+                            </div>
+                        </div>
 
-            <!-- Right: Image -->
-            <div class="p7-comp-right">
-                <div class="image-preview-wrapper">
-                    <img id="main-diagnosis-image" src="" alt="Diagnosis Result" style="display:none;"
-                        crossorigin="anonymous">
-                    <canvas id="phase6-canvas"></canvas>
-                </div>
-            </div>
+                        <!-- Hue -->
+                        <div class="fader-container-p6">
+                            <div class="fader-title-p6">Hue <span id="label-hue-val">(180°)</span></div>
+                            <div class="fader-group-p6">
+                                <input type="range" id="range-hue" min="0" max="360" value="180" class="p6-fader">
+                            </div>
+                        </div>
 
-            <!-- Buttons Area (Moved to root for easier layout) -->
-            <div class="comp-buttons-area">
-                <div class="save-buttons-group">
-                    <button id="btn-back-style" class="btn-outline">Styleに戻る</button>
-                    <button id="btn-save" class="btn-primary">保存</button>
-                    <button id="btn-reset" class="btn-dark-outline">リセット</button>
+                        <!-- Saturation -->
+                        <div class="fader-container-p6">
+                            <div class="fader-title-p6">Saturation <span id="label-saturate-val">(0%)</span></div>
+                            <div class="fader-group-p6">
+                                <input type="range" id="range-saturate" min="0" max="100" value="0" class="p6-fader">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Column Buttons -->
+                    <div class="refinement-footer-p6">
+                        <button id="btn-reset" class="btn-outline-p6">リセット</button>
+                        <button id="btn-save" class="btn-outline-p6">画像保存</button>
+                        <button id="back-to-proposal-btn-p6" class="btn-outline-p6">戻る</button>
+                    </div>
                 </div>
-                <!-- Hidden but kept if ref needed logic -->
-                <button id="save-generated-image-to-db-btn" class="btn-success" style="display:none;">DB保存</button>
-                <button id="back-to-proposal-btn" class="btn-outline" style="display:none;">提案に戻る</button>
+
+                <!-- Column 3: Preview Area (Right) -->
+                <div class="p6-col-preview">
+                    <div class="image-display-area-p6">
+                        <img id="main-diagnosis-image" src="" alt="" style="display:none;" crossorigin="anonymous">
+                        <canvas id="phase6-canvas"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

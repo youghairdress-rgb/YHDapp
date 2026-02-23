@@ -342,6 +342,188 @@
     transition: all 0.2s;
 }
 
+/* --- Phase 6: Integrated 3-Column Layout (1920x1080 Optimization) --- */
+.p6-integrated-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "header header header"
+        "col1 col2 col3";
+    gap: 2vh 2.5vw;
+    height: 100%;
+    max-height: calc(100vh - 120px);
+}
+
+.p6-header {
+    grid-area: header;
+    text-align: center;
+    margin-bottom: 2vh;
+}
+
+/* Col 1: Selection */
+.p6-col-selection {
+    grid-area: col1;
+    display: flex;
+    flex-direction: column;
+    gap: 2vh;
+    min-height: 0;
+    border-right: 1px solid #f1f5f9;
+    padding-right: 1.5vw;
+}
+
+.selection-container-p6 {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5vh;
+    padding-right: 10px;
+}
+
+/* Custom Scrollbar for list */
+.selection-container-p6::-webkit-scrollbar {
+    width: 6px;
+}
+
+.selection-container-p6::-webkit-scrollbar-thumb {
+    background: #0ABAB5;
+    border-radius: 10px;
+}
+
+.selection-grid-p6 {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.selection-footer-p6 {
+    margin-top: 2vh;
+}
+
+/* Col 2: Refinement */
+.p6-col-refinement {
+    grid-area: col2;
+    display: flex;
+    flex-direction: column;
+    gap: 3vh;
+    min-height: 0;
+    padding: 0 1vw;
+}
+
+.adjustment-controls-p6 {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5vh;
+}
+
+.fader-container-p6 {
+    background: #f8fafc;
+    padding: 18px 22px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.fader-title-p6 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #475569;
+}
+
+.p6-fader {
+    width: 100%;
+    height: 8px;
+    accent-color: #0ABAB5;
+    cursor: pointer;
+}
+
+.refinement-footer-p6 {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-bottom: 1vh;
+}
+
+/* Col 3: Preview Area */
+.p6-col-preview {
+    grid-area: col3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f0fdfa;
+    /* Subtle Tiffany tint */
+    border-radius: 24px;
+    overflow: hidden;
+    height: 100%;
+}
+
+.image-display-area-p6 {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+#phase6-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto !important;
+    width: auto !important;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+}
+
+/* Shared Buttons in P6 */
+.btn-tiffany-p6 {
+    width: 100%;
+    padding: 18px;
+    background: #0ABAB5;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(10, 186, 181, 0.2);
+    transition: all 0.2s;
+}
+
+.btn-tiffany-p6:hover {
+    background: #09a39f;
+    transform: translateY(-2px);
+}
+
+.btn-outline-p6 {
+    width: 100%;
+    padding: 14px;
+    background: #fff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-outline-p6:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.form-control-p6 {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 16px;
+}
+
 /* --- Phase 5 & 5-2: 2-Column Responsive Layout (DELL 23" optimized) --- */
 .p5-layout-2col {
     display: grid;

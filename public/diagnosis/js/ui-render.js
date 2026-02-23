@@ -204,8 +204,6 @@ export function renderGenerationConfigUI() {
   if (proposal.haircolors) {
     Object.values(proposal.haircolors).forEach((color, index) => {
       const val = `color${index + 1}`;
-      // If styles exist, don't auto-check color to avoid confusion? Or just check first one.
-      // Let's check first one consistent with styles.
       colorHtml += createRadioOption(
         'color-select',
         val,
@@ -229,36 +227,18 @@ export function renderGenerationConfigUI() {
 import { runHairSegmentation } from './ui-features.js';
 
 export function displayGeneratedImage(base64Data, mimeType, styleName, colorName, toneLevel) {
-  // New UI Elements
-  const adjustmentContainer = document.getElementById('phase7-adjustment-container');
   const mainDiagnosisImage = document.getElementById('main-diagnosis-image');
 
-  // Old UI Elements (Hidden or Removed)
-  const generatedImageContainer = document.querySelector('.generated-image-container');
-  const postActions = document.getElementById('post-generation-actions');
-
-  // 1. Setup Phase 6 UI (Canvas etc.)
   initializePhase6Adjustments();
 
-  // Reset State (Show Button, Hide Faders)
-  if (window.resetPhase6State) window.resetPhase6State();
-
   if (mainDiagnosisImage) {
-    // Wait for image load
-    mainDiagnosisImage.onload = () => {
-      // Delay slightly to ensure layout is stable
-      setTimeout(() => {
-        // Auto-run segmentation
-        runHairSegmentation(mainDiagnosisImage);
-      }, 300);
-    };
-    // Set crossOrigin explicitly
-    mainDiagnosisImage.crossOrigin = 'anonymous';
-
     const dataUrl = `data:${mimeType};base64,${base64Data}`;
-    mainDiagnosisImage.src = dataUrl;
 
-    // Reset filters when a new image is loaded
+    mainDiagnosisImage.onload = () => {
+      runHairSegmentation(mainDiagnosisImage);
+    };
+
+    mainDiagnosisImage.src = dataUrl;
     mainDiagnosisImage.style.filter = 'none';
 
     // Reset sliders visually
@@ -270,27 +250,15 @@ export function displayGeneratedImage(base64Data, mimeType, styleName, colorName
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-
-    if (adjustmentContainer) {
-      adjustmentContainer.style.display = 'block';
-    }
   }
-
-  // Ensure old elements are hidden if they still exist
-  if (generatedImageContainer) generatedImageContainer.style.display = 'none';
-  // RESTORED: Do not hide postActions (Save features)
-  if (postActions) postActions.style.display = 'block';
 }
 
 function initializePhase6Adjustments() {
-  // 1. Setup Canvas & Image
   const imgElement = document.getElementById('main-diagnosis-image');
   if (imgElement) {
     imgElement.crossOrigin = 'anonymous';
-    // imgElement.style.display = 'block'; // Do not show source image
   }
 
-  // Create or Get Canvas
   let phase6Canvas = document.getElementById('phase6-canvas');
   if (!phase6Canvas) {
     phase6Canvas = document.createElement('canvas');
@@ -306,14 +274,15 @@ function resetSliders() {
   const rBrightness = document.getElementById('range-brightness');
   const rHue = document.getElementById('range-hue');
   const rSaturate = document.getElementById('range-saturate');
-  const lBrightness = document.getElementById('label-brightness');
-  const lHue = document.getElementById('label-hue');
-  const lSaturate = document.getElementById('label-saturate');
+  const lBrightness = document.getElementById('label-brightness-val');
+  const lHue = document.getElementById('label-hue-val');
+  const lSaturate = document.getElementById('label-saturate-val');
 
   if (rBrightness) rBrightness.value = 10;
   if (rHue) rHue.value = 180;
   if (rSaturate) rSaturate.value = 0;
-  if (lBrightness) lBrightness.textContent = '10';
 
-  if (lSaturate) lSaturate.textContent = '0%';
+  if (lBrightness) lBrightness.textContent = '(10tone)';
+  if (lHue) lHue.textContent = '(180°)';
+  if (lSaturate) lSaturate.textContent = '(0%)';
 }
