@@ -157,9 +157,10 @@ body {
 }
 
 .proposal-item {
-    padding: 10px 15px;
+    padding: 6px 12px;
+    /* Reduced from 10px 15px */
     background: #fff;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid #f1f5f9;
     display: flex;
     justify-content: space-between;
@@ -171,7 +172,8 @@ body {
     justify-content: space-around;
     align-items: center;
     gap: 12px;
-    padding: 10px 0;
+    padding: 5px 0;
+    /* Reduced */
 }
 
 .color-swatch-item {
@@ -199,10 +201,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
+    padding: 6px 10px;
+    /* Reduced */
     background: #fff;
-    border-radius: 8px;
-    margin-bottom: 4px;
+    border-radius: 6px;
+    margin-bottom: 3px;
 }
 
 .makeup-label {
@@ -215,6 +218,22 @@ body {
     font-size: 15px;
     font-weight: 600;
     color: var(--text-color);
+}
+
+.stylist-advice-container {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1vh 1.2vw;
+    border: 1px dashed #cbd5e1;
+    height: auto;
+    min-height: 40px;
+}
+
+#top-stylist-comment-text {
+    font-size: clamp(12px, 1.5vh, 15px);
+    line-height: 1.4;
+    color: #334155;
+    margin: 0;
 }
 
 /* --- Phase 6: Selection --- */
