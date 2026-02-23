@@ -144,29 +144,58 @@
                 </div>
 
                 <div class="p3-grid-5" id="phase3-viewer-grid">
-                    <div class="p3-item" id="view-item-front-photo">
+                    <!-- Photo: Front -->
+                    <div class="p3-item upload-item-p3" id="item-front-photo">
                         <div class="p3-label">Photo:Front</div>
-                        <div class="viewer-thumbnail" id="thumb-item-front-photo"></div>
+                        <div class="viewer-thumbnail" id="thumb-item-front-photo">
+                            <i class="upload-icon"></i>
+                        </div>
+                        <input type="file" id="file-item-front-photo" class="p3-upload-input" accept="image/*"
+                            capture="user" style="display:none;">
                         <span class="p3-status status-badge">Pending</span>
                     </div>
-                    <div class="p3-item" id="view-item-side-photo">
+
+                    <!-- Photo: Side -->
+                    <div class="p3-item upload-item-p3" id="item-side-photo">
                         <div class="p3-label">Photo:Side</div>
-                        <div class="viewer-thumbnail" id="thumb-item-side-photo"></div>
+                        <div class="viewer-thumbnail" id="thumb-item-side-photo">
+                            <i class="upload-icon"></i>
+                        </div>
+                        <input type="file" id="file-item-side-photo" class="p3-upload-input" accept="image/*"
+                            capture="user" style="display:none;">
                         <span class="p3-status status-badge">Pending</span>
                     </div>
-                    <div class="p3-item" id="view-item-back-photo">
+
+                    <!-- Photo: Back -->
+                    <div class="p3-item upload-item-p3" id="item-back-photo">
                         <div class="p3-label">Photo:Back</div>
-                        <div class="viewer-thumbnail" id="thumb-item-back-photo"></div>
+                        <div class="viewer-thumbnail" id="thumb-item-back-photo">
+                            <i class="upload-icon"></i>
+                        </div>
+                        <input type="file" id="file-item-back-photo" class="p3-upload-input" accept="image/*"
+                            capture="user" style="display:none;">
                         <span class="p3-status status-badge">Pending</span>
                     </div>
-                    <div class="p3-item" id="view-item-front-video">
+
+                    <!-- Video: Front -->
+                    <div class="p3-item upload-item-p3" id="item-front-video">
                         <div class="p3-label">Video:Front</div>
-                        <div class="viewer-thumbnail" id="thumb-item-front-video"></div>
+                        <div class="viewer-thumbnail" id="thumb-item-front-video">
+                            <i class="upload-icon"></i>
+                        </div>
+                        <input type="file" id="file-item-front-video" class="p3-upload-input" accept="video/*"
+                            capture="user" style="display:none;">
                         <span class="p3-status status-badge">Pending</span>
                     </div>
-                    <div class="p3-item" id="view-item-back-video">
+
+                    <!-- Video: Back -->
+                    <div class="p3-item upload-item-p3" id="item-back-video">
                         <div class="p3-label">Video:Back</div>
-                        <div class="viewer-thumbnail" id="thumb-item-back-video"></div>
+                        <div class="viewer-thumbnail" id="thumb-item-back-video">
+                            <i class="upload-icon"></i>
+                        </div>
+                        <input type="file" id="file-item-back-video" class="p3-upload-input" accept="video/*"
+                            capture="user" style="display:none;">
                         <span class="p3-status status-badge">Pending</span>
                     </div>
                 </div>

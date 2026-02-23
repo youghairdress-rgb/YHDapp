@@ -202,9 +202,23 @@ function setupEventListeners() {
     .getElementById('request-diagnosis-btn-viewer')
     ?.addEventListener('click', handleDiagnosisRequest);
 
-  // File Selection (Photos/Videos)
+  // File Selection (Photos/Videos) - New Logic for Phase 3
+  document.querySelectorAll('.upload-item-p3').forEach((item) => {
+    const input = item.querySelector('.p3-upload-input');
+    if (input) {
+      // Clicking the whole item triggers input
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.click();
+      });
+      // Handle file selection
+      input.addEventListener('change', (e) => handleFileSelect(e, item.id));
+    }
+  });
+
+  // Legacy/Other File Selection (if any)
   document.querySelectorAll('.upload-item').forEach((item) => {
-    if (item.closest('#phase3')) return; // Check logic from legacy
+    if (item.closest('#phase3')) return;
     const btn = item.querySelector('button');
     const input = item.querySelector('.file-input');
     if (btn && input) {
@@ -284,8 +298,10 @@ async function handleFileSelect(e, itemId, btn) {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  btn.textContent = '処理中...';
-  btn.disabled = true;
+  if (btn) {
+    btn.textContent = '処理中...';
+    btn.disabled = true;
+  }
   delete appState.uploadedFileUrls[itemId];
   checkAllFilesUploaded(false);
 
@@ -413,6 +429,16 @@ async function handleDiagnosisRequest() {
 
 async function checkCloudUploads() {
   const uid = appState.userProfile.firebaseUid;
+  if (!uid) {
+    console.warn('[checkCloudUploads] No UID found. Skipping cloud check or returning to Phase1.');
+    // Failsafe for HMR
+    if (window.currentPhase === 'phase3') {
+      alert('セッション情報がリセットされました。トップに戻ります。');
+      changePhase('phase1');
+    }
+    return;
+  }
+
   const items = [
     'item-front-photo',
     'item-side-photo',
@@ -429,13 +455,14 @@ async function checkCloudUploads() {
   }
 
   for (const itemId of items) {
-    const viewId = 'view-' + itemId;
-    const viewEl = document.getElementById(viewId);
+    const viewEl = document.getElementById(itemId); // Using new ID
     if (!viewEl) continue;
 
     try {
       const path = `guest_uploads/${uid}/${itemId}`;
       const storage = appState.firebase.storage;
+      if (!storage) throw new Error('Storage not initialized');
+
       const storageRef = ref(storage, path);
       const url = await getDownloadURL(storageRef);
 
@@ -453,9 +480,13 @@ async function checkCloudUploads() {
       }
       loadedCount++;
     } catch (e) {
-      viewEl.classList.remove('ready');
-      viewEl.classList.add('pending');
-      viewEl.querySelector('.status-badge').textContent = '未アップロード';
+      // Normal case: file doesn't exist yet
+      if (viewEl) {
+        viewEl.classList.remove('ready');
+        viewEl.classList.add('pending');
+        const badge = viewEl.querySelector('.status-badge');
+        if (badge) badge.textContent = '未アップロード';
+      }
     }
   }
 
