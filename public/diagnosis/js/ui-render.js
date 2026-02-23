@@ -154,31 +154,44 @@ export function displayProposalResult(proposal) {
   if (proposal.comment) setTextContent('top-stylist-comment-text', proposal.comment);
 }
 
-import { changePhase } from './ui-core.js';
-
 export function renderGenerationConfigUI() {
   const styleContainer = document.getElementById('style-selection-group');
   const colorContainer = document.getElementById('color-selection-group');
-  const proposal = appState.aiProposal;
+  let proposal = appState.aiProposal;
   const hasInspiration = !!appState.inspirationImageUrl;
 
-  if (!styleContainer || !colorContainer) return;
-
-  if (!proposal) {
-    alert('開発環境の更新によりデータがリセットされました。トップ画面に戻ります。');
-    changePhase('phase1');
+  // 1. HTMLの枠が見つからない場合はエラーを出すだけで、トップには戻さない
+  if (!styleContainer || !colorContainer) {
+    console.error('HTMLエラー: style-selection-group または color-selection-group が見つかりません。');
     return;
   }
 
+  // 2. 万が一本当にデータが消えている場合は、UI確認用のダミーデータを自動で流し込む（アラートは出さない）
+  if (!proposal || !proposal.hairstyles) {
+    console.warn('AIの提案データが見つからないため、UI確認用のダミーデータを挿入します。');
+    proposal = {
+      hairstyles: {
+        style1: { name: "【テスト用】ショートボブ", description: "UI確認用のダミースタイルです" },
+        style2: { name: "【テスト用】ロングレイヤー", description: "UI確認用のダミースタイルです" }
+      },
+      haircolors: {
+        color1: { name: "【テスト用】アッシュブラウン", description: "UI確認用のダミーカラーです", recommendedLevel: "Tone 7" },
+        color2: { name: "【テスト用】ピンクベージュ", description: "UI確認用のダミーカラーです", recommendedLevel: "Tone 9" }
+      }
+    };
+    appState.aiProposal = proposal; // ダミーデータを記憶させる
+  }
+
+  // 3. ラジオボタンの生成（以下、元の処理と同じ）
   const createRadioOption = (groupName, value, labelText, isChecked = false) => {
     const id = `${groupName}-${value}`;
     const formattedLabel = labelText.replace(/：/g, '：<br>');
     return `
-            <div class="radio-option">
-                <input type="radio" name="${groupName}" id="${id}" value="${value}" ${isChecked ? 'checked' : ''}>
-                <label for="${id}">${formattedLabel}</label>
-            </div>
-        `;
+        <div class="radio-option">
+            <input type="radio" name="${groupName}" id="${id}" value="${value}" ${isChecked ? 'checked' : ''}>
+            <label for="${id}">${formattedLabel}</label>
+        </div>
+    `;
   };
 
   // Style Options
@@ -186,25 +199,11 @@ export function renderGenerationConfigUI() {
   if (proposal.hairstyles) {
     Object.values(proposal.hairstyles).forEach((style, index) => {
       const val = `style${index + 1}`;
-      styleHtml += createRadioOption(
-        'style-select',
-        val,
-        `提案Style${index + 1}: ${style.name}`,
-        index === 0
-      );
+      styleHtml += createRadioOption('style-select', val, `提案Style${index + 1}: ${style.name}`, index === 0);
     });
   }
-  if (hasInspiration)
-    styleHtml += createRadioOption(
-      'style-select',
-      'user_request',
-      '★ ご希望のStyle (写真から再現)'
-    );
-  styleHtml += createRadioOption(
-    'style-select',
-    'keep_style',
-    'スタイルは変えない (現在の髪型のまま)'
-  );
+  if (hasInspiration) styleHtml += createRadioOption('style-select', 'user_request', '★ ご希望のStyle (写真から再現)');
+  styleHtml += createRadioOption('style-select', 'keep_style', 'スタイルは変えない (現在の髪型のまま)');
   styleContainer.innerHTML = styleHtml;
 
   // Color Options
@@ -212,23 +211,14 @@ export function renderGenerationConfigUI() {
   if (proposal.haircolors) {
     Object.values(proposal.haircolors).forEach((color, index) => {
       const val = `color${index + 1}`;
-      colorHtml += createRadioOption(
-        'color-select',
-        val,
-        `提案Color${index + 1}: ${color.name}`,
-        index === 0
-      );
+      colorHtml += createRadioOption('color-select', val, `提案Color${index + 1}: ${color.name}`, index === 0);
     });
   }
-  if (hasInspiration)
-    colorHtml += createRadioOption(
-      'color-select',
-      'user_request',
-      '★ ご希望のColor (写真から再現)'
-    );
+  if (hasInspiration) colorHtml += createRadioOption('color-select', 'user_request', '★ ご希望のColor (写真から再現)');
   colorHtml += createRadioOption('color-select', 'keep_color', '明るさを選択');
   colorContainer.innerHTML = colorHtml;
 }
+
 
 // --- Phase 6: Generated Image Display ---
 
