@@ -403,7 +403,42 @@
 }
 
 .selection-footer-p6 {
-    margin-top: 2vh;
+    margin-top: 1.5vh;
+}
+
+.fader-group-p6 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fader-btn-p6 {
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #64748b;
+    transition: all 0.2s;
+    padding: 0;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.fader-btn-p6:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0ABAB5;
+    transform: translateY(-1px);
+}
+
+.fader-btn-p6:active {
+    transform: translateY(0);
 }
 
 /* Col 2: Refinement */

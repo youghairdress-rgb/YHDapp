@@ -154,13 +154,21 @@ export function displayProposalResult(proposal) {
   if (proposal.comment) setTextContent('top-stylist-comment-text', proposal.comment);
 }
 
+import { changePhase } from './ui-core.js';
+
 export function renderGenerationConfigUI() {
   const styleContainer = document.getElementById('style-selection-group');
   const colorContainer = document.getElementById('color-selection-group');
   const proposal = appState.aiProposal;
   const hasInspiration = !!appState.inspirationImageUrl;
 
-  if (!styleContainer || !colorContainer || !proposal) return;
+  if (!styleContainer || !colorContainer) return;
+
+  if (!proposal) {
+    alert('開発環境の更新によりデータがリセットされました。トップ画面に戻ります。');
+    changePhase('phase1');
+    return;
+  }
 
   const createRadioOption = (groupName, value, labelText, isChecked = false) => {
     const id = `${groupName}-${value}`;
