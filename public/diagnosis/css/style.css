@@ -218,6 +218,8 @@ body {
     font-size: 15px;
     font-weight: 600;
     color: var(--text-color);
+    padding-left: 4ch;
+    /* Shift right by 4 characters */
 }
 
 .stylist-advice-container {
