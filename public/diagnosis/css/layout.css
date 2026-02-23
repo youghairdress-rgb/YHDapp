@@ -37,7 +37,8 @@
     max-height: 960px;
     background-color: #fff;
     border-radius: 40px;
-    padding: var(--card-padding);
+    padding: 30px 40px;
+    /* Reduced from var(--card-padding) */
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
@@ -345,14 +346,17 @@
 .p5-layout-2col {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr auto;
+    grid-template-rows: auto auto auto;
+    /* Changed from 1fr to auto for variable height */
     grid-template-areas:
         "header header"
         "left right"
         "footer footer";
-    gap: 2vh 3vw;
-    height: 100%;
-    max-height: calc(100vh - 120px);
+    gap: 1.5vh 3vw;
+    /* Reduced gap */
+    height: auto;
+    /* Changed from 100% */
+    max-height: 100%;
 }
 
 .p5-header {
@@ -381,10 +385,12 @@
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 20px;
-    padding: 1.5vh 2vw;
-    flex: 1;
+    padding: 1.2vh 1.5vw;
+    /* Reduced internal padding */
     display: flex;
     flex-direction: column;
+    height: auto;
+    /* Fit content */
     min-height: 0;
 }
 
