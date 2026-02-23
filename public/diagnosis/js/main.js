@@ -2,7 +2,7 @@ import liff from '@line/liff';
 import html2canvas from 'html2canvas';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, getDownloadURL, listAll } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
@@ -430,12 +430,13 @@ async function handleDiagnosisRequest() {
 async function checkCloudUploads() {
   const uid = appState.userProfile.firebaseUid;
   if (!uid) {
-    console.warn('[checkCloudUploads] No UID found. Skipping cloud check or returning to Phase1.');
-    // Failsafe for HMR
-    if (window.currentPhase === 'phase3') {
-      alert('セッション情報がリセットされました。トップに戻ります。');
-      changePhase('phase1');
-    }
+    console.warn('[checkCloudUploads] No UID found. Skipping cloud check.');
+    return;
+  }
+
+  const storage = appState.firebase.storage;
+  if (!storage) {
+    console.warn('[checkCloudUploads] Storage not initialized.');
     return;
   }
 
@@ -454,40 +455,62 @@ async function checkCloudUploads() {
     btn.textContent = '確認中...';
   }
 
-  for (const itemId of items) {
-    const viewEl = document.getElementById(itemId); // Using new ID
-    if (!viewEl) continue;
+  try {
+    // Step 1: List all files in the user's upload directory (1 request, no 404)
+    const dirRef = ref(storage, `guest_uploads/${uid}`);
+    const listResult = await listAll(dirRef);
+    const existingFileNames = new Set(listResult.items.map(item => item.name));
 
-    try {
-      const path = `guest_uploads/${uid}/${itemId}`;
-      const storage = appState.firebase.storage;
-      if (!storage) throw new Error('Storage not initialized');
+    // Step 2: For each expected item, check if it exists in the listing
+    for (const itemId of items) {
+      const viewEl = document.getElementById(itemId);
+      if (!viewEl) continue;
 
-      const storageRef = ref(storage, path);
-      const url = await getDownloadURL(storageRef);
+      if (existingFileNames.has(itemId)) {
+        // File exists - safe to call getDownloadURL (no 404)
+        try {
+          const fileRef = ref(storage, `guest_uploads/${uid}/${itemId}`);
+          const url = await getDownloadURL(fileRef);
 
-      appState.uploadedFileUrls[itemId] = url;
-      viewEl.classList.remove('pending');
-      viewEl.classList.add('ready');
-      viewEl.querySelector('.status-badge').textContent = 'OK';
+          appState.uploadedFileUrls[itemId] = url;
+          viewEl.classList.remove('pending');
+          viewEl.classList.add('ready');
+          const badge = viewEl.querySelector('.status-badge');
+          if (badge) badge.textContent = 'OK';
 
-      const thumb = viewEl.querySelector('.viewer-thumbnail');
-      thumb.innerHTML = '';
-      if (itemId.includes('video')) {
-        thumb.innerHTML = `<div style="position:absolute;z-index:1">▶️</div><video src="${url}" muted style="width:100%;height:100%;object-fit:cover"></video>`;
+          const thumb = viewEl.querySelector('.viewer-thumbnail');
+          if (thumb) {
+            thumb.innerHTML = '';
+            if (itemId.includes('video')) {
+              thumb.innerHTML = `<div style="position:absolute;z-index:1">▶️</div><video src="${url}" muted style="width:100%;height:100%;object-fit:cover"></video>`;
+            } else {
+              thumb.innerHTML = `<img src="${url}" alt="OK">`;
+            }
+          }
+          loadedCount++;
+        } catch (err) {
+          console.warn(`[checkCloudUploads] getDownloadURL failed for ${itemId}:`, err.message);
+        }
       } else {
-        thumb.innerHTML = `<img src="${url}" alt="OK">`;
-      }
-      loadedCount++;
-    } catch (e) {
-      // Normal case: file doesn't exist yet
-      if (viewEl) {
+        // File does NOT exist - just mark as pending, NO HTTP request
         viewEl.classList.remove('ready');
         viewEl.classList.add('pending');
         const badge = viewEl.querySelector('.status-badge');
         if (badge) badge.textContent = '未アップロード';
       }
     }
+  } catch (err) {
+    // listAll itself failed (e.g. auth issue, network down)
+    console.warn('[checkCloudUploads] listAll failed:', err.message);
+    items.forEach(itemId => {
+      const viewEl = document.getElementById(itemId);
+      if (viewEl) {
+        viewEl.classList.remove('ready');
+        viewEl.classList.add('pending');
+        const badge = viewEl.querySelector('.status-badge');
+        if (badge) badge.textContent = 'Pending';
+      }
+    });
   }
 
   if (btn) {
@@ -497,6 +520,7 @@ async function checkCloudUploads() {
   const nextBtn = document.getElementById('request-diagnosis-btn-viewer');
   if (nextBtn) nextBtn.disabled = loadedCount !== items.length;
 }
+
 
 // --- Generation & Refinment ---
 
