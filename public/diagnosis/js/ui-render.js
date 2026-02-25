@@ -164,53 +164,72 @@ export function displayProposalResult(proposal) {
 export function renderGenerationConfigUI() {
   const styleContainer = document.getElementById('style-selection-group');
   const colorContainer = document.getElementById('color-selection-group');
-  let proposal = appState.aiProposal;
-  const hasInspiration = !!appState.inspirationImageUrl;
+  
+  // --- 堅牢な状態復旧ロジック (sessionStorageを利用) ---
+  if (!appState.aiProposal || !appState.aiProposal.hairstyles) {
+    try {
+      const backupProposal = sessionStorage.getItem('yhd_backup_proposal');
+      const backupResult = sessionStorage.getItem('yhd_backup_result');
+      const backupUrls = sessionStorage.getItem('yhd_backup_urls');
 
-  // 1. HTMLの枠が見つからない場合はエラーを出すだけで、トップには戻さない
+      if (backupProposal && backupResult && backupUrls) {
+        appState.aiProposal = JSON.parse(backupProposal);
+        appState.aiDiagnosisResult = JSON.parse(backupResult);
+        appState.uploadedFileUrls = JSON.parse(backupUrls);
+        console.log('[DEBUG] 状態を sessionStorage から完全に復旧しました');
+      }
+    } catch (e) {
+      console.warn('状態の復旧に失敗しました:', e);
+    }
+  }
+
+  let proposal = appState.aiProposal;
+  const hasInspiration = !!appState.inspirationImageUrl || !!appState.uploadedFileUrls['item-inspiration-photo'];
+
+  // 1. HTMLの枠が見つからない場合のエラーチェック
   if (!styleContainer || !colorContainer) {
     console.error('HTMLエラー: style-selection-group または color-selection-group が見つかりません。');
     return;
   }
 
-  // 2. 提案データが全く無い場合は、空のオブジェクトとして扱い処理を続行する（エラーで落とさない）
-  if (!proposal) {
-    console.warn('AIの提案データが見つかりません。デフォルトのオプションのみ表示します。');
-    proposal = {};
+  // 2. 厳格なエラーハンドリング (リロード後にデータが復旧できなかった場合)
+  // ダミーデータは絶対に使用せず、ユーザーを安全に前の画面へ戻す
+  if (!proposal || !proposal.hairstyles || !proposal.haircolors || Object.keys(proposal.hairstyles).length === 0) {
+    console.error('AIの提案データが見つかりません。データ欠落。');
+    alert('AIの提案データの読み込みに失敗しました。お手数ですがもう一度お試しください。');
+    // UI-coreを動的に読み込んで遷移
+    import('./ui-core.js').then(m => m.changePhase('phase5-2'));
+    return;
   }
 
-  // 3. ラジオボタンの生成（以下、元の処理と同じ）
+  // 3. ラジオボタンの生成 (ネイティブの丸ポチを隠し、ラベルを美しいボタンとして描画)
   const createRadioOption = (groupName, value, labelText, isChecked = false) => {
     const id = `${groupName}-${value}`;
     const formattedLabel = labelText.replace(/：/g, '：<br>');
     return `
         <div class="radio-option">
-            <input type="radio" name="${groupName}" id="${id}" value="${value}" ${isChecked ? 'checked' : ''}>
-            <label for="${id}">${formattedLabel}</label>
+            <input type="radio" name="${groupName}" id="${id}" value="${value}" ${isChecked ? 'checked' : ''} style="display:none;">
+            <label for="${id}" class="radio-button-label">${formattedLabel}</label>
         </div>
     `;
   };
 
   // Style Options
   let styleHtml = '';
-  if (proposal && proposal.hairstyles) {
-    Object.values(proposal.hairstyles).forEach((style, index) => {
-      const val = `style${index + 1}`;
-      styleHtml += createRadioOption('style-select', val, `提案Style${index + 1}: ${style.name || 'AIおすすめ'}`, index === 0);
-    });
-  }
+  Object.values(proposal.hairstyles).forEach((style, index) => {
+    const val = `style${index + 1}`;
+    styleHtml += createRadioOption('style-select', val, `提案Style${index + 1}: ${style.name || 'AIおすすめ'}`, index === 0);
+  });
   if (hasInspiration) styleHtml += createRadioOption('style-select', 'user_request', '★ ご希望のStyle (写真から再現)');
   styleHtml += createRadioOption('style-select', 'keep_style', 'スタイルは変えない (現在の髪型のまま)');
   styleContainer.innerHTML = styleHtml;
 
   // Color Options
   let colorHtml = '';
-  if (proposal && proposal.haircolors) {
-    Object.values(proposal.haircolors).forEach((color, index) => {
-      const val = `color${index + 1}`;
-      colorHtml += createRadioOption('color-select', val, `提案Color${index + 1}: ${color.name || 'AIおすすめ'}`, index === 0);
-    });
-  }
+  Object.values(proposal.haircolors).forEach((color, index) => {
+    const val = `color${index + 1}`;
+    colorHtml += createRadioOption('color-select', val, `提案Color${index + 1}: ${color.name || 'AIおすすめ'}`, index === 0);
+  });
   if (hasInspiration) colorHtml += createRadioOption('color-select', 'user_request', '★ ご希望のColor (写真から再現)');
   colorHtml += createRadioOption('color-select', 'keep_color', '明るさを選択');
   colorContainer.innerHTML = colorHtml;
@@ -245,6 +264,10 @@ export function displayGeneratedImage(base64Data, mimeType, styleName, colorName
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+
+    // ローディングオーバーレイを非表示
+    const p6Overlay = document.getElementById('p6-generation-overlay');
+    if (p6Overlay) p6Overlay.style.display = 'none';
   }
 }
 

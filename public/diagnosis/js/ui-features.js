@@ -134,7 +134,7 @@ export async function runHairSegmentation(imgElement) {
 
 export function applyImageAdjustments() {
   const canvas = document.getElementById('phase6-canvas');
-  if (!canvas || !originalImageBitmap || !hairMaskBitmap) return;
+  if (!canvas || !originalImageBitmap) return;
 
   const ctx = canvas.getContext('2d');
   const width = canvas.width;
@@ -181,8 +181,22 @@ export function applyImageAdjustments() {
     ctx.drawImage(originalImageBitmap, 0, 0, width, height);
   }
 
-  // IF No Mask, Stop here (Display original only)
+  // IF No Mask, Fallback to applying filters to the whole image
   if (!hairMaskBitmap) {
+    // A. Draw Original with Brightness Lift
+    ctx.filter = `brightness(${brightnessScale})`;
+    ctx.drawImage(originalImageBitmap, 0, 0, width, height);
+    ctx.filter = 'none';
+
+    // B. Apply Color Tint to the whole image
+    if (colorOpacity > 0) {
+      ctx.globalCompositeOperation = 'color';
+      ctx.globalAlpha = colorOpacity;
+      ctx.fillStyle = colorString;
+      ctx.fillRect(0, 0, width, height);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1.0;
+    }
     ctx.restore();
     return;
   }

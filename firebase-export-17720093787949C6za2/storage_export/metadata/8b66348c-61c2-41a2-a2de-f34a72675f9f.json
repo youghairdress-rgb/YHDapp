@@ -1,0 +1,19 @@
+{
+  "name": "guest_uploads/bjyUu6QpO9FVPAs5O9Gg/item-front-video",
+  "bucket": "yhd-db.firebasestorage.app",
+  "metageneration": 1,
+  "generation": 1772002194414,
+  "contentType": "video/mp4",
+  "storageClass": "STANDARD",
+  "contentDisposition": "inline",
+  "downloadTokens": [
+    "150cbf47-5fad-4c37-98a8-b32018b44722"
+  ],
+  "etag": "ITpIfKzY7z2dtJV1g/UqdqIVIrU",
+  "customMetadata": {},
+  "timeCreated": "2026-02-25T06:49:54.414Z",
+  "updated": "2026-02-25T06:49:54.414Z",
+  "size": 1847962,
+  "md5Hash": "KOgGjJb9fW84wjb++H97Kg==",
+  "crc32c": "1003426680"
+}

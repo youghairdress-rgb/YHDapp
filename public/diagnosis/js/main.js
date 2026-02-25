@@ -527,6 +527,16 @@ async function handleDiagnosisRequest() {
 
     appState.aiDiagnosisResult = res.result;
     appState.aiProposal = res.proposal;
+    
+    // バックアップの保存 (HMR・リロード対策)
+    try {
+      sessionStorage.setItem('yhd_backup_proposal', JSON.stringify(res.proposal));
+      sessionStorage.setItem('yhd_backup_result', JSON.stringify(res.result));
+      sessionStorage.setItem('yhd_backup_urls', JSON.stringify(appState.uploadedFileUrls));
+    } catch (e) {
+      console.warn('sessionStorageへのバックアップ保存に失敗しました:', e);
+    }
+
     displayDiagnosisResult(res.result);
     changePhase('phase4');
   } catch (err) {
@@ -639,6 +649,11 @@ async function handleImageGenerationRequest() {
   }
   
   toggleLoader(true, 'AIが画像を生成しています...');
+  
+  // 画像エリア専用のローディングを表示
+  const p6Overlay = document.getElementById('p6-generation-overlay');
+  if (p6Overlay) p6Overlay.style.display = 'flex';
+  
   try {
     const styleSelect = document.querySelector('input[name="style-select"]:checked')?.value;
     const colorSelect = document.querySelector('input[name="color-select"]:checked')?.value;
