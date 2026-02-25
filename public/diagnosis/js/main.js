@@ -2,7 +2,7 @@ import liff from '@line/liff';
 import html2canvas from 'html2canvas';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, getDownloadURL, listAll } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 
@@ -72,21 +72,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     const storage = getStorage(app);
     const functions = getFunctions(app, 'asia-northeast1');
 
-    appState.firebase = { app, auth, storage, firestore: db, functions };
+    // ★重要: オブジェクトを丸ごと上書きせず、個別に代入することで参照を維持する
+    appState.firebase.app = app;
+    appState.firebase.auth = auth;
+    appState.firebase.firestore = db;
+    appState.firebase.storage = storage;
+    appState.firebase.functions = functions;
 
+    console.log('[main.js] Firebase instances initialized (Reference preserved)');
     // 環境判定とエミュレータ接続
-    const isDev = import.meta.env.DEV || ['localhost', '127.0.0.1'].includes(window.location.hostname);
-    if (isDev) {
+    const isLocalhost =
+      import.meta.env.DEV ||
+      ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) ||
+      window.location.hostname.startsWith('192.168.') ||
+      window.location.hostname.startsWith('10.') ||
+      window.location.hostname.startsWith('172.');
+
+    if (isLocalhost) {
       const { connectAuthEmulator } = await import('firebase/auth');
       const { connectFirestoreEmulator } = await import('firebase/firestore');
       const { connectStorageEmulator } = await import('firebase/storage');
       const { connectFunctionsEmulator } = await import('firebase/functions');
 
-      connectAuthEmulator(auth, 'http://127.0.0.1:9099');
-      connectFirestoreEmulator(db, '127.0.0.1', 8080);
-      connectStorageEmulator(storage, '127.0.0.1', 9199);
-      connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-      console.log('[diagnosis] Emulators connected');
+      const emuHost = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+      connectAuthEmulator(auth, `http://${emuHost}:9099`);
+      connectFirestoreEmulator(db, emuHost, 8080);
+      connectStorageEmulator(storage, emuHost, 9199);
+      connectFunctionsEmulator(functions, emuHost, 5001);
+      console.log('[diagnosis] Emulators connected to:', emuHost);
     }
     const params = new URLSearchParams(window.location.search);
     if (params.get('customerId')) {
@@ -189,9 +202,23 @@ function setupEventListeners() {
     .getElementById('request-diagnosis-btn-viewer')
     ?.addEventListener('click', handleDiagnosisRequest);
 
-  // File Selection (Photos/Videos)
+  // File Selection (Photos/Videos) - New Logic for Phase 3
+  document.querySelectorAll('.upload-item-p3').forEach((item) => {
+    const input = item.querySelector('.p3-upload-input');
+    if (input) {
+      // Clicking the whole item triggers input
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.click();
+      });
+      // Handle file selection
+      input.addEventListener('change', (e) => handleFileSelect(e, item.id));
+    }
+  });
+
+  // Legacy/Other File Selection (if any)
   document.querySelectorAll('.upload-item').forEach((item) => {
-    if (item.closest('#phase3')) return; // Check logic from legacy
+    if (item.closest('#phase3')) return;
     const btn = item.querySelector('button');
     const input = item.querySelector('.file-input');
     if (btn && input) {
@@ -209,19 +236,30 @@ function setupEventListeners() {
     changePhase('phase5');
   });
 
+  // Navigation between Phase 5 and Phase 5-2
+  document.getElementById('next-to-phase5-2-btn')?.addEventListener('click', () => {
+    changePhase('phase5-2');
+  });
+
+  document.getElementById('back-to-phase5-btn')?.addEventListener('click', () => {
+    changePhase('phase5');
+  });
+
   document.getElementById('move-to-phase6-btn')?.addEventListener('click', () => {
     renderGenerationConfigUI();
     changePhase('phase6');
   });
 
-  // Generation
+  // Generation (Integrated in Phase 6)
   document.getElementById('generate-image-btn')?.addEventListener('click', async () => {
-    changePhase('phase7');
+    // We stay in Phase 6 now, the canvas is on the same screen
     await handleImageGenerationRequest();
   });
 
-  // Adjustments (Phase 7)
-  document.getElementById('btn-back-style')?.addEventListener('click', () => changePhase('phase6'));
+  // Adjustments (Integrated in Phase 6)
+  document.getElementById('btn-back-style')?.addEventListener('click', () => {
+    // This button might be removed or hidden, but keeping for compatibility
+  });
   document
     .getElementById('refine-image-btn')
     ?.addEventListener('click', handleImageRefinementRequest);
@@ -233,10 +271,10 @@ function setupEventListeners() {
     ?.addEventListener('click', () => changePhase('phase4'));
   document
     .getElementById('back-to-proposal-btn')
-    ?.addEventListener('click', () => changePhase('phase5'));
+    ?.addEventListener('click', () => changePhase('phase5-2'));
   document
     .getElementById('back-to-proposal-btn-p6')
-    ?.addEventListener('click', () => changePhase('phase5'));
+    ?.addEventListener('click', () => changePhase('phase5-2'));
   document.getElementById('close-liff-btn')?.addEventListener('click', () => liff?.closeWindow());
 
   // Screenshot Buttons
@@ -245,7 +283,10 @@ function setupEventListeners() {
     ?.addEventListener('click', () => captureAndSave('#phase4 .card', 'AI診断結果'));
   document
     .getElementById('save-phase5-btn')
-    ?.addEventListener('click', () => captureAndSave('#phase5 .card', 'AI提案内容'));
+    ?.addEventListener('click', () => captureAndSave('#phase5 .card', 'AI提案内容1'));
+  document
+    .getElementById('save-phase5-2-btn')
+    ?.addEventListener('click', () => captureAndSave('#phase5-2 .card', 'AI提案内容2'));
 
   // Fader / Adjustment Listeners
   setupAdustmentListeners();
@@ -257,8 +298,10 @@ async function handleFileSelect(e, itemId, btn) {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  btn.textContent = '処理中...';
-  btn.disabled = true;
+  if (btn) {
+    btn.textContent = '処理中...';
+    btn.disabled = true;
+  }
   delete appState.uploadedFileUrls[itemId];
   checkAllFilesUploaded(false);
 
@@ -386,6 +429,17 @@ async function handleDiagnosisRequest() {
 
 async function checkCloudUploads() {
   const uid = appState.userProfile.firebaseUid;
+  if (!uid) {
+    console.warn('[checkCloudUploads] No UID found. Skipping cloud check.');
+    return;
+  }
+
+  const storage = appState.firebase.storage;
+  if (!storage) {
+    console.warn('[checkCloudUploads] Storage not initialized.');
+    return;
+  }
+
   const items = [
     'item-front-photo',
     'item-side-photo',
@@ -401,35 +455,62 @@ async function checkCloudUploads() {
     btn.textContent = '確認中...';
   }
 
-  for (const itemId of items) {
-    const viewId = 'view-' + itemId;
-    const viewEl = document.getElementById(viewId);
-    if (!viewEl) continue;
+  try {
+    // Step 1: List all files in the user's upload directory (1 request, no 404)
+    const dirRef = ref(storage, `guest_uploads/${uid}`);
+    const listResult = await listAll(dirRef);
+    const existingFileNames = new Set(listResult.items.map(item => item.name));
 
-    try {
-      const path = `guest_uploads/${uid}/${itemId}`;
-      const storage = appState.firebase.storage;
-      const storageRef = ref(storage, path);
-      const url = await getDownloadURL(storageRef);
+    // Step 2: For each expected item, check if it exists in the listing
+    for (const itemId of items) {
+      const viewEl = document.getElementById(itemId);
+      if (!viewEl) continue;
 
-      appState.uploadedFileUrls[itemId] = url;
-      viewEl.classList.remove('pending');
-      viewEl.classList.add('ready');
-      viewEl.querySelector('.status-badge').textContent = 'OK';
+      if (existingFileNames.has(itemId)) {
+        // File exists - safe to call getDownloadURL (no 404)
+        try {
+          const fileRef = ref(storage, `guest_uploads/${uid}/${itemId}`);
+          const url = await getDownloadURL(fileRef);
 
-      const thumb = viewEl.querySelector('.viewer-thumbnail');
-      thumb.innerHTML = '';
-      if (itemId.includes('video')) {
-        thumb.innerHTML = `<div style="position:absolute;z-index:1">▶️</div><video src="${url}" muted style="width:100%;height:100%;object-fit:cover"></video>`;
+          appState.uploadedFileUrls[itemId] = url;
+          viewEl.classList.remove('pending');
+          viewEl.classList.add('ready');
+          const badge = viewEl.querySelector('.status-badge');
+          if (badge) badge.textContent = 'OK';
+
+          const thumb = viewEl.querySelector('.viewer-thumbnail');
+          if (thumb) {
+            thumb.innerHTML = '';
+            if (itemId.includes('video')) {
+              thumb.innerHTML = `<div style="position:absolute;z-index:1">▶️</div><video src="${url}" muted style="width:100%;height:100%;object-fit:cover"></video>`;
+            } else {
+              thumb.innerHTML = `<img src="${url}" alt="OK">`;
+            }
+          }
+          loadedCount++;
+        } catch (err) {
+          console.warn(`[checkCloudUploads] getDownloadURL failed for ${itemId}:`, err.message);
+        }
       } else {
-        thumb.innerHTML = `<img src="${url}" alt="OK">`;
+        // File does NOT exist - just mark as pending, NO HTTP request
+        viewEl.classList.remove('ready');
+        viewEl.classList.add('pending');
+        const badge = viewEl.querySelector('.status-badge');
+        if (badge) badge.textContent = '未アップロード';
       }
-      loadedCount++;
-    } catch (e) {
-      viewEl.classList.remove('ready');
-      viewEl.classList.add('pending');
-      viewEl.querySelector('.status-badge').textContent = '未アップロード';
     }
+  } catch (err) {
+    // listAll itself failed (e.g. auth issue, network down)
+    console.warn('[checkCloudUploads] listAll failed:', err.message);
+    items.forEach(itemId => {
+      const viewEl = document.getElementById(itemId);
+      if (viewEl) {
+        viewEl.classList.remove('ready');
+        viewEl.classList.add('pending');
+        const badge = viewEl.querySelector('.status-badge');
+        if (badge) badge.textContent = 'Pending';
+      }
+    });
   }
 
   if (btn) {
@@ -439,6 +520,7 @@ async function checkCloudUploads() {
   const nextBtn = document.getElementById('request-diagnosis-btn-viewer');
   if (nextBtn) nextBtn.disabled = loadedCount !== items.length;
 }
+
 
 // --- Generation & Refinment ---
 

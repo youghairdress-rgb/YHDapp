@@ -57,7 +57,7 @@ const main = async () => {
     } else {
       // 未登録の場合は初回登録ページへリダイレクト
       showLoading('初回登録画面に移動します...');
-      window.location.href = './entry.html';
+      window.location.href = '/entry.html';
       return; // これ以上処理を進めない
     }
     // ▲▲▲ 修正ここまで ▲▲▲

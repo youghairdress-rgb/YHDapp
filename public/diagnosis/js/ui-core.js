@@ -9,6 +9,7 @@ import { appState } from './state.js';
 // --- Phase Management ---
 
 export function changePhase(phaseId) {
+  window.currentPhase = phaseId;
   logger.log(`Changing phase to: ${phaseId}`);
 
   // Hide all phases EXCEPT the target
