@@ -169,7 +169,7 @@ const initializeLiffAndAuth = async (liffId) => {
     return await firebaseLoginWithToken(accessToken);
   } catch (error) {
     console.error('LIFFの初期化または認証プロセスでエラーが発生しました:', error);
-    throw new Error(`LIFFの処理中にエラーが発生しました: ${error.message}`);
+    throw new Error(`LIFFの処理中にエラーが発生しました: ${error.message}`, { cause: error });
   }
 };
 

@@ -14,6 +14,9 @@ import {
   getFirestore,
   collection,
   addDoc,
+  getDocs,
+  query,
+  orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
 import { httpsCallable, getFunctions, connectFunctionsEmulator } from 'firebase/functions';
@@ -143,6 +146,23 @@ export async function saveImageToGallery(blob, userId, styleName, colorName, not
     logger.error(`[Gallery] Firestore save failed:`, e);
     // Even if Firestore fails, return URL as upload succeeded
     return url;
+  }
+}
+
+export async function getGalleryImages(userId) {
+  try {
+    const db = getFirestore();
+    const galleryRef = collection(db, `users/${userId}/gallery`);
+    const q = query(galleryRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const images = [];
+    snapshot.forEach((doc) => {
+      images.push({ id: doc.id, ...doc.data() });
+    });
+    return images;
+  } catch (e) {
+    logger.error(`[Gallery] Failed to fetch images for ${userId}:`, e);
+    return [];
   }
 }
 

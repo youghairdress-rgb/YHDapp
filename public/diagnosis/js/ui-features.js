@@ -16,9 +16,8 @@ export async function initializeHairSegmenter() {
   if (imageSegmenter) return; // Already initialized
 
   try {
-
     const visionTasks = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm'
     );
 
     imageSegmenter = await ImageSegmenter.createFromOptions(visionTasks, {

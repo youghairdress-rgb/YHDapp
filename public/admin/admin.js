@@ -352,14 +352,25 @@ const adminMain = async (auth, user) => {
         detailMobileUploadLink.href = `/diagnosis/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
 
+      // Helper for fullscreen popup
+      const openFullscreen = (url) => {
+        window.open(url, '_blank', `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${screen.availWidth},height=${screen.availHeight}`);
+      };
+
       // AIカウンセリング (診断)
       if (detailCounselingLink) {
-        detailCounselingLink.href = `/diagnosis/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        detailCounselingLink.onclick = (e) => {
+          e.preventDefault();
+          openFullscreen(`/diagnosis/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
+        };
       }
 
       // AIヘアスタイル診断
       if (detailMatchingLink) {
-        detailMatchingLink.href = `/ai-matching/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        detailMatchingLink.onclick = (e) => {
+          e.preventDefault();
+          openFullscreen(`/ai-matching/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
+        };
       }
 
       // 髪色アプリ (撮影/編集)
@@ -370,7 +381,10 @@ const adminMain = async (auth, user) => {
         detailHairUploadLink.href = `/hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
       if (detailHairEditLink) {
-        detailHairEditLink.href = `/hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+        detailHairEditLink.onclick = (e) => {
+          e.preventDefault();
+          openFullscreen(`/hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
+        };
       }
     }
     openModal(detailModal);

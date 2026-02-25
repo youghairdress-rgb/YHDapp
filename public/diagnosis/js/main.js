@@ -31,6 +31,7 @@ import {
   saveImageToGallery,
   saveScreenshotToGallery,
   uploadFileToStorage,
+  getGalleryImages,
 } from './api.js';
 
 // --- Initialization ---
@@ -105,6 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (params.get('customerId')) {
       appState.userProfile.viaAdmin = true;
       appState.userProfile.firebaseUid = params.get('customerId');
+      appState.userProfile.userId = params.get('customerId');
       appState.userProfile.displayName = decodeURIComponent(params.get('customerName') || '');
     }
 
@@ -121,7 +123,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const performAuth = async () => {
           if (IS_DEV_MODE && USE_MOCK_AUTH) {
-            await signInAnonymously(appState.firebase.auth);
+            const userCredential = await signInAnonymously(appState.firebase.auth);
+            appState.userProfile.firebaseUid = userCredential.user.uid;
+            console.log(`[main.js] Signed in anonymously with UID: ${userCredential.user.uid}`);
           } else {
             console.log('[main.js] Requesting Custom Token...');
             const { customToken } = await requestCustomToken(liffResult.accessToken);
@@ -191,6 +195,25 @@ function setupEventListeners() {
     if (inspBtn) inspBtn.addEventListener('click', trigger);
     inspInput.addEventListener('change', handleInspirationSelect);
   }
+
+  // Gallery Selection Modal logic
+  const galleryBtn = document.getElementById('inspiration-gallery-btn');
+  const galleryModal = document.getElementById('gallery-selection-modal');
+  const closeGalleryBtn = document.getElementById('close-gallery-modal-btn');
+
+  if (galleryBtn) {
+    galleryBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openGalleryModal();
+    });
+  }
+  if (closeGalleryBtn) {
+    closeGalleryBtn.addEventListener('click', () => {
+      galleryModal.style.display = 'none';
+      galleryModal.classList.remove('active');
+    });
+  }
+
   document.getElementById('inspiration-delete-btn')?.addEventListener('click', (e) => {
     e.stopPropagation();
     handleInspirationDelete();
@@ -246,6 +269,8 @@ function setupEventListeners() {
   });
 
   document.getElementById('move-to-phase6-btn')?.addEventListener('click', () => {
+    console.log('[DEBUG] Phase 6 Entry - appState.aiProposal:', appState.aiProposal);
+    console.log('[DEBUG] Phase 6 Entry - appState.aiDiagnosisResult:', appState.aiDiagnosisResult);
     renderGenerationConfigUI();
     changePhase('phase6');
   });
@@ -280,13 +305,13 @@ function setupEventListeners() {
   // Screenshot Buttons
   document
     .getElementById('save-phase4-btn')
-    ?.addEventListener('click', () => captureAndSave('#phase4 .card', 'AI診断結果'));
+    ?.addEventListener('click', () => captureAndSave('#phase4 .p4-layout', 'AI診断結果'));
   document
     .getElementById('save-phase5-btn')
-    ?.addEventListener('click', () => captureAndSave('#phase5 .card', 'AI提案内容1'));
+    ?.addEventListener('click', () => captureAndSave('#phase5 .p5-layout-2col', 'AI提案内容1'));
   document
     .getElementById('save-phase5-2-btn')
-    ?.addEventListener('click', () => captureAndSave('#phase5-2 .card', 'AI提案内容2'));
+    ?.addEventListener('click', () => captureAndSave('#phase5-2 .p5-layout-2col', 'AI提案内容2'));
 
   // Fader / Adjustment Listeners
   setupAdustmentListeners();
@@ -402,8 +427,91 @@ function handleInspirationDelete() {
   document.getElementById('inspiration-upload-container').classList.remove('has-preview');
   document.getElementById('inspiration-upload-title').textContent = '写真を選択';
   document.getElementById('inspiration-delete-btn').style.display = 'none';
-  document.getElementById('inspiration-upload-btn').textContent = '選択';
+  document.getElementById('inspiration-upload-status').textContent = 'タップして画像を選択、またはギャラリーから';
   document.getElementById('inspiration-image-input').value = null;
+}
+
+// --- Gallery Selection ---
+async function openGalleryModal() {
+  const modal = document.getElementById('gallery-selection-modal');
+  const grid = document.getElementById('gallery-selection-grid');
+  const emptyMsg = document.getElementById('gallery-selection-empty');
+  
+  if (!modal || !grid) return;
+  
+  modal.style.display = 'flex';
+  modal.classList.add('active');
+  grid.innerHTML = '';
+  emptyMsg.style.display = 'none';
+
+  toggleLoader(true, 'ギャラリーを読み込み中...');
+  
+  try {
+    const images = await getGalleryImages(appState.userProfile.userId || appState.userProfile.firebaseUid);
+    
+    if (!images || images.length === 0) {
+      emptyMsg.style.display = 'block';
+      return;
+    }
+    
+    images.forEach(imgData => {
+      const imgContainer = document.createElement('div');
+      imgContainer.style.position = 'relative';
+      imgContainer.style.cursor = 'pointer';
+      imgContainer.style.borderRadius = '8px';
+      imgContainer.style.overflow = 'hidden';
+      imgContainer.style.aspectRatio = '1/1';
+      imgContainer.style.border = '2px solid transparent';
+      
+      const imgEl = document.createElement('img');
+      imgEl.src = imgData.url;
+      imgEl.style.width = '100%';
+      imgEl.style.height = '100%';
+      imgEl.style.objectFit = 'cover';
+      
+      imgContainer.appendChild(imgEl);
+      
+      imgContainer.addEventListener('click', () => {
+        selectGalleryImage(imgData.url);
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+      });
+      
+      imgContainer.addEventListener('mouseover', () => {
+        imgContainer.style.border = '2px solid var(--primary-color)';
+      });
+      imgContainer.addEventListener('mouseout', () => {
+        imgContainer.style.border = '2px solid transparent';
+      });
+      
+      grid.appendChild(imgContainer);
+    });
+  } catch (error) {
+    console.error('ギャラリー読み込みエラー:', error);
+    showModal('エラー', 'ギャラリーの読み込みに失敗しました。');
+  } finally {
+    toggleLoader(false);
+  }
+}
+
+function selectGalleryImage(url) {
+  const preview = document.getElementById('inspiration-image-preview');
+  const container = document.getElementById('inspiration-upload-container');
+  const title = document.getElementById('inspiration-upload-title');
+  const status = document.getElementById('inspiration-upload-status');
+  const deleteBtn = document.getElementById('inspiration-delete-btn');
+
+  appState.inspirationImageUrl = url;
+  appState.uploadedFileUrls['item-inspiration-photo'] = url;
+
+  if (preview) {
+    preview.src = url;
+    preview.style.display = 'block';
+  }
+  if (container) container.classList.add('has-preview');
+  if (title) title.textContent = '選択済み';
+  if (status) status.textContent = 'ギャラリーから選択しました';
+  if (deleteBtn) deleteBtn.style.display = 'inline-block';
 }
 
 // --- Diagnosis & Viewer ---
@@ -428,7 +536,7 @@ async function handleDiagnosisRequest() {
 }
 
 async function checkCloudUploads() {
-  const uid = appState.userProfile.firebaseUid;
+  const uid = appState.userProfile.userId;
   if (!uid) {
     console.warn('[checkCloudUploads] No UID found. Skipping cloud check.');
     return;
@@ -525,6 +633,11 @@ async function checkCloudUploads() {
 // --- Generation & Refinment ---
 
 async function handleImageGenerationRequest() {
+  if (!appState.uploadedFileUrls['item-front-photo']) {
+    alert('元画像が見つかりません。フェーズ1から画像をアップロードしてください。');
+    return;
+  }
+  
   toggleLoader(true, 'AIが画像を生成しています...');
   try {
     const styleSelect = document.querySelector('input[name="style-select"]:checked')?.value;
@@ -671,11 +784,20 @@ async function captureAndSave(selector, title) {
     element.style.overflow = 'visible';
     element.style.maxHeight = 'none';
 
+    // CORS対策: DOM内の全video, img要素にcrossOrigin="anonymous"を強制付与
+    const mediaElements = element.querySelectorAll('video, img');
+    mediaElements.forEach(el => {
+      if (!el.getAttribute('crossorigin')) {
+        el.setAttribute('crossorigin', 'anonymous');
+      }
+    });
+
     // Brief delay to ensure layout updates
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     const canvas = await html2canvas(element, {
       useCORS: true,
+      allowTaint: true,
       scale: 2,
       backgroundColor: '#ffffff',
       windowHeight: element.scrollHeight,

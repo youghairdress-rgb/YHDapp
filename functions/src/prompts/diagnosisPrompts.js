@@ -22,8 +22,9 @@ const AI_RESPONSE_SCHEMA = {
             "eyes": {"type": "STRING", "description": "目の特徴 (例: 二重, つり目)"},
             "eyebrows": {"type": "STRING", "description": "眉の特徴 (例: アーチ型, 平行)"},
             "forehead": {"type": "STRING", "description": "おでこの特徴 (例: 広い, 狭い)"},
+            "partsBalance": {"type": "STRING", "description": "顔に対する鼻・口・目・眉・おでこのそれぞれのパーツのバランスの総合評価 (例: 中心にパーツが集まっている求心顔, 余白が少ない)"},
           },
-          "required": ["nose", "mouth", "eyes", "eyebrows", "forehead"],
+          "required": ["nose", "mouth", "eyes", "eyebrows", "forehead", "partsBalance"],
         },
         "skeleton": {
           "type": "OBJECT",
@@ -202,6 +203,7 @@ Do not guess. Deduce from visual evidence.
 - **Measure:** Mentally measure the ratio of vertical (hairline to chin) vs. horizontal (cheekbone width).
 - **Contour:** Analyze the jawline angle. Is it sharp (Square/Base), curved (Round/Oval), or narrow (Triangle)?
 - **Depth:** Use the VIDEO inputs to check 3D depth. Is the face flat or sculpted?
+- **Parts Balance:** Analyze the balance of facial parts (nose, mouth, eyes, eyebrows, forehead) in relation to the whole face. Evaluate spacing, positioning, and proportion.
 - **Body Frame:** Analyze neck length relative to head height. Check shoulder slope and bone prominence.
 
 ### Step 2: Pigment Analysis (Personal Color)

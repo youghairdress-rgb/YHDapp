@@ -20,7 +20,14 @@ export function displayDiagnosisResult(result) {
   };
 
   // Label mappings for Japanese display
-  const faceLabels = { nose: '鼻', mouth: '口', eyes: '目', eyebrows: '眉', forehead: 'おでこ' };
+  const faceLabels = { 
+    nose: '鼻', 
+    mouth: '口', 
+    eyes: '目', 
+    eyebrows: '眉', 
+    forehead: 'おでこ',
+    partsBalance: 'パーツのバランス'
+  };
   const skeletonLabels = {
     neckLength: '首',
     faceShape: '顔型',
@@ -166,20 +173,10 @@ export function renderGenerationConfigUI() {
     return;
   }
 
-  // 2. 万が一本当にデータが消えている場合は、UI確認用のダミーデータを自動で流し込む（アラートは出さない）
-  if (!proposal || !proposal.hairstyles) {
-    console.warn('AIの提案データが見つからないため、UI確認用のダミーデータを挿入します。');
-    proposal = {
-      hairstyles: {
-        style1: { name: "【テスト用】ショートボブ", description: "UI確認用のダミースタイルです" },
-        style2: { name: "【テスト用】ロングレイヤー", description: "UI確認用のダミースタイルです" }
-      },
-      haircolors: {
-        color1: { name: "【テスト用】アッシュブラウン", description: "UI確認用のダミーカラーです", recommendedLevel: "Tone 7" },
-        color2: { name: "【テスト用】ピンクベージュ", description: "UI確認用のダミーカラーです", recommendedLevel: "Tone 9" }
-      }
-    };
-    appState.aiProposal = proposal; // ダミーデータを記憶させる
+  // 2. 提案データが全く無い場合は、空のオブジェクトとして扱い処理を続行する（エラーで落とさない）
+  if (!proposal) {
+    console.warn('AIの提案データが見つかりません。デフォルトのオプションのみ表示します。');
+    proposal = {};
   }
 
   // 3. ラジオボタンの生成（以下、元の処理と同じ）
@@ -196,10 +193,10 @@ export function renderGenerationConfigUI() {
 
   // Style Options
   let styleHtml = '';
-  if (proposal.hairstyles) {
+  if (proposal && proposal.hairstyles) {
     Object.values(proposal.hairstyles).forEach((style, index) => {
       const val = `style${index + 1}`;
-      styleHtml += createRadioOption('style-select', val, `提案Style${index + 1}: ${style.name}`, index === 0);
+      styleHtml += createRadioOption('style-select', val, `提案Style${index + 1}: ${style.name || 'AIおすすめ'}`, index === 0);
     });
   }
   if (hasInspiration) styleHtml += createRadioOption('style-select', 'user_request', '★ ご希望のStyle (写真から再現)');
@@ -208,10 +205,10 @@ export function renderGenerationConfigUI() {
 
   // Color Options
   let colorHtml = '';
-  if (proposal.haircolors) {
+  if (proposal && proposal.haircolors) {
     Object.values(proposal.haircolors).forEach((color, index) => {
       const val = `color${index + 1}`;
-      colorHtml += createRadioOption('color-select', val, `提案Color${index + 1}: ${color.name}`, index === 0);
+      colorHtml += createRadioOption('color-select', val, `提案Color${index + 1}: ${color.name || 'AIおすすめ'}`, index === 0);
     });
   }
   if (hasInspiration) colorHtml += createRadioOption('color-select', 'user_request', '★ ご希望のColor (写真から再現)');
