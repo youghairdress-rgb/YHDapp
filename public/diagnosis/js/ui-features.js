@@ -235,10 +235,15 @@ export function applyImageAdjustments() {
   ctx.restore();
 }
 
+let areAdjustmentListenersBound = false;
+
 /**
  * Setup Listeners for Sliders and Buttons
  */
 export function setupAdustmentListeners() {
+  if (areAdjustmentListenersBound) return;
+  areAdjustmentListenersBound = true;
+
   const update = () => {
     applyImageAdjustments();
     // Update labels

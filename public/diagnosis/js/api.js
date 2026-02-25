@@ -202,6 +202,35 @@ export async function requestDiagnosis(fileUrls, user, gender) {
 }
 
 export async function generateHairstyleImage(params) {
+  // ユーザー要件: Canvas加工でフェーダーが最も効果的に機能する「編集しやすい画像」を出力させるためのプロンプト
+  const canvasOptimizedPrompt = `
+[Role: Master Hair Colorist & Digital Imaging Specialist]
+
+[Task: AI Hairstyle Simulation]
+Generate a high-resolution, photorealistic image of the user with the specified hairstyle and color. 
+The output MUST be optimized for real-time post-processing (HTML5 Canvas manipulation).
+
+[Technical Specifications for Canvas Compatibility]
+1. CLEAR SEPARATION: Ensure a distinct contrast between hair strands and the background to assist AI segmentation.
+2. LIGHTING CONSISTENCY: Use neutral, studio-quality lighting to prevent color distortion during brightness/hue adjustments.
+3. PRESERVE IDENTITY: Keep facial features, skin texture, and eye color 100% identical to the source image.
+4. MASK-FRIENDLY EDGES: Render hair edges with high fidelity—no blurring or "halos" that break the alpha mask.
+
+[Style Context]
+- Target Style: ${params.hairstyleName || ''}
+- Target Color: ${params.haircolorName || ''} (Level: ${params.recommendedLevel || ''})
+- User Request: ${params.userRequestsText || ''}
+
+[Final Output Quality]
+8k resolution, salon-grade texture, maintaining the original subject's head position and environment.
+
+[Negative Prompt]
+blurry, low-res, cartoon, altered face, changed skin tone, messy artifacts at hair boundaries, unrealistic saturation.`;
+
+  // Provide to backend. Use userRequestsText replacement or a dedicated override field to guarantee injection
+  params.userRequestsText = canvasOptimizedPrompt;
+  params.canvasOptimizedPrompt = canvasOptimizedPrompt;
+
   return fetchInternal('generateHairstyleImage', params);
 }
 

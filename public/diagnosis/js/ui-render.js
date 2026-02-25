@@ -242,31 +242,30 @@ import { runHairSegmentation } from './ui-features.js';
 
 export function displayGeneratedImage(base64Data, mimeType, styleName, colorName, toneLevel) {
   const mainDiagnosisImage = document.getElementById('main-diagnosis-image');
-
-  initializePhase6Adjustments();
+  const dataUrl = `data:${mimeType};base64,${base64Data}`;
 
   if (mainDiagnosisImage) {
-    const dataUrl = `data:${mimeType};base64,${base64Data}`;
-
+    // 1. 画像をセット
     mainDiagnosisImage.src = dataUrl;
-    mainDiagnosisImage.style.filter = 'none';
 
-    // The reference app passes the URL string directly, which waits for offscreen load internally
-    runHairSegmentation(dataUrl);
+    // 2. 画像のロード完了を待ってから全てを開始（これが最も確実）
+    mainDiagnosisImage.onload = async () => {
+      console.log("[Phase6] Image Loaded. Initializing adjustments...");
 
-    // Reset sliders visually
-    resetSliders();
+      // キャンバスとスライダーの初期化
+      initializePhase6Adjustments();
+      resetSliders();
 
-    // Also clear canvas if exists
-    const canvas = document.getElementById('phase6-canvas');
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
+      // セグメンテーション実行 (内部で applyImageAdjustments が呼ばれる)
+      await runHairSegmentation(mainDiagnosisImage);
 
-    // ローディングオーバーレイを非表示
-    const p6Overlay = document.getElementById('p6-generation-overlay');
-    if (p6Overlay) p6Overlay.style.display = 'none';
+      // ★重要: 動的に生成された要素があるため、リスナーをここで「再結合」する
+      import('./ui-features.js').then(m => m.setupAdustmentListeners());
+
+      // ローディングを消す
+      const p6Overlay = document.getElementById('p6-generation-overlay');
+      if (p6Overlay) p6Overlay.style.display = 'none';
+    };
   }
 }
 
