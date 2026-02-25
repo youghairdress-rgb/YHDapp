@@ -20,11 +20,11 @@ export function displayDiagnosisResult(result) {
   };
 
   // Label mappings for Japanese display
-  const faceLabels = { 
-    nose: '鼻', 
-    mouth: '口', 
-    eyes: '目', 
-    eyebrows: '眉', 
+  const faceLabels = {
+    nose: '鼻',
+    mouth: '口',
+    eyes: '目',
+    eyebrows: '眉',
     forehead: 'おでこ',
     partsBalance: 'パーツのバランス'
   };
@@ -164,7 +164,7 @@ export function displayProposalResult(proposal) {
 export function renderGenerationConfigUI() {
   const styleContainer = document.getElementById('style-selection-group');
   const colorContainer = document.getElementById('color-selection-group');
-  
+
   // --- 堅牢な状態復旧ロジック (sessionStorageを利用) ---
   if (!appState.aiProposal || !appState.aiProposal.hairstyles) {
     try {
@@ -248,12 +248,11 @@ export function displayGeneratedImage(base64Data, mimeType, styleName, colorName
   if (mainDiagnosisImage) {
     const dataUrl = `data:${mimeType};base64,${base64Data}`;
 
-    mainDiagnosisImage.onload = () => {
-      runHairSegmentation(mainDiagnosisImage);
-    };
-
     mainDiagnosisImage.src = dataUrl;
     mainDiagnosisImage.style.filter = 'none';
+
+    // The reference app passes the URL string directly, which waits for offscreen load internally
+    runHairSegmentation(dataUrl);
 
     // Reset sliders visually
     resetSliders();

@@ -16,21 +16,23 @@ export async function initializeHairSegmenter() {
   if (imageSegmenter) return; // Already initialized
 
   try {
+    // 診断アプリのNPMパッケージ（^0.10.32）と互換性があるバージョンのWASMを指定
     const visionTasks = await FilesetResolver.forVisionTasks(
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm'
     );
 
+    // WebGL(GPU)由来のエラーを根本的に防ぎ、全デバイスで安定させるためにCPUを指定
     imageSegmenter = await ImageSegmenter.createFromOptions(visionTasks, {
       baseOptions: {
         modelAssetPath:
           'https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/1/hair_segmenter.tflite',
-        delegate: 'GPU',
+        delegate: 'CPU',
       },
       runningMode: runningMode,
       outputCategoryMask: true,
       outputConfidenceMasks: false,
     });
-    logger.log('Hair Segmenter Initialized');
+    logger.log('Hair Segmenter Initialized (CPU Mode)');
   } catch (e) {
     logger.error('Failed to initialize Hair Segmenter:', e);
     // Do not re-throw, just log. App can continue without segmentation.
@@ -40,12 +42,12 @@ export async function initializeHairSegmenter() {
 let originalImageBitmap = null;
 let hairMaskBitmap = null;
 
-export async function runHairSegmentation(imgElement) {
+export async function runHairSegmentation(imgElementOrSrc) {
   if (!imageSegmenter) await initializeHairSegmenter();
   if (!imageSegmenter) return;
 
   try {
-    const src = imgElement.src;
+    const src = typeof imgElementOrSrc === 'string' ? imgElementOrSrc : imgElementOrSrc.src;
     if (!src) return;
 
     // Load image into a fresh Image object to ensure it's strictly valid for MP
@@ -207,35 +209,22 @@ export function applyImageAdjustments() {
   tempCanvas.height = height;
   const tempCtx = tempCanvas.getContext('2d');
 
-  // A. Draw Original with Brightness Lift
+  // A. Mask out everything except hair (Draw mask first)
+  tempCtx.drawImage(hairMaskBitmap, 0, 0, width, height);
+  tempCtx.globalCompositeOperation = 'source-in';
+
+  // B. Draw Original Image over the mask (so only hair remains)
   tempCtx.filter = `brightness(${brightnessScale})`;
   tempCtx.drawImage(originalImageBitmap, 0, 0, width, height);
   tempCtx.filter = 'none'; // Reset
 
-  // B. Mask out everything except hair
-  tempCtx.globalCompositeOperation = 'destination-in';
-  tempCtx.drawImage(hairMaskBitmap, 0, 0, width, height);
-
   // C. Apply Color Tint (Hue + Saturation/Opacity)
   if (colorOpacity > 0) {
-    // Create a separate "Color Shape" layer
-    const colorCanvas = document.createElement('canvas');
-    colorCanvas.width = width;
-    colorCanvas.height = height;
-    const colorCtx = colorCanvas.getContext('2d');
-
-    // Fill color
-    colorCtx.fillStyle = colorString;
-    colorCtx.fillRect(0, 0, width, height);
-
-    // Cut out hair shape (Masking the color)
-    colorCtx.globalCompositeOperation = 'destination-in';
-    colorCtx.drawImage(hairMaskBitmap, 0, 0, width, height);
-
-    // Now blend this "Color Shape" onto the "Brightness Hair"
+    // Now blend the color onto the isolated "Brightness Hair"
     tempCtx.globalCompositeOperation = 'color';
     tempCtx.globalAlpha = colorOpacity;
-    tempCtx.drawImage(colorCanvas, 0, 0);
+    tempCtx.fillStyle = colorString;
+    tempCtx.fillRect(0, 0, width, height);
   }
 
   // 3. Composite Treated Hair onto Main Canvas

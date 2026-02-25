@@ -436,24 +436,24 @@ async function openGalleryModal() {
   const modal = document.getElementById('gallery-selection-modal');
   const grid = document.getElementById('gallery-selection-grid');
   const emptyMsg = document.getElementById('gallery-selection-empty');
-  
+
   if (!modal || !grid) return;
-  
+
   modal.style.display = 'flex';
   modal.classList.add('active');
   grid.innerHTML = '';
   emptyMsg.style.display = 'none';
 
   toggleLoader(true, 'ギャラリーを読み込み中...');
-  
+
   try {
     const images = await getGalleryImages(appState.userProfile.userId || appState.userProfile.firebaseUid);
-    
+
     if (!images || images.length === 0) {
       emptyMsg.style.display = 'block';
       return;
     }
-    
+
     images.forEach(imgData => {
       const imgContainer = document.createElement('div');
       imgContainer.style.position = 'relative';
@@ -462,28 +462,28 @@ async function openGalleryModal() {
       imgContainer.style.overflow = 'hidden';
       imgContainer.style.aspectRatio = '1/1';
       imgContainer.style.border = '2px solid transparent';
-      
+
       const imgEl = document.createElement('img');
       imgEl.src = imgData.url;
       imgEl.style.width = '100%';
       imgEl.style.height = '100%';
       imgEl.style.objectFit = 'cover';
-      
+
       imgContainer.appendChild(imgEl);
-      
+
       imgContainer.addEventListener('click', () => {
         selectGalleryImage(imgData.url);
         modal.style.display = 'none';
         modal.classList.remove('active');
       });
-      
+
       imgContainer.addEventListener('mouseover', () => {
         imgContainer.style.border = '2px solid var(--primary-color)';
       });
       imgContainer.addEventListener('mouseout', () => {
         imgContainer.style.border = '2px solid transparent';
       });
-      
+
       grid.appendChild(imgContainer);
     });
   } catch (error) {
@@ -527,7 +527,7 @@ async function handleDiagnosisRequest() {
 
     appState.aiDiagnosisResult = res.result;
     appState.aiProposal = res.proposal;
-    
+
     // バックアップの保存 (HMR・リロード対策)
     try {
       sessionStorage.setItem('yhd_backup_proposal', JSON.stringify(res.proposal));
@@ -647,13 +647,13 @@ async function handleImageGenerationRequest() {
     alert('元画像が見つかりません。フェーズ1から画像をアップロードしてください。');
     return;
   }
-  
+
   toggleLoader(true, 'AIが画像を生成しています...');
-  
+
   // 画像エリア専用のローディングを表示
   const p6Overlay = document.getElementById('p6-generation-overlay');
   if (p6Overlay) p6Overlay.style.display = 'flex';
-  
+
   try {
     const styleSelect = document.querySelector('input[name="style-select"]:checked')?.value;
     const colorSelect = document.querySelector('input[name="color-select"]:checked')?.value;
@@ -733,14 +733,89 @@ async function handleImageGenerationRequest() {
   }
 }
 
+/**
+ * ユーザーの日本語入力をAI用の構造化プロンプトに変換する
+ */
+function buildRefinementPrompt(userInput, currentState) {
+  // 基本となる品質キーワード（ネガティブな変化を防ぐ）
+  const qualityBase = "highly detailed, photorealistic, salon quality, maintaining face identity, keep the face strictly unchanged, maintain original facial features";
+  const negativePrompt = "Avoid: cartoon, drawing, blurry, green skin, messy, changing facial features";
+
+  // 頻出する日本語の要望を英語の最適化プロンプトにマッピング
+  const promptMap = {
+    "もう少し明るくして": "increase hair brightness by 2 tones, maintaining the current color, high-gloss finish",
+    "明るく": "increase hair brightness by 1-2 tones",
+    "赤みを消したい": "remove red and orange undertones, apply cool matte ash toner, neutralized color",
+    "赤み": "remove red and orange undertones, apply cool matte ash toner",
+    "前髪を少し短く": "slightly shorten the bangs to just above the eyebrows, keep the natural see-through texture",
+    "前髪": "focus on adjusting the bangs while keeping the rest of the hair intact",
+    "もっとツヤが欲しい": "add professional salon hair gloss, enhance specular highlights on hair surface, healthy texture",
+    "ツヤ": "add professional salon hair gloss, healthy texture",
+    "ボリュームを抑えて": "reduce hair volume, sleek and polished look, minimize frizz, straight-down silhouette",
+    "ボリューム": "adjust hair volume"
+  };
+
+  let optimizedRequest = userInput;
+  // より具体的なフレーズからマッチさせるため、キーの長さ順でソートしてチェック
+  const sortedKeys = Object.keys(promptMap).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    if (userInput.includes(key)) {
+      // ユーザーの元のテキストも一部残しつつ、最適化されたプロンプトを追加
+      const mappedValue = promptMap[key];
+      optimizedRequest = `${mappedValue} (User intent: ${userInput})`;
+      break;
+    }
+  }
+
+  // 現在の診断状態（currentStateから取得）をコンテキストとして追加
+  const context = `current style: ${currentState.hairstyleName}, current color: ${currentState.haircolorName}`;
+
+  // 最終的なプロンプトの組み立て
+  return `[Action: Refine hair image] 
+[Request: ${optimizedRequest}] 
+[Context: ${context}] 
+[Output Requirement: ${qualityBase}]
+[Negative: ${negativePrompt}]`.replace(/\n/g, ' ');
+}
+
 async function handleImageRefinementRequest() {
   const input = document.getElementById('refinement-prompt-input');
-  if (!input?.value || !appState.generatedImageDataBase64) return;
+  const rawValue = input?.value;
+  if (!rawValue || !appState.generatedImageDataBase64) return;
 
-  toggleLoader(true, '修正中...');
+  // 現在選択されているスタイルとカラーを取得
+  const styleSelect = document.querySelector('input[name="style-select"]:checked')?.value;
+  const colorSelect = document.querySelector('input[name="color-select"]:checked')?.value;
+
+  let hName = "selected style";
+  let cName = "selected color";
+
+  if (styleSelect && appState.aiProposal?.hairstyles?.[styleSelect]) {
+    hName = appState.aiProposal.hairstyles[styleSelect].name;
+  } else if (styleSelect === 'keep_style') {
+    hName = "current hair style";
+  } else if (styleSelect === 'user_request') {
+    hName = "user requested style";
+  }
+
+  if (colorSelect && appState.aiProposal?.haircolors?.[colorSelect]) {
+    cName = appState.aiProposal.haircolors[colorSelect].name;
+  } else if (colorSelect === 'keep_color') {
+    cName = "current hair color";
+  } else if (colorSelect === 'user_request') {
+    cName = "user requested color";
+  }
+
+  // 構造化プロンプトに変換
+  const optimizedPrompt = buildRefinementPrompt(rawValue, {
+    hairstyleName: hName,
+    haircolorName: cName
+  });
+
+  toggleLoader(true, 'AIが細部を調整中...');
   try {
     const dataUrl = `data:${appState.generatedImageMimeType};base64,${appState.generatedImageDataBase64}`;
-    const res = await refineHairstyleImage(dataUrl, appState.userProfile.firebaseUid, input.value);
+    const res = await refineHairstyleImage(dataUrl, appState.userProfile.firebaseUid, optimizedPrompt);
 
     appState.generatedImageDataBase64 = res.imageBase64;
     appState.generatedImageMimeType = res.mimeType;
