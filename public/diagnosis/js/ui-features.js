@@ -175,59 +175,53 @@ export function applyImageAdjustments() {
   // Clear canvas
   ctx.clearRect(0, 0, width, height);
 
-  // 1. Draw Background (Original Image)
-  // We need to draw the full original image first as the base.
+  // 1. 背景の描画（オリジナル画像）
   ctx.globalCompositeOperation = 'source-over';
   ctx.filter = 'none';
-  if (originalImageBitmap) {
-    ctx.drawImage(originalImageBitmap, 0, 0, width, height);
-  }
+  ctx.drawImage(originalImageBitmap, 0, 0, width, height);
 
-  // IF No Mask, Fallback to applying filters to the whole image
   if (!hairMaskBitmap) {
-    // A. Draw Original with Brightness Lift
-    ctx.filter = `brightness(${brightnessScale})`;
-    ctx.drawImage(originalImageBitmap, 0, 0, width, height);
-    ctx.filter = 'none';
-
-    // B. Apply Color Tint to the whole image
-    if (colorOpacity > 0) {
-      ctx.globalCompositeOperation = 'color';
-      ctx.globalAlpha = colorOpacity;
-      ctx.fillStyle = colorString;
-      ctx.fillRect(0, 0, width, height);
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 1.0;
-    }
     ctx.restore();
     return;
   }
 
-  // 2. Prepare "Treated Hair" Layer (Offscreen)
+  // 2. 処理用レイヤー（髪の毛専用）の準備
   const tempCanvas = document.createElement('canvas');
   tempCanvas.width = width;
   tempCanvas.height = height;
   const tempCtx = tempCanvas.getContext('2d');
 
-  // A. Mask out everything except hair (Draw mask first)
-  tempCtx.drawImage(hairMaskBitmap, 0, 0, width, height);
-  tempCtx.globalCompositeOperation = 'source-in';
-
-  // B. Draw Original Image over the mask (so only hair remains)
+  // A. Brightness (Filter)
   tempCtx.filter = `brightness(${brightnessScale})`;
   tempCtx.drawImage(originalImageBitmap, 0, 0, width, height);
-  tempCtx.filter = 'none'; // Reset
+  tempCtx.filter = 'none';
 
-  // C. Apply Color Tint (Hue + Saturation/Opacity)
+  // B. Mask Hair
+  tempCtx.globalCompositeOperation = 'destination-in';
+  tempCtx.drawImage(hairMaskBitmap, 0, 0, width, height);
+
+  // C. Color Tint (髪色アプリと完全互換のロジック)
   if (colorOpacity > 0) {
-    // Now blend the color onto the isolated "Brightness Hair"
+    const colorCanvas = document.createElement('canvas');
+    colorCanvas.width = width;
+    colorCanvas.height = height;
+    const colorCtx = colorCanvas.getContext('2d');
+
+    // 色を全体に塗る
+    colorCtx.fillStyle = colorString;
+    colorCtx.fillRect(0, 0, width, height);
+
+    // 塗った色をマスクで切り抜く
+    colorCtx.globalCompositeOperation = 'destination-in';
+    colorCtx.drawImage(hairMaskBitmap, 0, 0, width, height);
+
+    // 切り抜いた色を髪の毛に重ねる
     tempCtx.globalCompositeOperation = 'color';
     tempCtx.globalAlpha = colorOpacity;
-    tempCtx.fillStyle = colorString;
-    tempCtx.fillRect(0, 0, width, height);
+    tempCtx.drawImage(colorCanvas, 0, 0);
   }
 
-  // 3. Composite Treated Hair onto Main Canvas
+  // 3. 処理済みの髪の毛をメインキャンバスに合成
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1.0;
   ctx.drawImage(tempCanvas, 0, 0);
