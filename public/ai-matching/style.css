@@ -336,9 +336,10 @@ body {
 }
 
 .reason-text {
-    font-size: 0.9rem;
-    /* 小さく */
-    line-height: 1.5;
+    font-size: 0.85rem;
+    /* さらに小さく */
+    line-height: 1.4;
+    /* 行間を詰める */
     color: #444;
 }
 
@@ -492,9 +493,10 @@ body {
     }
 
     .reason-text {
-        font-size: 1.15rem;
-        /* 読みやすく */
-        line-height: 1.7;
+        font-size: 1.05rem;
+        /* 少し小さく調整 */
+        line-height: 1.5;
+        /* 行間を詰める */
     }
 
     /* 画像パネルの比率調整 (iPad縦持ちでも見やすく) */
@@ -638,9 +640,9 @@ body {
     }
 
     .reason-text {
-        font-size: 1.3rem;
-        /* テキスト全体を大きく */
-        line-height: 1.8;
+        font-size: 1.2rem;
+        /* 全体を少し調整 */
+        line-height: 1.6;
     }
 
     .result-image-panel {
@@ -792,7 +794,7 @@ body {
     }
 
     .reason-text {
-        font-size: 1.6rem;
-        line-height: 1.8;
+        font-size: 1.4rem;
+        line-height: 1.6;
     }
 }
