@@ -108,10 +108,24 @@ const getFirebaseUser = () =>
   });
 
 /**
+ * グローバルなLIFF初期化状態を保持するプロミス（シングルトン・パターン）
+ * これにより、複数ファイルから同時に呼ばれても liff.init() が1回しか実行されないことを保証します。
+ */
+let liffInitPromise = null;
+
+/**
  * LIFFの初期化とFirebaseへの認証を行う共通関数
  */
 const initializeLiffAndAuth = async (liffId) => {
-  // --- ローカル開発環境の完全分離 ---
+  // --- 1. LiffId の厳密なチェック ---
+  if (!liffId || typeof liffId !== 'string' || liffId.trim() === '') {
+    const errorMsg = '致命的エラー: liffId が設定されていません。環境変数 VITE_LIFF_ID が正しく読み込まれているか確認してください。';
+    console.error(errorMsg);
+    // UIをブロックしないようにフォールバック（初期化未完了状態）で返す
+    return { error: errorMsg };
+  }
+
+  // --- 2. ローカル開発環境の完全分離 ---
   if (isLocalhost) {
     console.log('ローカル開発モード: LINE LIFF APIを遮断し、ダミー認証を実行します');
     try {
@@ -139,10 +153,18 @@ const initializeLiffAndAuth = async (liffId) => {
     }
   }
 
-  // --- プロダクション環境 (本物の LIFF) ---
+  // --- 3. プロダクション環境 (本物の LIFF) ---
   try {
-    console.log(`LIFFを初期化します。LIFF ID: ${liffId}`);
-    await actualLiff.init({ liffId });
+    // シングルトンパターン: 既に初期化実行中、または完了済みの場合はそのPromiseを待つ
+    if (!liffInitPromise) {
+      console.log(`LIFFを初期化します。LIFF ID: ${liffId}`);
+      liffInitPromise = actualLiff.init({ liffId });
+    } else {
+      console.log('LIFFは既に初期化プロセスに入っています。完了を待機します...');
+    }
+
+    // liff.init の完了を待機
+    await liffInitPromise;
     console.log('LIFFの初期化が完了しました。');
 
     if (!actualLiff.isLoggedIn()) {

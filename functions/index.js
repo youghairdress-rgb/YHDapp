@@ -37,7 +37,7 @@ const withCors = (handler) => (req, res) => {
 };
 
 // --- 1. createFirebaseCustomToken (Original - Kept as v1 to avoid upgrade error) ---
-exports.createFirebaseCustomToken = functionsV1.runWith({
+exports.createFirebaseCustomToken = functionsV1.region("asia-northeast1").runWith({
   memory: "1GB",
   timeoutSeconds: 300,
 }).https.onRequest(withCors(async (req, res) => {
@@ -79,7 +79,7 @@ exports.createFirebaseCustomToken = functionsV1.runWith({
 }));
 
 // --- 2. sendBookingConfirmation ---
-exports.sendBookingConfirmation = functionsV1.firestore.document("reservations/{reservationId}").onCreate(async (snap, context) => {
+exports.sendBookingConfirmation = functionsV1.region("asia-northeast1").firestore.document("reservations/{reservationId}").onCreate(async (snap, context) => {
   if (!snap) return null;
   const booking = snap.data();
   if (booking.createdBy === "admin") return null;
@@ -132,7 +132,7 @@ exports.sendBookingConfirmation = functionsV1.firestore.document("reservations/{
 });
 
 // --- 3. mergeUserData ---
-exports.mergeUserData = functionsV1.https.onCall(async (data, context) => {
+exports.mergeUserData = functionsV1.region("asia-northeast1").https.onCall(async (data, context) => {
   if (!context.auth) throw new functionsV1.https.HttpsError("unauthenticated", "Auth required.");
   const {oldUserId, newUserId, profile, newUserData} = data;
   if (context.auth.uid !== newUserId) throw new functionsV1.https.HttpsError("permission-denied", "Permission denied.");
@@ -162,7 +162,7 @@ exports.mergeUserData = functionsV1.https.onCall(async (data, context) => {
 });
 
 // --- 4. sendPushMessage ---
-exports.sendPushMessage = functionsV1.https.onCall(async (data, context) => {
+exports.sendPushMessage = functionsV1.region("asia-northeast1").https.onCall(async (data, context) => {
   if (!context.auth) throw new functionsV1.https.HttpsError("unauthenticated", "Auth required.");
   const {customerId, text} = data;
   const db = admin.firestore();
@@ -180,7 +180,7 @@ exports.sendPushMessage = functionsV1.https.onCall(async (data, context) => {
   return {success: true};
 });
 
-exports.analyzeHairstyle = functionsV1.runWith({timeoutSeconds: 540, memory: "2GB"}).https.onRequest(withCors(async (req, res) => {
+exports.analyzeHairstyle = functionsV1.region("asia-northeast1").runWith({timeoutSeconds: 540, memory: "2GB"}).https.onRequest(withCors(async (req, res) => {
   // AI Matching Controller Import (Lazy load)
   const {analyzeHairstyleController} = require("./src/controllers/aiMatching");
   await analyzeHairstyleController(req, res, {
@@ -212,7 +212,7 @@ exports.analyzeHairstyleCall = onCall({timeoutSeconds: 540, memory: "2GiB"}, asy
   return result;
 });
 
-exports.notifyAdminOnPhotoUpload = functionsV1.firestore.document("users/{userId}/gallery/{photoId}").onCreate(async (snap, context) => {
+exports.notifyAdminOnPhotoUpload = functionsV1.region("asia-northeast1").firestore.document("users/{userId}/gallery/{photoId}").onCreate(async (snap, context) => {
   if (!snap) return null;
   const newData = snap.data();
 
@@ -239,12 +239,12 @@ exports.notifyAdminOnPhotoUpload = functionsV1.firestore.document("users/{userId
   return null;
 });
 
-exports.createFirebaseCustomTokenV2 = functionsV1.runWith({timeoutSeconds: 300, memory: "1GB"}).https.onRequest(withCors(async (req, res) => {
+exports.createFirebaseCustomTokenV2 = functionsV1.region("asia-northeast1").runWith({timeoutSeconds: 300, memory: "1GB"}).https.onRequest(withCors(async (req, res) => {
   await createFirebaseCustomTokenController(req, res, {auth: auth});
 }));
 
 // onCall versions for integrated AI functions
-exports.requestDiagnosisCall = functionsV1.runWith({timeoutSeconds: 540, memory: "4GB"}).https.onCall(async (data, context) => {
+exports.requestDiagnosisCall = functionsV1.region("asia-northeast1").runWith({timeoutSeconds: 540, memory: "4GB"}).https.onCall(async (data, context) => {
   let result = null;
   const req = {body: data, method: "POST"};
   const res = {
@@ -262,7 +262,7 @@ exports.requestDiagnosisCall = functionsV1.runWith({timeoutSeconds: 540, memory:
   return result;
 });
 
-exports.generateHairstyleImageCall = functionsV1.runWith({timeoutSeconds: 540, memory: "2GB"}).https.onCall(async (data, context) => {
+exports.generateHairstyleImageCall = functionsV1.region("asia-northeast1").runWith({timeoutSeconds: 540, memory: "2GB"}).https.onCall(async (data, context) => {
   let result = null;
   const req = {body: data, method: "POST"};
   const res = {
@@ -284,7 +284,7 @@ exports.generateHairstyleImageCall = functionsV1.runWith({timeoutSeconds: 540, m
   return result;
 });
 
-exports.refineHairstyleImageCall = functionsV1.runWith({timeoutSeconds: 540, memory: "2GB"}).https.onCall(async (data, context) => {
+exports.refineHairstyleImageCall = functionsV1.region("asia-northeast1").runWith({timeoutSeconds: 540, memory: "2GB"}).https.onCall(async (data, context) => {
   let result = null;
   const req = {body: data, method: "POST"};
   const res = {
@@ -306,7 +306,7 @@ exports.refineHairstyleImageCall = functionsV1.runWith({timeoutSeconds: 540, mem
   return result;
 });
 
-exports.createFirebaseCustomTokenCall = functionsV1.https.onCall(async (data, context) => {
+exports.createFirebaseCustomTokenCall = functionsV1.region("asia-northeast1").https.onCall(async (data, context) => {
   let result = null;
   const req = {body: data, method: "POST"};
   const res = {
@@ -324,7 +324,7 @@ exports.createFirebaseCustomTokenCall = functionsV1.https.onCall(async (data, co
   return result;
 });
 
-exports.analyzeTrendsCall = functionsV1.runWith({timeoutSeconds: 540, memory: "2GB"}).https.onCall(async (data, context) => {
+exports.analyzeTrendsCall = functionsV1.region("asia-northeast1").runWith({timeoutSeconds: 540, memory: "2GB"}).https.onCall(async (data, context) => {
   let result = null;
   const req = {body: data, method: "POST"};
   const res = {
@@ -348,7 +348,7 @@ const {getRecentErrors, getErrorStats} = require("./src/utils/errorMonitor");
 /**
  * 最近のエラーログを取得（管理者のみ）
  */
-exports.getErrorLogs = functionsV1.https.onCall(async (data, context) => {
+exports.getErrorLogs = functionsV1.region("asia-northeast1").https.onCall(async (data, context) => {
   if (!context.auth || !context.auth.token.admin) {
     throw new functionsV1.https.HttpsError("permission-denied", "Admin only.");
   }
@@ -360,7 +360,7 @@ exports.getErrorLogs = functionsV1.https.onCall(async (data, context) => {
 /**
  * エラー統計を取得（管理者のみ）
  */
-exports.getErrorStats = functionsV1.https.onCall(async (data, context) => {
+exports.getErrorStats = functionsV1.region("asia-northeast1").https.onCall(async (data, context) => {
   if (!context.auth || !context.auth.token.admin) {
     throw new functionsV1.https.HttpsError("permission-denied", "Admin only.");
   }

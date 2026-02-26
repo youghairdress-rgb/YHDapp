@@ -21,15 +21,32 @@
 
         <main id="mypage-content" style="display: none;">
             <div class="mypage-container">
-                <!-- ユーザー基本情報 -->
+                <!-- ユーザー基本情報 (ヘッダー風デザイン) -->
                 <section class="mypage-section">
-                    <div class="mypage-header-flex">
-                        <h2>お客様情報</h2>
-                        <!-- ▼▼▼ 修正: 顧客IDを表示しないように削除 ▼▼▼ -->
-                    </div>
-                    <div class="user-info-card">
-                        <p><strong>お名前:</strong> <span id="user-name">読み込み中...</span> 様</p>
-                        <!-- ▼▼▼ 修正: LINE連携状態を表示 (任意) ▼▼▼ -->
+                    <div class="user-info-card"
+                        style="padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                        <div
+                            style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                            <div>
+                                <p style="font-size: 0.9rem; color: #666; margin-bottom: 4px;">ようこそ</p>
+                                <h2 style="font-size: 1.6rem; font-weight: bold; color: #333; margin: 0;">
+                                    <span id="user-name">読み込み中...</span> 様
+                                </h2>
+                            </div>
+                            <!-- 画像アップロードボタン (お名前の横) -->
+                            <div style="flex-shrink: 0;">
+                                <input type="file" id="user-image-upload" accept="image/*" class="hidden"
+                                    style="display:none;">
+                                <button id="trigger-upload-btn" class="button-primary"
+                                    style="width: auto; padding: 10px 20px; font-size: 0.9rem; border-radius: 30px; background: #0ABAB5; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> 画像をアップロード
+                                </button>
+                                <div id="upload-status-area" class="hidden"
+                                    style="font-size: 0.75rem; color: #0ABAB5; text-align: center; margin-top: 4px; font-weight: bold; display: none;">
+                                    送信中...
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -60,7 +77,6 @@
             <p id="loading-text">読み込み中...</p>
         </div>
         <div id="registration-container" style="display: none;">
-            <!-- 初回登録フォームが必要な場合はここに表示（通常は entry.html へ飛ばすが、念のため） -->
         </div>
     </div>
 
@@ -69,13 +85,13 @@
         <span class="close-viewer">&times;</span>
         <img class="image-viewer-content" id="viewer-img">
         <div class="viewer-actions" style="margin-top:20px; text-align:center;">
-             <button id="btn-open-editor" class="button-primary" style="width: auto; padding: 10px 20px;">
+            <button id="btn-open-editor" class="button-primary" style="width: auto; padding: 10px 20px;">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> プライバシー加工して口コミ投稿
             </button>
         </div>
     </div>
 
-    <!-- ▼▼▼ Image Privacy Editor Modal ▼▼▼ -->
+    <!-- Image Privacy Editor Modal -->
     <div id="privacy-editor-modal" class="modal-overlay">
         <div class="editor-container">
             <div class="editor-header">
@@ -100,30 +116,23 @@
                         戻す
                     </button>
                 </div>
-                <!-- Stamp Selector (Visible when stamp tool active) -->
+                <!-- Stamp Selector -->
                 <div id="stamp-options" class="stamp-selector">
                     <div class="stamp-option selected" onclick="selectStamp('🙂')">🙂</div>
                     <div class="stamp-option" onclick="selectStamp('💖')">💖</div>
                     <div class="stamp-option" onclick="selectStamp('⭐')">⭐</div>
-
-                    <!-- Pre-defined Image Stamp (Logo) -->
                     <div class="stamp-option" onclick="selectImageStamp('./img/YHDlogo2.png')">
                         <img src="./img/YHDlogo2.png" style="width:24px; height:24px; object-fit:contain;">
                     </div>
-
-                    <!-- Pre-defined Image Stamp (Diagnosis Stamp) -->
                     <div class="stamp-option" onclick="selectImageStamp('./diagnosis/images/stamp.png')">
                         <img src="./diagnosis/images/stamp.png" style="width:24px; height:24px; object-fit:contain;">
                     </div>
-
-                    <!-- Custom Image Input -->
                     <label class="stamp-option" style="cursor:pointer;">
                         <input type="file" id="custom-stamp-input" accept="image/*" style="display:none;"
                             onchange="handleCustomStamp(this)">
                         <i class="fa-regular fa-image"></i>
                     </label>
                 </div>
-                <!-- Stamp Size Slider -->
                 <div id="stamp-size-control"
                     style="display:none; width: 100%; padding: 10px; align-items: center; justify-content: space-between;">
                     <span style="font-size: 0.8em; color: #666;">サイズ調整:</span>
@@ -138,7 +147,7 @@
         </div>
     </div>
 
-    <!-- ▼▼▼ Review Guide Modal ▼▼▼ -->
+    <!-- Review Guide Modal -->
     <div id="review-guide-modal" class="modal-overlay">
         <div class="editor-container" style="height: auto; max-height:80vh; overflow-y:auto;">
             <div class="editor-header">
@@ -147,58 +156,38 @@
                     onclick="closeReviewModal()">&times;</span>
             </div>
             <div class="review-guide">
-                <!-- Step 0: Save Image Manual -->
                 <div class="review-step" id="step-save-image" style="text-align:center; background:#e0f7fa;">
                     <strong style="color:#0ABAB5; font-size:1.1rem;">STEP 1: 画像を保存</strong>
-
-                    <p style="font-size:0.9rem; margin:10px 0;">
-                        下の画像を<strong>長押し</strong>して<br>「写真に保存」してください。<br>
-                    </p>
-
+                    <p style="font-size:0.9rem; margin:10px 0;">下の画像を<strong>長押し</strong>して「写真に保存」してください。</p>
                     <img id="review-generated-image" src=""
                         style="max-width:100%; border-radius:8px; border:2px solid #ccc; display:block; margin:0 auto;">
-
-                    <p style="font-size:0.8rem; color:#666; margin-top:5px;">
-                        ※確実に保存できるURLを発行済みです。<br>
-                        (保存したら次へ進んでください)
-                    </p>
+                    <p style="font-size:0.8rem; color:#666; margin-top:5px;">※確実に保存できるURLを発行済みです。</p>
                 </div>
-
                 <div class="review-step">
                     <div class="step-num">2</div>
                     <strong>コメントを作成＆コピー</strong>
-                    <p style="font-size:0.85rem; margin-bottom:5px;">口コミに投稿するコメントを自由に書いてください。</p>
                     <textarea id="review-comment-input" class="copy-input" rows="3"
-                        placeholder="例：カラーがとても気に入りました！雰囲気も良かったです。"></textarea>
-                    <div class="copy-area" style="margin-top:5px;">
-                        <button class="button-secondary" onclick="copyComment()" style="width:100%; font-weight:bold;">
-                            <i class="fa-regular fa-copy"></i> コメントをコピー
-                        </button>
-                    </div>
+                        placeholder="例：カラーがとても気に入りました！"></textarea>
+                    <button class="button-secondary" onclick="copyComment()"
+                        style="width:100%; font-weight:bold; margin-top:5px;">
+                        <i class="fa-regular fa-copy"></i> コメントをコピー
+                    </button>
                 </div>
-
                 <div class="review-step">
                     <div class="step-num">3</div>
                     <strong>Googleマップへ移動</strong>
-                    <p style="font-size:0.9rem; margin-top:5px; text-align: left; display: inline-block;">
-                        開いた画面で<br>
-                        ① <strong>クチコミ</strong>を選択<br>
-                        ② <strong>星(★)</strong>をタップ<br>
-                        ③ コメントを<strong>貼り付け</strong><br>
-                        ④ 保存した<strong>画像を添付</strong>して投稿！
+                    <p style="font-size:0.9rem; margin-top:5px; text-align: left;">
+                        開いた画面で ① クチコミを選択 ② 星(★)をタップ ③ コメントを貼り付け ④ 画像を添付して投稿！
                     </p>
                 </div>
-
                 <button class="button-primary" onclick="goToGoogleMaps()">
                     <i class="fa-brands fa-google"></i> Googleマップを開く
                 </button>
-                <br>
                 <button class="button-secondary" onclick="closeReviewModal()"
                     style="margin-top:10px; border:none; text-decoration:underline;">閉じる</button>
             </div>
         </div>
     </div>
-    <!-- ▲▲▲ Image Privacy Editor & Review Modal ▲▲▲ -->
 
     <script type="module" src="./mypage.js"></script>
 </body>

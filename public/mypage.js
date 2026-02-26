@@ -8,6 +8,10 @@ import {
   orderBy,
   where,
   Timestamp,
+  updateDoc,
+  serverTimestamp,
+  addDoc,
+  setDoc,
 } from 'firebase/firestore';
 import {
   ref,
@@ -16,7 +20,7 @@ import {
   listAll,
   getMetadata,
 } from 'firebase/storage';
-import { initEditor, openEditorModal } from './js/privacy_editor.js'; // New Import
+import { initEditor, openEditorModal } from './js/privacy_editor.js';
 
 // --- DOM Helper Functions ---
 const loadingContainer = document.getElementById('loading-container');
@@ -41,9 +45,9 @@ const main = async () => {
   try {
     showLoading('LIFFを初期化中...');
     const { user, profile } = await initializeLiffAndAuth('2008029428-VljQlRjZ');
-    currentUserId = user.uid; // グローバル変数にセット
+    currentUserId = profile.userId;
 
-    // Initialize Privacy Editor (Imported storage used internally)
+    // Initialize Privacy Editor
     initEditor();
 
     showLoading('顧客情報を確認中...');
@@ -64,9 +68,12 @@ const main = async () => {
     await Promise.all([loadReservationHistory(profile.userId), loadGallery(profile.userId)]);
 
     showContent();
-    
+
     // 画像ビューアの初期化
     initImageViewer();
+
+    // ユーザー写真アップロード機能の初期化
+    initUserPhotoUpload();
 
   } catch (error) {
     console.error('エラー:', error);
@@ -198,17 +205,92 @@ viewer.addEventListener('click', (e) => {
 });
 
 const initImageViewer = () => {
-    const btnOpenEditor = document.getElementById('btn-open-editor');
-    if (btnOpenEditor) {
-      btnOpenEditor.addEventListener('click', () => {
-        // Open Editor
-        initEditor(); // Lazy init or re-init
-        openEditorModal(viewerImg.src);
-      });
+  const btnOpenEditor = document.getElementById('btn-open-editor');
+  if (btnOpenEditor) {
+    btnOpenEditor.addEventListener('click', () => {
+      // Open Editor
+      openEditorModal(viewerImg.src);
+    });
+  }
+
+  // Initialize Editor Helper
+  initEditor();
+};
+
+// --- User Photo Upload Logic (Senior Engineer Implementation) ---
+const initUserPhotoUpload = () => {
+  const triggerBtn = document.getElementById('trigger-upload-btn');
+  const fileInput = document.getElementById('user-image-upload');
+  const statusArea = document.getElementById('upload-status-area');
+
+  if (!triggerBtn || !fileInput) return;
+
+  // ボタンクリックでファイル選択を発火
+  triggerBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // ファイル選択時のイベント
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // UI状態: 送信中
+    triggerBtn.disabled = true;
+    triggerBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    if (statusArea) {
+      statusArea.classList.remove('hidden');
+      statusArea.style.display = 'block';
     }
 
-    // Initialize Editor Helper
-    initEditor();
+    try {
+      if (!currentUserId) throw new Error('ユーザー情報の取得に失敗しました。再読み込みしてください。');
+
+      // 1. Storageへのアップロードパス作成
+      const timestamp = Date.now();
+      const fileName = `user_upload_${timestamp}.jpg`;
+      const storagePath = `users/${currentUserId}/gallery/${fileName}`;
+      const storageRef = ref(storage, storagePath);
+
+      // 2. アップロード実行
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // 3. Firestoreへ記録 (管理者に通知を飛ばすためのフラグ isUserUpload: true)
+      const galleryRef = collection(db, 'users', currentUserId, 'gallery');
+      await addDoc(galleryRef, {
+        url: downloadURL,
+        originalPath: storagePath,
+        createdAt: serverTimestamp(),
+        isUserUpload: true, // 管理者通知のトリガー
+        type: 'user_style_submit',
+        fileName: fileName
+      });
+
+      // ユーザー情報の更新 (存在しない場合は作成)
+      await setDoc(doc(db, 'users', currentUserId), {
+        lastActiveAt: serverTimestamp()
+      }, { merge: true });
+
+      alert('写真をアップロードしました！\nゆうじさん（管理者）に通知が届きます。');
+
+      // 4. ギャラリーを即座に再描画
+      await loadGallery(currentUserId);
+
+    } catch (error) {
+      console.error('[Upload] Failed:', error);
+      alert('アップロードに失敗しました: ' + error.message);
+    } finally {
+      // UI状態の復帰
+      triggerBtn.disabled = false;
+      triggerBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      if (statusArea) {
+        statusArea.classList.add('hidden');
+        statusArea.style.display = 'none';
+      }
+      fileInput.value = ''; // 選択解除
+    }
+  });
 };
 
 document.addEventListener('DOMContentLoaded', main);

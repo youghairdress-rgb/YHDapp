@@ -5,6 +5,7 @@ import { getAuth, signInWithCustomToken, signInAnonymously, connectAuthEmulator 
 import { getStorage, ref, getDownloadURL, listAll } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
+import { initializeLiffAndAuth, db, auth, storage, functions } from '../../admin/firebase-init.js';
 
 import { appState, IS_DEV_MODE, USE_MOCK_AUTH } from './state.js';
 import {
@@ -36,25 +37,6 @@ import {
 
 // --- Initialization ---
 
-const initializeAppProcess = async () => {
-  try {
-    if (IS_DEV_MODE && USE_MOCK_AUTH) {
-      return { profile: { userId: 'dev-user', displayName: 'Dev User' }, accessToken: 'dev-token' };
-    }
-    if (typeof liff === 'undefined') throw new Error('LIFF SDK not loaded.');
-
-    await liff.init({ liffId: appState.liffId });
-    if (!liff.isLoggedIn()) {
-      liff.login();
-      return null;
-    }
-    return { profile: await liff.getProfile(), accessToken: liff.getAccessToken() };
-  } catch (err) {
-    console.error('[Init] Failed:', err);
-    throw err;
-  }
-};
-
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[main.js] DOMContentLoaded fired');
   const loadTimeout = setTimeout(() => {
@@ -62,46 +44,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (loadingScreen && loadingScreen.style.display !== 'none') {
       hideLoadingScreen();
       changePhase('phase1');
-      alert('起動に時間がかかりました。');
+      alert('起動に時間がかかりました。ネットワーク環境をご確認ください。');
     }
   }, 10000);
 
   try {
-    const app = initializeApp(appState.firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
-    const functions = getFunctions(app, 'asia-northeast1');
-
-    // ★重要: オブジェクトを丸ごと上書きせず、個別に代入することで参照を維持する
-    appState.firebase.app = app;
-    appState.firebase.auth = auth;
-    appState.firebase.firestore = db;
-    appState.firebase.storage = storage;
-    appState.firebase.functions = functions;
-
-    console.log('[main.js] Firebase instances initialized (Reference preserved)');
-    // 環境判定とエミュレータ接続
-    const isLocalhost =
-      import.meta.env.DEV ||
-      ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname) ||
-      window.location.hostname.startsWith('192.168.') ||
-      window.location.hostname.startsWith('10.') ||
-      window.location.hostname.startsWith('172.');
-
-    if (isLocalhost) {
-      const { connectAuthEmulator } = await import('firebase/auth');
-      const { connectFirestoreEmulator } = await import('firebase/firestore');
-      const { connectStorageEmulator } = await import('firebase/storage');
-      const { connectFunctionsEmulator } = await import('firebase/functions');
-
-      const emuHost = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
-      connectAuthEmulator(auth, `http://${emuHost}:9099`);
-      connectFirestoreEmulator(db, emuHost, 8080);
-      connectStorageEmulator(storage, emuHost, 9199);
-      connectFunctionsEmulator(functions, emuHost, 5001);
-      console.log('[diagnosis] Emulators connected to:', emuHost);
-    }
+    // 1. URLパラメータから管理者経由のアクセスかどうかを判定
     const params = new URLSearchParams(window.location.search);
     if (params.get('customerId')) {
       appState.userProfile.viaAdmin = true;
@@ -110,42 +58,33 @@ document.addEventListener('DOMContentLoaded', async () => {
       appState.userProfile.displayName = decodeURIComponent(params.get('customerName') || '');
     }
 
-    const liffResult = await initializeAppProcess();
+    // 2. 統合されたLIFFとFirebaseの初期化処理を呼び出す
+    console.log('[main.js] Calling centralized initializeLiffAndAuth...');
+    const initResult = await initializeLiffAndAuth(appState.liffId);
     clearTimeout(loadTimeout);
 
-    if (liffResult) {
+    if (initResult && initResult.error) {
+      // LIFFの初期化エラー時はアラートを出しつつ、UIブロックを解除して続行（デバッグ用）
+      console.warn('[main.js] Initialization warning:', initResult.error);
+      alert('システムの初期化に問題が発生しましたが、続行します。\n' + initResult.error);
+    } else if (initResult) {
       if (!appState.userProfile.viaAdmin) {
-        appState.userProfile.userId = liffResult.profile.userId;
-        appState.userProfile.firebaseUid = liffResult.profile.userId;
-        appState.userProfile.displayName = liffResult.profile.displayName;
+        appState.userProfile.userId = initResult.profile?.userId || 'unknown';
+        appState.userProfile.firebaseUid = initResult.user?.uid || 'unknown';
+        appState.userProfile.displayName = initResult.profile?.displayName || 'お客様';
       }
-
-      try {
-        const performAuth = async () => {
-          if (IS_DEV_MODE && USE_MOCK_AUTH) {
-            const userCredential = await signInAnonymously(appState.firebase.auth);
-            appState.userProfile.firebaseUid = userCredential.user.uid;
-            console.log(`[main.js] Signed in anonymously with UID: ${userCredential.user.uid}`);
-          } else {
-            console.log('[main.js] Requesting Custom Token...');
-            const { customToken } = await requestCustomToken(liffResult.accessToken);
-            if (customToken) {
-              console.log('[main.js] Signing in with Custom Token...');
-              await signInWithCustomToken(appState.firebase.auth, customToken);
-            }
-          }
-        };
-        const timeoutAuth = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Firebase Auth Timed out')), 4000)
-        );
-        await Promise.race([performAuth(), timeoutAuth]);
-        console.log('[main.js] Auth Completed');
-      } catch (e) {
-        console.error('[main.js] Auth flow failed or timed out:', e);
-      }
+      console.log(`[main.js] Init complete. User: ${appState.userProfile.displayName} (${appState.userProfile.firebaseUid})`);
     } else {
+      // initResult が無い場合 (ログイン中などで中断された場合) はここで処理終了
+      console.log('[main.js] Waiting for LIFF login redirect...');
       return;
     }
+
+    // ★重要: グローバルの appState に Firebase インスタンスの参照を保存しておく
+    appState.firebase.auth = auth;
+    appState.firebase.firestore = db;
+    appState.firebase.storage = storage;
+    appState.firebase.functions = functions;
 
     initializeAppUI();
     hideLoadingScreen();

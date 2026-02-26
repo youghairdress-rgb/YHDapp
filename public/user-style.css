@@ -209,6 +209,13 @@ body.user-modal-open {
     font-size: 1.2rem;
 }
 
+/* Viewer actions button styling */
+.viewer-actions button {
+    display: inline-block;
+    margin-top: 10px;
+}
+
+
 .summary-footer {
     position: fixed;
     bottom: 0;
