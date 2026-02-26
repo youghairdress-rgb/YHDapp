@@ -21,10 +21,15 @@ export default defineConfig({
                 sales: resolve(__dirname, 'public/admin/sales.html'),
                 settings: resolve(__dirname, 'public/admin/settings.html'),
                 diagnosis: resolve(__dirname, 'public/diagnosis/index.html'),
+                mobile_upload: resolve(__dirname, 'public/diagnosis/mobile_upload.html'),
                 aimatching: resolve(__dirname, 'public/ai-matching/camera.html'),
                 airesult: resolve(__dirname, 'public/ai-matching/result.html'),
                 promptgen: resolve(__dirname, 'public/prompt-generator/index.html'),
                 hairupload: resolve(__dirname, 'public/hair_upload.html'),
+                hairtransform: resolve(__dirname, 'public/hair_transform.html'),
+                mypage: resolve(__dirname, 'public/mypage.html'),
+                entry: resolve(__dirname, 'public/entry.html')
             }
         }
-    });
+    }
+});
