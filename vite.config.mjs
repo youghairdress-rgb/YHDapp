@@ -25,10 +25,6 @@ export default defineConfig({
                 airesult: resolve(__dirname, 'public/ai-matching/result.html'),
                 promptgen: resolve(__dirname, 'public/prompt-generator/index.html'),
                 hairupload: resolve(__dirname, 'public/hair_upload.html'),
-                hairtransform: resolve(__dirname, 'public/hair_transform.html'),
-                mypage: resolve(__dirname, 'public/mypage.html'),
-                entry: resolve(__dirname, 'public/entry.html')
             }
         }
-    }
-});
+    });
