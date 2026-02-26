@@ -5,13 +5,13 @@
  */
 
 const logger = require("firebase-functions/logger");
-const { callGeminiApiWithRetry } = require("../services/gemini");
-const { AI_RESPONSE_SCHEMA, getDiagnosisSystemPrompt } = require("../prompts/diagnosisPrompts");
+const {callGeminiApiWithRetry} = require("../services/gemini");
+const {AI_RESPONSE_SCHEMA, getDiagnosisSystemPrompt} = require("../prompts/diagnosisPrompts");
 const config = require("../config");
-const { fetchAsBase64 } = require("../utils/fetchHelper");
-const { sendSuccess, sendError } = require("../utils/responseHelper");
-const { sanitizeObject } = require("../utils/sanitizer");
-const { handleError } = require("../utils/errorMonitor");
+const {fetchAsBase64} = require("../utils/fetchHelper");
+const {sendSuccess, sendError} = require("../utils/responseHelper");
+const {sanitizeObject} = require("../utils/sanitizer");
+const {handleError} = require("../utils/errorMonitor");
 
 /**
  * 診断リクエストのメインコントローラー
@@ -20,7 +20,7 @@ const { handleError } = require("../utils/errorMonitor");
  * @param {object} dependencies
  */
 async function requestDiagnosisController(req, res, dependencies) {
-  const { llmApiKey } = dependencies;
+  const {llmApiKey} = dependencies;
 
   // 1. メソッドとAPIキーのチェック
   if (req.method !== "POST") {
@@ -33,7 +33,7 @@ async function requestDiagnosisController(req, res, dependencies) {
   }
 
   // 2. リクエストデータの取得
-  const { fileUrls, userProfile, gender, userRequestsText } = req.body;
+  const {fileUrls, userProfile, gender, userRequestsText} = req.body;
   if (!fileUrls || !userProfile || !gender) {
     return sendError(res, 400, "Bad Request", "Missing required data (fileUrls, userProfile, gender).");
   }
@@ -48,7 +48,7 @@ async function requestDiagnosisController(req, res, dependencies) {
 
   // 3. ファイル取得 (並列処理)
   const parts = [
-    { text: `この顧客（性別: ${gender}）を診断し、提案してください。` },
+    {text: `この顧客（性別: ${gender}）を診断し、提案してください。`},
   ];
 
   try {
@@ -57,27 +57,26 @@ async function requestDiagnosisController(req, res, dependencies) {
     // ご希望写真 (任意)
     if (fileUrls["item-inspiration-photo"]) {
       fetchPromises.push(
-        fetchAsBase64(fileUrls["item-inspiration-photo"], "item-inspiration-photo")
-          .then(res => {
-            parts.push({ text: "添付の最後は、顧客が希望する参考スタイル写真です。" });
-            return res;
-          })
+          fetchAsBase64(fileUrls["item-inspiration-photo"], "item-inspiration-photo")
+              .then(res => {
+                parts.push({text: "添付の最後は、顧客が希望する参考スタイル写真です。"});
+                return res;
+              }),
       );
     }
 
     const fetchedParts = await Promise.all(fetchPromises);
     parts.push(...fetchedParts);
-
   } catch (fetchError) {
-    await handleError(fetchError, 'requestDiagnosis', {
+    await handleError(fetchError, "requestDiagnosis", {
       context: {
         userId: userProfile?.userId,
         customerId: userProfile?.firebaseUid,
-        stage: 'FILE_FETCH',
-        fileUrls: Object.keys(fileUrls || {})
+        stage: "FILE_FETCH",
+        fileUrls: Object.keys(fileUrls || {}),
       },
       notifyLine: true,
-      throwError: false
+      throwError: false,
     });
     return sendError(res, 500, "File Fetch Error", `ファイル取得失敗: ${fetchError.message}`);
   }
@@ -104,8 +103,8 @@ async function requestDiagnosisController(req, res, dependencies) {
   const apiUrl = `${config.api.baseUrl}/${config.models.diagnosis}:generateContent?key=${apiKey}`;
 
   const payload = {
-    systemInstruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: "user", parts: parts }],
+    systemInstruction: {parts: [{text: systemPrompt}]},
+    contents: [{role: "user", parts: parts}],
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: AI_RESPONSE_SCHEMA,
@@ -133,21 +132,20 @@ async function requestDiagnosisController(req, res, dependencies) {
     // サニタイズして返却
     const sanitizedJson = sanitizeObject(parsedJson);
     return sendSuccess(res, sanitizedJson);
-
   } catch (apiError) {
-    await handleError(apiError, 'requestDiagnosis', {
+    await handleError(apiError, "requestDiagnosis", {
       context: {
         userId: userProfile?.userId,
         customerId: userProfile?.firebaseUid,
-        stage: 'GEMINI_API_CALL',
+        stage: "GEMINI_API_CALL",
         gender,
-        model: config.models.diagnosis
+        model: config.models.diagnosis,
       },
       notifyLine: true,
-      throwError: false
+      throwError: false,
     });
     return sendError(res, 500, "Gemini API Error", `AI診断失敗: ${apiError.message}`, {
-      model: config.models.diagnosis
+      model: config.models.diagnosis,
     });
   }
 }

@@ -184,7 +184,9 @@ export function renderGenerationConfigUI() {
   }
 
   let proposal = appState.aiProposal;
-  const hasInspiration = !!appState.inspirationImageUrl || !!appState.uploadedFileUrls['item-inspiration-photo'];
+  // ユーザーのテキスト要望（DOMから直接取得）、もしくは希望写真が存在するかを確認
+  const userReqText = document.getElementById('user-requests')?.value?.trim();
+  const hasUserRequestContent = !!userReqText || !!appState.inspirationImageUrl || !!appState.uploadedFileUrls['item-inspiration-photo'];
 
   // 1. HTMLの枠が見つからない場合のエラーチェック
   if (!styleContainer || !colorContainer) {
@@ -220,7 +222,7 @@ export function renderGenerationConfigUI() {
     const val = `style${index + 1}`;
     styleHtml += createRadioOption('style-select', val, `提案Style${index + 1}: ${style.name || 'AIおすすめ'}`, index === 0);
   });
-  if (hasInspiration) styleHtml += createRadioOption('style-select', 'user_request', '★ ご希望のStyle (写真から再現)');
+  if (hasUserRequestContent) styleHtml += createRadioOption('style-select', 'user_request', '★ ご希望のStyle (ご要望から再現)');
   styleHtml += createRadioOption('style-select', 'keep_style', 'スタイルは変えない (現在の髪型のまま)');
   styleContainer.innerHTML = styleHtml;
 
@@ -230,7 +232,7 @@ export function renderGenerationConfigUI() {
     const val = `color${index + 1}`;
     colorHtml += createRadioOption('color-select', val, `提案Color${index + 1}: ${color.name || 'AIおすすめ'}`, index === 0);
   });
-  if (hasInspiration) colorHtml += createRadioOption('color-select', 'user_request', '★ ご希望のColor (写真から再現)');
+  if (hasUserRequestContent) colorHtml += createRadioOption('color-select', 'user_request', '★ ご希望のColor (ご要望から再現)');
   colorHtml += createRadioOption('color-select', 'keep_color', '明るさを選択');
   colorContainer.innerHTML = colorHtml;
 }

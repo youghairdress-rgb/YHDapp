@@ -174,7 +174,13 @@ function getDiagnosisSystemPrompt(gender, userRequestsText = "", trendInfo = "")
     `
 ## PRIORITY REQUEST
 **Client's Wish:** "${userRequestsText}"
-Integrate this wish into the diagnosis and proposal. If the wish contradicts the physical diagnosis (e.g., client wants a style not suitable for their bone structure), propose a compromise that respects both.
+
+**CRITICAL INSTRUCTION FOR CLIENT'S WISH:**
+1. If the Client's Wish contains English comma-separated tags or prompt-like keywords (e.g., "ash hair color", "medium length"), YOU MUST PRESERVE THEM EXACTLY AS WRITTEN.
+2. DO NOT translate these English tags into Japanese.
+3. DO NOT summarize or alter these tags into conversational sentences.
+4. You must pass these exact English tags directly into the relevant parameters of your final JSON output (such as the style or color descriptions) where appropriate, alongside your Japanese analysis.
+5. Integrate this wish into the diagnosis and proposal. If the wish contradicts the physical diagnosis (e.g., client wants a style not suitable for their bone structure), propose a compromise that respects both.
 ` :
     "";
 

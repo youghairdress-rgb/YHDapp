@@ -12,10 +12,10 @@ const logger = require("firebase-functions/logger");
  * @param {string} message - Optional success message.
  */
 function sendSuccess(res, data, message = "Success") {
-    return res.status(200).json({
-        ...data,
-        message, // Optional top-level message
-    });
+  return res.status(200).json({
+    ...data,
+    message, // Optional top-level message
+  });
 }
 
 /**
@@ -27,21 +27,21 @@ function sendSuccess(res, data, message = "Success") {
  * @param {object} debugInfo - Optional debug information.
  */
 function sendError(res, status, error, message, debugInfo = null) {
-    const payload = {
-        error,
-        message,
-    };
-    if (debugInfo) {
-        payload.debugInfo = debugInfo;
-    }
+  const payload = {
+    error,
+    message,
+  };
+  if (debugInfo) {
+    payload.debugInfo = debugInfo;
+  }
 
-    // Log the error on the server side
-    logger.error(`[ResponseError] ${status} - ${error}: ${message}`, debugInfo);
+  // Log the error on the server side
+  logger.error(`[ResponseError] ${status} - ${error}: ${message}`, debugInfo);
 
-    return res.status(status || 500).json(payload);
+  return res.status(status || 500).json(payload);
 }
 
 module.exports = {
-    sendSuccess,
-    sendError,
+  sendSuccess,
+  sendError,
 };

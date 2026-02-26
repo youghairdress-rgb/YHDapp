@@ -647,6 +647,8 @@ body.user-modal-open {
     background-color: rgba(0, 0, 0, 0.9);
     justify-content: center;
     align-items: center;
+    flex-direction: column;
+    /* 画像の下にボタンを配置するために追加 */
     padding: 1rem;
     box-sizing: border-box;
 }

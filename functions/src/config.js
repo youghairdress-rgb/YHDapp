@@ -3,7 +3,7 @@
  * Application Configuration
  */
 
-const { defineSecret, defineString } = require("firebase-functions/params");
+const {defineSecret, defineString} = require("firebase-functions/params");
 
 // Define Params (Legacy for YHD-db compatibility & simplified config)
 const lineChannelIds = defineString("LINE_CHANNEL_IDS");
@@ -16,37 +16,37 @@ const llmApiKey = geminiApiKey;
 const imageGenApiKey = geminiApiKey;
 
 module.exports = {
-    // Params (Compatible with YHD-db index.js structure)
-    params: {
-        lineChannelIds,
-        lineChannelAccessToken,
-        adminLineUserIds,
-        geminiApiKey
-    },
-    // Secrets (Empty as we verify using env vars now)
-    secrets: {},
+  // Params (Compatible with YHD-db index.js structure)
+  params: {
+    lineChannelIds,
+    lineChannelAccessToken,
+    adminLineUserIds,
+    geminiApiKey,
+  },
+  // Secrets (Empty as we verify using env vars now)
+  secrets: {},
 
-    // Model Configurations
-    models: {
-        diagnosis: "gemini-2.5-flash", // Updated to the latest stable text model
-        imageGen: "gemini-2.5-flash-image", // MUST remain for image generation
-    },
+  // Model Configurations
+  models: {
+    diagnosis: "gemini-2.5-flash", // Updated to the latest stable text model
+    imageGen: "gemini-2.5-flash-image", // MUST remain for image generation
+  },
 
-    // Vertex AI Configuration
-    vertex: {
-        location: "us-west1", // Try us-west1 to avoid us-central1 congestion
-        projectId: process.env.GCLOUD_PROJECT || "yhd-dx",
-    },
+  // Vertex AI Configuration
+  vertex: {
+    location: "us-west1", // Try us-west1 to avoid us-central1 congestion
+    projectId: process.env.GCLOUD_PROJECT || "yhd-dx",
+  },
 
-    // API Configurations
-    api: {
-        baseUrl: "https://generativelanguage.googleapis.com/v1beta/models",
-        retryLimit: 3,
-    },
+  // API Configurations
+  api: {
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/models",
+    retryLimit: 3,
+  },
 
-    // CORS Settings
-    cors: {
-        origin: true,
-        methods: ["POST", "GET", "OPTIONS"],
-    },
+  // CORS Settings
+  cors: {
+    origin: true,
+    methods: ["POST", "GET", "OPTIONS"],
+  },
 };

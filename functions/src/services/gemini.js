@@ -46,7 +46,7 @@ async function callGeminiApiWithRetry(url, payload, maxRetries = 3) {
         }
       } else {
         // 400 (Bad Request) など、リトライしても無駄なエラー
-        let errorBodyText = await response.text();
+        const errorBodyText = await response.text();
         let errorBody;
         try {
           errorBody = JSON.parse(errorBodyText);

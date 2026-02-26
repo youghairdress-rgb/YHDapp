@@ -7,17 +7,17 @@
  */
 
 const logger = require("firebase-functions/logger");
-const { callGeminiApiWithRetry } = require("../services/gemini");
-const { getGenerationPrompt, getRefinementPrompt } = require("../prompts/imageGenPrompts");
+const {callGeminiApiWithRetry} = require("../services/gemini");
+const {getGenerationPrompt, getRefinementPrompt} = require("../prompts/imageGenPrompts");
 const config = require("../config");
-const { fetchAsBase64 } = require("../utils/fetchHelper");
-const { sendSuccess, sendError } = require("../utils/responseHelper");
+const {fetchAsBase64} = require("../utils/fetchHelper");
+const {sendSuccess, sendError} = require("../utils/responseHelper");
 
 /**
  * ヘアスタイル生成のリクエストを処理する
  */
 async function generateHairstyleImageController(req, res, dependencies) {
-  const { imageGenApiKey, storage } = dependencies;
+  const {imageGenApiKey, storage} = dependencies;
 
   if (req.method !== "POST") {
     return sendError(res, 405, "Method Not Allowed", `Method ${req.method} not allowed.`);
@@ -41,7 +41,7 @@ async function generateHairstyleImageController(req, res, dependencies) {
     inspirationImageUrl,
     isUserStyle,
     isUserColor,
-    hasToneOverride
+    hasToneOverride,
   } = req.body;
 
   if (!originalImageUrl || !firebaseUid || !hairstyleName || !haircolorName || !currentLevel) {
@@ -66,14 +66,14 @@ async function generateHairstyleImageController(req, res, dependencies) {
     hasInspirationImage: !!inspirationImageUrl,
     isUserStyle: !!isUserStyle,
     isUserColor: !!isUserColor,
-    hasToneOverride: !!hasToneOverride
+    hasToneOverride: !!hasToneOverride,
   });
 
   // 3. 画像データの取得 & Payload構築
   const parts = [];
 
   // Prompt (Text)
-  parts.push({ text: prompt });
+  parts.push({text: prompt});
 
   // Original Image
   try {
@@ -98,8 +98,8 @@ async function generateHairstyleImageController(req, res, dependencies) {
   const payload = {
     contents: [
       {
-        parts: parts
-      }
+        parts: parts,
+      },
     ],
     generationConfig: {
       temperature: 0.4,
@@ -107,7 +107,7 @@ async function generateHairstyleImageController(req, res, dependencies) {
       topP: 1,
       maxOutputTokens: 2048, // Gemini 2.x might use this for text, but keeping it safe
       // responseMimeType: "image/jpeg" // If supported by 2.5 flash image model directly
-    }
+    },
   };
 
   // 5. API呼び出し
@@ -147,7 +147,6 @@ async function generateHairstyleImageController(req, res, dependencies) {
     }
 
     throw new Error("AIから有効な画像データが返されませんでした。");
-
   } catch (apiError) {
     return sendError(res, 500, "Image Generation Error", `画像生成に失敗しました: ${apiError.message}`);
   }
@@ -157,14 +156,14 @@ async function generateHairstyleImageController(req, res, dependencies) {
  * 生成された画像の微調整 (Refinement)
  */
 async function refineHairstyleImageController(req, res, dependencies) {
-  const { imageGenApiKey, storage } = dependencies;
+  const {imageGenApiKey, storage} = dependencies;
 
   if (req.method !== "POST") {
     return sendError(res, 405, "Method Not Allowed", `Method ${req.method} not allowed.`);
   }
 
   // 2. リクエストデータの取得
-  const { generatedImageUrl, firebaseUid, refinementText } = req.body;
+  const {generatedImageUrl, firebaseUid, refinementText} = req.body;
 
   if (!generatedImageUrl || !firebaseUid || !refinementText) {
     return sendError(res, 400, "Bad Request", "Missing required data.");
@@ -195,20 +194,20 @@ async function refineHairstyleImageController(req, res, dependencies) {
   }
 
   const parts = [
-    { text: prompt },
+    {text: prompt},
     {
       inlineData: {
         mimeType: mimeType,
-        data: imageBase64
-      }
-    }
+        data: imageBase64,
+      },
+    },
   ];
 
   const payload = {
-    contents: [{ parts: parts }],
+    contents: [{parts: parts}],
     generationConfig: {
-      temperature: 0.4
-    }
+      temperature: 0.4,
+    },
   };
 
   // 5. API Call
@@ -229,7 +228,6 @@ async function refineHairstyleImageController(req, res, dependencies) {
     }
 
     throw new Error("AIから画像データが返されませんでした。");
-
   } catch (apiError) {
     return sendError(res, 500, "Image Refinement Error", `画像修正に失敗しました: ${apiError.message}`);
   }

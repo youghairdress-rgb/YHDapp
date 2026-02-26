@@ -35,9 +35,10 @@ function getGenerationPrompt(data) {
   // ユーザーの要望テキストが空でない場合、プロンプトに差し込む
   const requestPromptPart = userRequestsText ?
     `
-**PRIORITY USER REQUEST:**
+**[Strict Requirement] HIGHEST PRIORITY USER REQUEST:**
+Apply the following exact tags and instructions to the hair generation:
 "${userRequestsText}"
-(This instruction overrides standard style defaults. Execute with precision. NOTE: Unless the request explicitly describes a form change, do not change the original hairstyle.)
+(This instruction overrides standard style defaults. Execute with absolute precision. NOTE: Unless the request explicitly describes a form change, do not change the original hairstyle. Ensure all specified textures, lengths, and colors are meticulously rendered.)
 ` :
     "";
 
@@ -51,6 +52,7 @@ function getGenerationPrompt(data) {
   3. Exact Color Nuance (Underlying pigments)
   4. Lighting condition matches.
 - **Action:** TRANSFER these exact physical properties to the user in the Base Image (Image 1).
+- **[CRITICAL FACE RULE]:** You are extracting ONLY the HAIR from Image 2. The facial identity, skin tone, features, and expression of Image 1 MUST remain 100% untouched. DO NOT transpose the face from Image 2.
 ` :
     "";
 
