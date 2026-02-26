@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YHD AI Matching - Camera</title>
+    <!-- 既存のスタイルをベースにする -->
+    <link rel="stylesheet" href="../admin/style.css">
+    <!-- 専用スタイル -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header class="main-header">
+            <div class="header-left">
+                <!-- Home button removed -->
+                <h1 class="app-title">AI Matching<small>（撮影用）</small></h1>
+            </div>
+
+            <div class="header-actions">
+                <!-- ページ1用ボタン (診断開始ボタン削除) -->
+                <div id="header-input-actions" style="display: flex; gap: 10px;">
+                    <button id="header-save-photo-btn" class="header-btn secondary-btn" onclick="savePhotos()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> 保存する
+                    </button>
+                    <!-- 診断開始ボタンは削除し、保存機能のみに。 -->
+                </div>
+            </div>
+        </header>
+
+        <!-- 1. 入力画面 (撮影画面) -->
+        <section id="input-screen" class="screen active">
+            <div class="photo-columns">
+                <!-- 正面 -->
+                <div class="photo-column">
+                    <h2 class="column-title">Front</h2>
+                    <div class="photo-placeholder" id="placeholder-front" onclick="triggerCamera('front')">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                    <div class="photo-preview" id="preview-front" style="display: none;"
+                        onclick="triggerCamera('front')">
+                        <img src="" alt="Front Preview">
+                    </div>
+                    <!-- ダミーinput -->
+                    <input type="file" id="input-front" accept="image/*" capture="environment" hidden
+                        onchange="handleFileSelect(event, 'front')">
+                </div>
+
+                <!-- サイド -->
+                <div class="photo-column">
+                    <h2 class="column-title">Side</h2>
+                    <div class="photo-placeholder" id="placeholder-side" onclick="triggerCamera('side')">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                    <div class="photo-preview" id="preview-side" style="display: none;" onclick="triggerCamera('side')">
+                        <img src="" alt="Side Preview">
+                    </div>
+                    <input type="file" id="input-side" accept="image/*" capture="environment" hidden
+                        onchange="handleFileSelect(event, 'side')">
+                </div>
+
+                <!-- バック -->
+                <div class="photo-column">
+                    <h2 class="column-title">Back</h2>
+                    <div class="photo-placeholder" id="placeholder-back" onclick="triggerCamera('back')">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                    <div class="photo-preview" id="preview-back" style="display: none;" onclick="triggerCamera('back')">
+                        <img src="" alt="Back Preview">
+                    </div>
+                    <input type="file" id="input-back" accept="image/*" capture="environment" hidden
+                        onchange="handleFileSelect(event, 'back')">
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- script.jsをcamera.jsに変更 -->
+    <script type="module" src="camera.js"></script>
+</body>
+
+</html>

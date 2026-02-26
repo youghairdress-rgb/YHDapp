@@ -1,5 +1,5 @@
 import { runAdminPage } from './admin-auth.js';
-import { db } from './firebase-init.js';
+import { db, storage } from './firebase-init.js';
 import {
   collection,
   getDocs,
@@ -17,6 +17,11 @@ import {
   collectionGroup,
   writeBatch,
 } from 'firebase/firestore';
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from 'firebase/storage';
 
 const bookingMain = async (auth, user) => {
   // DOM Elements
@@ -59,9 +64,15 @@ const bookingMain = async (auth, user) => {
   const unavailableTitle = document.getElementById('unavailable-modal-title');
 
   // AI Action Elements
+  const detailCameraBtn = document.getElementById('detail-camera-btn');
   const detailMobileUploadLink = document.getElementById('detail-mobile-upload-link');
+  const detailHairAppCameraLink = document.getElementById('detail-hair-upload-link');
+  const detailMatchingCameraLink = document.getElementById('detail-matching-camera-link');
+  const detailPromptGeneratorLink = document.getElementById('detail-prompt-generator-link');
   const detailCounselingLink = document.getElementById('detail-counseling-link');
-  const detailMatchingLink = document.getElementById('detail-matching-link');
+  const detailHairAppEditLink = document.getElementById('detail-hair-edit-link');
+  const detailMatchingResultLink = document.getElementById('detail-matching-result-link');
+  const photoUploadInput = document.getElementById('photo-upload-input');
 
   // State
   let salonSettings = {};
@@ -463,6 +474,21 @@ const bookingMain = async (auth, user) => {
         detailMobileUploadLink.href = `/diagnosis/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
 
+      // 髪色アプリ (撮影)
+      if (detailHairAppCameraLink) {
+        detailHairAppCameraLink.href = `/hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
+      // マッチングアプリ (camera)
+      if (detailMatchingCameraLink) {
+        detailMatchingCameraLink.href = `/ai-matching/camera.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
+      // プロンプトジェネレーター
+      if (detailPromptGeneratorLink) {
+        detailPromptGeneratorLink.href = `/prompt-generator/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
       // Helper for fullscreen popup
       const openFullscreen = (url) => {
         window.open(url, '_blank', `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${screen.availWidth},height=${screen.availHeight}`);
@@ -476,25 +502,19 @@ const bookingMain = async (auth, user) => {
         };
       }
 
-      // AIヘアスタイル診断
-      if (detailMatchingLink) {
-        detailMatchingLink.onclick = (e) => {
+      // 髪色アプリ (編集)
+      if (detailHairAppEditLink) {
+        detailHairAppEditLink.onclick = (e) => {
           e.preventDefault();
-          openFullscreen(`/ai-matching/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
+          openFullscreen(`/hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
         };
       }
 
-      // 髪色アプリ (撮影/編集)
-      const detailHairUploadLink = document.getElementById('detail-hair-upload-link');
-      const detailHairEditLink = document.getElementById('detail-hair-edit-link');
-
-      if (detailHairUploadLink) {
-        detailHairUploadLink.href = `/hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
-      }
-      if (detailHairEditLink) {
-        detailHairEditLink.onclick = (e) => {
+      // マッチングアプリ (result)
+      if (detailMatchingResultLink) {
+        detailMatchingResultLink.onclick = (e) => {
           e.preventDefault();
-          openFullscreen(`/hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
+          openFullscreen(`/ai-matching/result.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
         };
       }
     }
@@ -981,6 +1001,68 @@ const bookingMain = async (auth, user) => {
     const time = `${String(finalHour).padStart(2, '0')}:${String(finalMinute).padStart(2, '0')}`;
     openActionModal(time);
   });
+
+  // --- Camera & Photo Upload Logic ---
+  const handleTakePhoto = () => {
+    if (!photoUploadInput) return;
+    photoUploadInput.setAttribute('capture', 'environment');
+    photoUploadInput.click();
+  };
+
+  const uploadAndSavePhoto = async (file) => {
+    if (!editingBooking || !editingBooking.customerId || !file) return;
+
+    if (detailCameraBtn) {
+      detailCameraBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      detailCameraBtn.disabled = true;
+    }
+
+    try {
+      const timestamp = Date.now();
+      const storageRef = ref(
+        storage,
+        `users/${editingBooking.customerId}/gallery/${timestamp}-${file.name}`
+      );
+
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      await addDoc(collection(db, `users/${editingBooking.customerId}/gallery`), {
+        url: downloadURL,
+        createdAt: serverTimestamp(),
+        isBookingPhoto: true,
+        bookingId: editingBooking.id,
+      });
+
+      alert('写真を保存しました');
+    } catch (error) {
+      console.error('写真のアップロードに失敗:', error);
+      alert('写真のアップロードに失敗しました。');
+    } finally {
+      if (detailCameraBtn) {
+        detailCameraBtn.innerHTML = '<i class="fa-solid fa-camera"></i>';
+        detailCameraBtn.disabled = false;
+      }
+      if (photoUploadInput) {
+        photoUploadInput.value = '';
+      }
+    }
+  };
+
+  if (detailCameraBtn) {
+    detailCameraBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleTakePhoto();
+    });
+  }
+
+  if (photoUploadInput) {
+    photoUploadInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        uploadAndSavePhoto(e.target.files[0]);
+      }
+    });
+  }
 };
 
 runAdminPage(bookingMain);

@@ -1,6 +1,6 @@
 ﻿/* 基本設定と変数 */
 :root {
-    --primary-color: #0ABAB5;
+    --primary-color: #3bb2b8;
     /* ティファニーブルー */
     --secondary-color: #F0FDF4;
     --accent-color: #ffc107;
@@ -107,6 +107,97 @@ header h1 {
 .quick-nav-button i {
     font-size: 1.25rem;
     color: var(--primary-color);
+}
+
+/* ▲▲▲ 追加ここまで ▲▲▲ */
+
+/* ▼▼▼ 追加: 料金プラン関連 ▼▼▼ */
+.pricing-plan-item {
+    background-color: #f7f7f7;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pricing-plan-item:hover {
+    background-color: var(--white-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pricing-plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.plan-name {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.plan-price {
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.plan-description {
+    font-size: 0.9rem;
+    color: var(--light-text-color);
+    margin: 0;
+}
+
+/* ▲▲▲ 追加ここまで ▲▲▲ */
+
+/* ▼▼▼ 追加: AIアクションリンク特大サイズ (2段構成) ▼▼▼ */
+.ai-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+    justify-items: center;
+    width: 100%;
+}
+
+.ai-tool-btn {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-color: var(--secondary-color);
+    border: 1px solid var(--primary-color);
+    transition: all 0.2s ease;
+}
+
+.ai-tool-btn:hover {
+    background-color: var(--primary-color);
+    box-shadow: 0 4px 8px rgba(10, 186, 181, 0.3);
+}
+
+.ai-tool-btn i {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    transition: color 0.2s ease;
+}
+
+.ai-tool-btn:hover i {
+    color: var(--white-color);
+}
+
+#detail-customer-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.5rem;
 }
 
 /* ▲▲▲ 追加ここまで ▲▲▲ */
@@ -270,7 +361,8 @@ main {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.85);
+    /* モーダル背景の不透明度を 0.85 から 0.95 に上げて、奥を見えにくくする */
+    background-color: rgba(0, 0, 0, 0.95);
     padding: 1rem;
     box-sizing: border-box;
     overflow-y: auto;

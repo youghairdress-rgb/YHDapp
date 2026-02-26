@@ -238,60 +238,113 @@ const customersMain = async (auth, user) => {
   const fetchVisitHistory = async (customerId) => {
     visitHistoryList.innerHTML = '<div class="spinner"></div>';
     try {
+      // 1. 売上履歴を取得
       const salesQuery = query(
         collection(db, 'sales'),
-        where('customerId', '==', customerId),
-        orderBy('createdAt', 'desc')
+        where('customerId', '==', customerId)
       );
-      const snapshot = await getDocs(salesQuery);
-      if (snapshot.empty) {
+
+      // 2. プロンプト（カルテ）などの履歴を取得
+      const visitHistoryQuery = query(
+        collection(db, 'users', customerId, 'visitHistory')
+      );
+
+      const [salesSnapshot, visitHistorySnapshot] = await Promise.all([
+        getDocs(salesQuery),
+        getDocs(visitHistoryQuery)
+      ]);
+
+      let combinedHistory = [];
+
+      // 売上データを整形して配列に追加
+      salesSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.createdAt) {
+          combinedHistory.push({
+            id: doc.id,
+            type: 'sale',
+            ...data,
+            timestamp: data.createdAt.toMillis() // ソート用にミリ秒を取得
+          });
+        }
+      });
+
+      // 履歴データを整形して配列に追加
+      visitHistorySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.createdAt) {
+          combinedHistory.push({
+            id: doc.id,
+            type: 'history',
+            ...data,
+            timestamp: data.createdAt.toMillis() // ソート用にミリ秒を取得
+          });
+        }
+      });
+
+      // 日付降順でソート
+      combinedHistory.sort((a, b) => b.timestamp - a.timestamp);
+
+      if (combinedHistory.length === 0) {
         visitHistoryList.innerHTML = '<p>まだ来店履歴はありません。</p>';
         return;
       }
 
       let html = '';
-      snapshot.forEach((doc) => {
-        const sale = { id: doc.id, ...doc.data() };
-        const visitDate = sale.createdAt.toDate().toLocaleDateString('ja-JP');
-        const menus = Array.isArray(sale.menus)
-          ? sale.menus.map((m) => m.name || '名称不明').join(', ')
-          : 'メニュー情報なし';
+      combinedHistory.forEach((item) => {
+        const visitDate = item.createdAt.toDate().toLocaleDateString('ja-JP');
 
-        // ▼▼▼ 修正: メモ欄を2つに分割 ▼▼▼
-        html += `
-                    <div class="visit-history-item">
-                        <div class="visit-info">
-                            <strong>${visitDate}</strong>
-                            <span>${menus}</span>
-                        </div>
-                        <div class="visit-total">¥${sale.total.toLocaleString()}</div>
-                        
-                        <!-- メッセージ（お客様と共有） -->
-                        <div class="staff-note-section">
-                            <label for="staff-public-message-${sale.id}">メッセージ（お客様と共有）</label>
-                            <textarea id="staff-public-message-${sale.id}" class="input-field" rows="3" inputmode="kana">${sale.staffPublicMessage || ''}</textarea>
-                            <button class="button-secondary save-staff-note-btn" data-sale-id="${sale.id}" data-field-type="staffPublicMessage">共有メッセージを保存</button>
-                        </div>
-                        
-                        <!-- スタッフ専用メモ（非公開） -->
-                        <div class="staff-note-section">
-                            <label for="staff-note-${sale.id}">スタッフ専用メモ（非公開）</label>
-                            <textarea id="staff-note-${sale.id}" class="input-field" rows="3" inputmode="kana">${sale.staffNote || ''}</textarea>
-                            <button class="button-secondary save-staff-note-btn" data-sale-id="${sale.id}" data-field-type="staffNote">専用メモを保存</button>
-                        </div>
+        if (item.type === 'sale') {
+          const menus = Array.isArray(item.menus)
+            ? item.menus.map((m) => m.name || '名称不明').join(', ')
+            : 'メニュー情報なし';
 
-                        ${sale.customerNote
-            ? `
-                        <div class="customer-note-section">
-                            <strong>お客様からのコメント:</strong>
-                            <p>${sale.customerNote}</p>
-                        </div>
-                        `
-            : ''
-          }
-                    </div>
-                `;
-        // ▲▲▲ 修正ここまで ▲▲▲
+          html += `
+              <div class="visit-history-item bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-4">
+                  <div class="visit-info mb-2 flex justify-between items-center">
+                      <span class="font-bold text-gray-800"><i class="fa-solid fa-calendar-check text-yhd-primary mr-2"></i>${visitDate}</span>
+                  </div>
+                  <div class="mb-3 text-sm text-gray-600">
+                    <span class="inline-block bg-gray-100 px-2 py-1 rounded text-xs font-bold mr-2 text-gray-500">メニュー</span>
+                    ${menus}
+                  </div>
+                  <div class="visit-total mb-4 font-bold text-lg text-yhd-primary">¥${item.total.toLocaleString()}</div>
+                  
+                  <!-- メッセージ（お客様と共有） -->
+                  <div class="staff-note-section mb-3">
+                      <label for="staff-public-message-${item.id}" class="block text-sm font-bold text-gray-700 mb-1">メッセージ（お客様と共有）</label>
+                      <textarea id="staff-public-message-${item.id}" class="input-field w-full p-2 border rounded-md" rows="2" inputmode="kana">${item.staffPublicMessage || ''}</textarea>
+                      <button class="button-secondary save-staff-note-btn mt-2 !py-1 !px-3 !text-sm" data-sale-id="${item.id}" data-field-type="staffPublicMessage">共有メッセージを保存</button>
+                  </div>
+                  
+                  <!-- スタッフ専用メモ（非公開） -->
+                  <div class="staff-note-section mb-3">
+                      <label for="staff-note-${item.id}" class="block text-sm font-bold text-gray-700 mb-1">スタッフ専用メモ（非公開）</label>
+                      <textarea id="staff-note-${item.id}" class="input-field w-full p-2 border rounded-md" rows="2" inputmode="kana">${item.staffNote || ''}</textarea>
+                      <button class="button-secondary save-staff-note-btn mt-2 !py-1 !px-3 !text-sm" data-sale-id="${item.id}" data-field-type="staffNote">専用メモを保存</button>
+                  </div>
+
+                  ${item.customerNote ? `
+                  <div class="customer-note-section p-3 bg-gray-50 rounded-md text-sm mt-3">
+                      <strong class="text-gray-700 block mb-1">お客様からのコメント:</strong>
+                      <p class="text-gray-600 m-0">${item.customerNote}</p>
+                  </div>
+                  ` : ''}
+              </div>
+          `;
+        } else if (item.type === 'history') {
+          html += `
+              <div class="visit-history-item bg-indigo-50 p-4 rounded-lg shadow-sm border border-indigo-100 mb-4">
+                  <div class="visit-info mb-3">
+                      <span class="font-bold text-indigo-900"><i class="fa-solid fa-robot text-indigo-500 mr-2"></i>${visitDate}</span>
+                      <span class="block text-sm text-indigo-700 mt-1 font-bold">${item.title}</span>
+                  </div>
+                  ${item.kartePrompt ? `
+                  <div class="bg-white p-3 rounded border border-indigo-100 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">${item.kartePrompt}</div>
+                  ` : ''}
+              </div>
+          `;
+        }
       });
       visitHistoryList.innerHTML = html;
 

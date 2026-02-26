@@ -100,25 +100,31 @@
                         </div>
                     </div>
                     <div id="normal-booking-actions" class="modal-footer grid-buttons">
-                        <!-- ▼▼▼ 追加: AIアクションボタン (横並び) ▼▼▼ -->
-                        <div class="ai-actions-row"
-                            style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: center; align-items: center; margin-bottom: 10px;">
-                            <button class="icon-button camera-btn" id="detail-camera-btn" title="写真"><i
+                        <!-- ▼▼▼ 追加: AIアクションボタン (2段構成) ▼▼▼ -->
+                        <input type="file" id="photo-upload-input" accept="image/*" capture="environment"
+                            style="display: none;">
+                        <div class="ai-actions-grid"
+                            style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; justify-items: center;">
+                            <!-- 上段 -->
+                            <button class="icon-button ai-tool-btn camera-btn" id="detail-camera-btn" title="写真"><i
                                     class="fa-solid fa-camera"></i></button>
-                            <!-- ▼▼▼ 追加: 画像素材アップロード (mobile_upload.html) ▼▼▼ -->
-                            <a href="#" target="_blank" class="icon-button" id="detail-mobile-upload-link"
+                            <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-mobile-upload-link"
                                 title="画像素材"><i class="fa-solid fa-images"></i></a>
-                            <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
-                            <!-- New Hair App Links -->
-                            <a href="#" target="_blank" class="icon-button" id="detail-hair-upload-link"
+                            <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-hair-upload-link"
                                 title="髪色アプリ(撮影)"><i class="fa-solid fa-mobile-screen"></i></a>
-                            <a href="#" target="_blank" class="icon-button" id="detail-hair-edit-link"
-                                title="髪色アプリ(編集)"><i class="fa-solid fa-palette"></i></a>
+                            <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-matching-camera-link"
+                                title="マッチングアプリ(camera)"><i class="fa-solid fa-camera-retro"></i></a>
 
-                            <a href="#" target="_blank" class="icon-button" id="detail-counseling-link"
+                            <!-- 下段 -->
+                            <a href="#" target="_blank" class="icon-button ai-tool-btn"
+                                id="detail-prompt-generator-link" title="プロンプトジェネレーター"><i
+                                    class="fa-solid fa-wand-magic"></i></a>
+                            <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-counseling-link"
                                 title="AIカウンセリング"><i class="fa-solid fa-wand-magic-sparkles"></i></a>
-                            <a href="#" target="_blank" class="icon-button" id="detail-matching-link"
-                                title="AIヘアスタイル診断"><i class="fa-solid fa-scissors"></i></a>
+                            <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-hair-edit-link"
+                                title="髪色アプリ(編集)"><i class="fa-solid fa-palette"></i></a>
+                            <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-matching-result-link"
+                                title="マッチングアプリ(result)"><i class="fa-solid fa-scissors"></i></a>
                         </div>
                         <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
 

@@ -1,6 +1,6 @@
 /* 基本のリセットと変数上書き */
 :root {
-    --primary-color: #0ABAB5;
+    --primary-color: #3bb2b8;
     --background-color: #f0f4f8;
     --glass-bg: rgba(255, 255, 255, 0.9);
     --glass-border: rgba(255, 255, 255, 0.6);
@@ -55,8 +55,18 @@ body {
 .app-title {
     color: white;
     /* タイトル白文字強制 */
+    font-size: 1.4rem;
     font-weight: 700;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+}
+
+.app-title small {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-left: 8px;
+    opacity: 0.95;
 }
 
 /* ヘッダーボタン共通 (Material/Neumorphism-ish) */
@@ -524,12 +534,16 @@ body {
     /* Admin style.cssのHeader干渉をリセット */
     header.main-header {
         margin-bottom: 0;
-        padding: 0.5rem 0;
-        /* 高さを抑える */
-        background: transparent;
-        /* 背景干渉防止 */
-        box-shadow: none;
+        padding: 0 1.5rem;
+        border-radius: 0 0 16px 16px;
+        /* 角丸 */
+        height: 70px;
+        /* PCでは少し高めに */
+        box-shadow: 0 4px 12px rgba(0, 171, 181, 0.2);
         flex-shrink: 0;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     /* Page 1: 写真カラム - PC/iPad横は横並び */
@@ -572,7 +586,7 @@ body {
         aspect-ratio: 9/16;
     }
 
-    /* Page 2: 結果画面 - 画像最大化レイアウト */
+    /* Page 2: 結果画面 - 画像最大化レイアウト (1920x1080最適化) */
     .result-layout {
         flex: 1;
         width: 100%;
@@ -580,8 +594,10 @@ body {
         margin: 0 auto;
         display: flex;
         flex-direction: row;
-        gap: 2rem;
-        padding-bottom: 20px;
+        gap: 4rem;
+        /* 隙間を広げる */
+        padding: 2rem 40px;
+        /* 余白追加 */
         min-height: 0;
         overflow: hidden;
         align-items: center;
@@ -589,9 +605,9 @@ body {
     }
 
     .result-info-panel {
-        flex: 0 0 400px;
-        /* 幅を固定値に (%だと崩れやすいので) */
-        max-width: 30vw;
+        flex: 0 0 500px;
+        /* パネルを少し大きくする */
+        max-width: 35vw;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -599,15 +615,32 @@ body {
         max-height: 100%;
         min-height: 0;
         overflow-y: auto;
-        padding: 2rem;
-        background: rgba(255, 255, 255, 0.8);
-        /* 視認性確保 */
+        padding: 3rem;
+        /* パディングを増やす */
+        background: rgba(255, 255, 255, 0.9);
+        /* 少し透明度を下げる */
+        border-radius: 16px;
+    }
+
+    .score-label {
+        font-size: 1.5rem;
+        /* ラベルをより大きく */
     }
 
     .score-value {
-        font-size: 3.5rem;
-        /* 適正サイズ */
-        line-height: 1.2;
+        font-size: 6rem;
+        /* スコアを巨大化 */
+        line-height: 1.1;
+    }
+
+    .score-value .percent {
+        font-size: 3rem;
+    }
+
+    .reason-text {
+        font-size: 1.3rem;
+        /* テキスト全体を大きく */
+        line-height: 1.8;
     }
 
     .result-image-panel {
@@ -628,8 +661,10 @@ body {
         width: 100%;
         height: 100%;
         max-height: 100%;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border-radius: 16px;
+        /* 角丸を少し大きく */
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        /* 影を強調 */
         overflow: hidden;
         position: relative;
         background-color: #000;
@@ -644,6 +679,22 @@ body {
         width: auto;
         height: auto;
         object-fit: contain;
+    }
+
+    /* Before画像オーバーレイをPCサイズで大きく見せる */
+    .before-image-overlay {
+        width: 25%;
+        border-width: 3px;
+    }
+
+    .overlay-label {
+        font-size: 1rem;
+        padding: 4px 12px;
+    }
+
+    .overlay-label-after {
+        font-size: 1.5rem;
+        padding: 6px 16px;
     }
 }
 
@@ -698,8 +749,50 @@ body {
     color: var(--primary-color) !important;
 }
 
-/* 文字色を濃く */
 .snapshot-mode .reason-text,
 .snapshot-mode .score-label {
     color: #000 !important;
+}
+
+/* --- 超大型モニター / Full HD (1920x1080) 向け最適化 --- */
+@media screen and (min-width: 1600px) {
+    header.main-header {
+        height: 80px;
+        padding: 0 2rem;
+    }
+
+    .app-title {
+        font-size: 2rem;
+    }
+
+    .app-title small {
+        font-size: 1.4rem;
+        margin-left: 12px;
+    }
+
+    .header-btn {
+        padding: 1rem 2rem;
+        font-size: 1.2rem;
+    }
+
+    .result-info-panel {
+        padding: 4rem;
+    }
+
+    .score-value {
+        font-size: 8rem;
+    }
+
+    .score-value .percent {
+        font-size: 4rem;
+    }
+
+    .score-label {
+        font-size: 1.8rem;
+    }
+
+    .reason-text {
+        font-size: 1.6rem;
+        line-height: 1.8;
+    }
 }

@@ -74,9 +74,13 @@ const adminMain = async (auth, user) => {
 
   // AI Action Elements
   const detailCameraBtn = document.getElementById('detail-camera-btn');
-  const detailMobileUploadLink = document.getElementById('detail-mobile-upload-link'); // Added
+  const detailMobileUploadLink = document.getElementById('detail-mobile-upload-link');
+  const detailHairAppCameraLink = document.getElementById('detail-hair-upload-link');
+  const detailMatchingCameraLink = document.getElementById('detail-matching-camera-link');
+  const detailPromptGeneratorLink = document.getElementById('detail-prompt-generator-link');
   const detailCounselingLink = document.getElementById('detail-counseling-link');
-  const detailMatchingLink = document.getElementById('detail-matching-link');
+  const detailHairAppEditLink = document.getElementById('detail-hair-edit-link');
+  const detailMatchingResultLink = document.getElementById('detail-matching-result-link');
   const photoUploadInput = document.getElementById('photo-upload-input');
   const galleryUploadingOverlay = document.getElementById('gallery-uploading-overlay'); // index.htmlに無い場合は無視されるか追加が必要 (今回はなしで進める)
 
@@ -352,6 +356,21 @@ const adminMain = async (auth, user) => {
         detailMobileUploadLink.href = `/diagnosis/mobile_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
       }
 
+      // 髪色アプリ (撮影)
+      if (detailHairAppCameraLink) {
+        detailHairAppCameraLink.href = `/hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
+      // マッチングアプリ (camera)
+      if (detailMatchingCameraLink) {
+        detailMatchingCameraLink.href = `/ai-matching/camera.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
+      // プロンプトジェネレーター
+      if (detailPromptGeneratorLink) {
+        detailPromptGeneratorLink.href = `/prompt-generator/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
+      }
+
       // Helper for fullscreen popup
       const openFullscreen = (url) => {
         window.open(url, '_blank', `toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=${screen.availWidth},height=${screen.availHeight}`);
@@ -365,25 +384,19 @@ const adminMain = async (auth, user) => {
         };
       }
 
-      // AIヘアスタイル診断
-      if (detailMatchingLink) {
-        detailMatchingLink.onclick = (e) => {
+      // 髪色アプリ (編集)
+      if (detailHairAppEditLink) {
+        detailHairAppEditLink.onclick = (e) => {
           e.preventDefault();
-          openFullscreen(`/ai-matching/index.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
+          openFullscreen(`/hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
         };
       }
 
-      // 髪色アプリ (撮影/編集)
-      const detailHairUploadLink = document.getElementById('detail-hair-upload-link');
-      const detailHairEditLink = document.getElementById('detail-hair-edit-link');
-
-      if (detailHairUploadLink) {
-        detailHairUploadLink.href = `/hair_upload.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`;
-      }
-      if (detailHairEditLink) {
-        detailHairEditLink.onclick = (e) => {
+      // マッチングアプリ (result)
+      if (detailMatchingResultLink) {
+        detailMatchingResultLink.onclick = (e) => {
           e.preventDefault();
-          openFullscreen(`/hair_transform.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
+          openFullscreen(`/ai-matching/result.html?customerId=${booking.customerId}&customerName=${customerNameEncoded}`);
         };
       }
     }

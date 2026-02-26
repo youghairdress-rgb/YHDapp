@@ -218,19 +218,19 @@ async function initializeHairSegmenter() {
   if (imageSegmenter) return;
   try {
     const visionTasks = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.12/wasm'
     );
     imageSegmenter = await ImageSegmenter.createFromOptions(visionTasks, {
       baseOptions: {
         modelAssetPath:
           'https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/1/hair_segmenter.tflite',
-        delegate: 'GPU',
+        delegate: 'CPU',
       },
       runningMode: 'IMAGE',
       outputCategoryMask: true,
       outputConfidenceMasks: false,
     });
-    console.log('Hair Segmenter Initialized');
+    console.log('Hair Segmenter Initialized (CPU Mode)');
   } catch (e) {
     console.error('MediaPipe Init Error:', e);
     alert('AI機能の初期化に失敗しました。');

@@ -245,10 +245,7 @@ export function displayGeneratedImage(base64Data, mimeType, styleName, colorName
   const dataUrl = `data:${mimeType};base64,${base64Data}`;
 
   if (mainDiagnosisImage) {
-    // 1. 画像をセット
-    mainDiagnosisImage.src = dataUrl;
-
-    // 2. 画像のロード完了を待ってから全てを開始（これが最も確実）
+    // 1. 必ず src をセットする前に onload を定義する（Base64による即時発火での処理抜けを防ぐため）
     mainDiagnosisImage.onload = async () => {
       console.log("[Phase6] Image Loaded. Initializing adjustments...");
 
@@ -259,13 +256,16 @@ export function displayGeneratedImage(base64Data, mimeType, styleName, colorName
       // セグメンテーション実行 (内部で applyImageAdjustments が呼ばれる)
       await runHairSegmentation(mainDiagnosisImage);
 
-      // ★重要: 動的に生成された要素があるため、リスナーをここで「再結合」する
+      // 動的に生成された要素があるため、リスナーをここで「再結合」する
       import('./ui-features.js').then(m => m.setupAdustmentListeners());
 
       // ローディングを消す
       const p6Overlay = document.getElementById('p6-generation-overlay');
       if (p6Overlay) p6Overlay.style.display = 'none';
     };
+
+    // 2. onload を定義した後に初めて画像をセットしてロードを開始する
+    mainDiagnosisImage.src = dataUrl;
   }
 }
 

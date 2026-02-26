@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YHD AI Matching - Result</title>
+    <!-- 既存のスタイルをベースにする -->
+    <link rel="stylesheet" href="../admin/style.css">
+    <!-- 専用スタイル -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header class="main-header">
+            <div class="header-left">
+                <!-- Home button removed -->
+                <h1 class="app-title">AI Matching<small>（結果表示・PC用）</small></h1>
+            </div>
+
+            <div class="header-actions">
+                <!-- 結果画面用ボタンのみ残す -->
+                <div id="header-result-actions" style="display: flex; gap: 10px;">
+                    <!-- 診断開始ボタンをここに追加 -->
+                    <button id="header-diagnose-btn" class="header-btn primary-btn" onclick="startDiagnosis()">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 診断開始
+                    </button>
+                    <button id="header-save-btn" class="header-btn secondary-btn" onclick="saveResultImage()"
+                        style="display: none;">
+                        <i class="fa-solid fa-download"></i> 画像で保存
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 2. 結果画面 (Active by default) -->
+        <section id="result-screen" class="screen active">
+            <div class="result-layout">
+                <!-- 左側: 結果テキスト -->
+                <div class="result-info-panel glass-panel">
+                    <div class="score-container">
+                        <div class="score-label">Matching Score</div>
+                        <!-- 初期状態はハイフンなどでおく -->
+                        <div class="score-value">--<span class="percent">%</span></div>
+                    </div>
+                    <div class="reason-container">
+                        <h3></h3>
+                        <p class="reason-text">
+                            「診断開始」ボタンを押すと、保存された写真を取得してAI分析を実行します。
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 右側: 画像比較 -->
+                <div class="result-image-panel">
+                    <div class="after-image-container">
+                        <img src="https://placehold.jp/800x1000.png?text=Waiting%20for%20Diagnosis..." alt="After Style"
+                            class="after-image" id="result-after-img">
+                        <div class="before-image-overlay">
+                            <span class="overlay-label">Before</span>
+                            <img src="https://placehold.jp/300x400.png?text=Before" alt="Before Style"
+                                class="before-image" id="result-before-img">
+                        </div>
+                        <span class="overlay-label-after">After</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- script.jsをresult.jsに変更 -->
+    <script type="module" src="result.js"></script>
+</body>
+
+</html>

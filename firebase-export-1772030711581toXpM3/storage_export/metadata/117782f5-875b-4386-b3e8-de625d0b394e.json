@@ -1,0 +1,19 @@
+{
+  "name": "guest_uploads/zpZhsyJ0A5WCpvRU4JbQ/item-side-photo",
+  "bucket": "yhd-db.firebasestorage.app",
+  "metageneration": 1,
+  "generation": 1772020986884,
+  "contentType": "image/jpeg",
+  "storageClass": "STANDARD",
+  "contentDisposition": "inline",
+  "downloadTokens": [
+    "d9f49735-10ce-4c51-b61b-d6c63d0e607a"
+  ],
+  "etag": "IDWwSAv/QsHvdL4bNngTw3ohr/s",
+  "customMetadata": {},
+  "timeCreated": "2026-02-25T12:03:06.884Z",
+  "updated": "2026-02-25T12:03:06.884Z",
+  "size": 152675,
+  "md5Hash": "Q1s4fyl/RrT66UHs9xCqdQ==",
+  "crc32c": "1475941286"
+}

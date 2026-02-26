@@ -1,0 +1,19 @@
+{
+  "name": "guest_uploads/O2n6cijpau7zYG6AXRZl/item-back-video",
+  "bucket": "yhd-db.firebasestorage.app",
+  "metageneration": 1,
+  "generation": 1771857659305,
+  "contentType": "video/mp4",
+  "storageClass": "STANDARD",
+  "contentDisposition": "inline",
+  "downloadTokens": [
+    "f58e651f-59fb-4b14-b82b-49df9d9150c2"
+  ],
+  "etag": "G00bD5W8IVHAKhEVc4IqJ4I2/g0",
+  "customMetadata": {},
+  "timeCreated": "2026-02-23T14:40:59.305Z",
+  "updated": "2026-02-23T14:40:59.305Z",
+  "size": 1553689,
+  "md5Hash": "kDBde25940SAvoo8ldWX3w==",
+  "crc32c": "965826720"
+}
