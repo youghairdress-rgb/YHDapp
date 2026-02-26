@@ -141,29 +141,62 @@ const loadReservationHistory = async (userId) => {
 const loadGallery = async (userId) => {
   const container = document.getElementById('gallery-container');
   try {
-    const storageRef = ref(storage, `users/${userId}/gallery`);
-    const res = await listAll(storageRef);
+    const paths = [
+      `ai-matching-results/${userId}`,
+      `ai-matching-uploads/${userId}`,
+      `galleries/${userId}`,
+      `guest_uploads/${userId}`,
+      `hair_app_uploads/${userId}`,
+      `pc_generated/${userId}`,
+      `uploads/${userId}`,
+      `users/${userId}/gallery`
+    ];
 
-    if (res.items.length === 0) {
+    let allItemsRefs = [];
+
+    // 並列で全パスからアイテムリストを取得
+    await Promise.all(paths.map(async (path) => {
+      try {
+        const directoryRef = ref(storage, path);
+        const res = await listAll(directoryRef);
+        allItemsRefs = allItemsRefs.concat(res.items);
+      } catch (e) {
+        console.warn(`[loadGallery] Could not list ${path}:`, e.message);
+      }
+    }));
+
+    if (allItemsRefs.length === 0) {
       container.innerHTML = '<p class="empty-msg">写真はまだありません。</p>';
       return;
     }
 
     // メタデータを取得して日付順にソートする準備
     const photoData = await Promise.all(
-      res.items.map(async (itemRef) => {
-        const url = await getDownloadURL(itemRef);
-        const metadata = await getMetadata(itemRef);
-        return { url, time: new Date(metadata.timeCreated) };
+      allItemsRefs.map(async (itemRef) => {
+        try {
+          const url = await getDownloadURL(itemRef);
+          const metadata = await getMetadata(itemRef);
+          return { url, time: new Date(metadata.timeCreated) };
+        } catch (e) {
+          console.warn(`[loadGallery] Failed to fetch metadata for ${itemRef.fullPath}:`, e.message);
+          return null;
+        }
       })
     );
 
-    photoData.sort((a, b) => b.time - a.time);
+    // null（エラー分）を除去してソート
+    const validPhotoData = photoData.filter(p => p !== null);
+    validPhotoData.sort((a, b) => b.time - a.time);
+
+    if (validPhotoData.length === 0) {
+      container.innerHTML = '<p class="empty-msg">写真はまだありません。</p>';
+      return;
+    }
 
     let html = '';
     let lastDate = '';
 
-    photoData.forEach((photo) => {
+    validPhotoData.forEach((photo) => {
       const dateStr = photo.time.toLocaleDateString('ja-JP', {
         year: 'numeric',
         month: 'numeric',
