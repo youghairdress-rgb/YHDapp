@@ -155,36 +155,53 @@ const loadGallery = async (userId) => {
     let allItemsRefs = [];
 
     // 並列で全パスからアイテムリストを取得
-    await Promise.all(paths.map(async (path) => {
+    const lists = await Promise.all(paths.map(async (path) => {
       try {
         const directoryRef = ref(storage, path);
         const res = await listAll(directoryRef);
-        allItemsRefs = allItemsRefs.concat(res.items);
+        // パス情報を持たせて返す
+        return res.items.map(item => ({ ref: item, parentPath: path }));
       } catch (e) {
         console.warn(`[loadGallery] Could not list ${path}:`, e.message);
+        return [];
       }
     }));
+
+    allItemsRefs = lists.flat();
 
     if (allItemsRefs.length === 0) {
       container.innerHTML = '<p class="empty-msg">写真はまだありません。</p>';
       return;
     }
 
-    // メタデータを取得して日付順にソートする準備
+    // メタデータを取得して日付順にソート、およびフィルタリング
     const photoData = await Promise.all(
-      allItemsRefs.map(async (itemRef) => {
+      allItemsRefs.map(async (itemObj) => {
         try {
-          const url = await getDownloadURL(itemRef);
+          const itemRef = itemObj.ref;
+          const parentPath = itemObj.parentPath;
           const metadata = await getMetadata(itemRef);
+          const contentType = metadata.contentType || '';
+
+          // フィルタリング設定:
+          // guest_uploads の場合は image/jpeg のみ表示
+          if (parentPath.includes('guest_uploads')) {
+            if (contentType !== 'image/jpeg') return null;
+          } else {
+            // 他のフォルダは画像全般を表示
+            if (!contentType.startsWith('image/')) return null;
+          }
+
+          const url = await getDownloadURL(itemRef);
           return { url, time: new Date(metadata.timeCreated) };
         } catch (e) {
-          console.warn(`[loadGallery] Failed to fetch metadata for ${itemRef.fullPath}:`, e.message);
+          console.warn(`[loadGallery] Failed to process ${itemObj.ref.fullPath}:`, e.message);
           return null;
         }
       })
     );
 
-    // null（エラー分）を除去してソート
+    // null（フィルタされた、またはエラー分）を除去してソート
     const validPhotoData = photoData.filter(p => p !== null);
     validPhotoData.sort((a, b) => b.time - a.time);
 
