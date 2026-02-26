@@ -8,6 +8,7 @@ import {
   addDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   Timestamp,
   query,
   orderBy,
@@ -20,6 +21,7 @@ const posMain = async (auth, user) => {
   let menuCategories = [];
   let selectedMenus = [];
   let editingSaleId = null;
+  let currentDraftId = null; // 追加: 現在編集中の下書きID
   let paymentMethod = null;
   let sourceBookingId = null;
   let sourceBookingData = null;
@@ -44,8 +46,8 @@ const posMain = async (auth, user) => {
   const pointDiscountInput = document.getElementById('point-discount');
   const deductionAmountInput = document.getElementById('deduction-amount');
   const totalEl = document.getElementById('total');
-  const todayPaymentRow = document.getElementById('today-payment-row'); // 追加
-  const todayPaymentEl = document.getElementById('today-payment'); // 追加
+  const todayPaymentRow = document.getElementById('today-payment-row');
+  const todayPaymentEl = document.getElementById('today-payment');
 
   // Cash Payment Elements
   const cashPaymentFields = document.getElementById('cash-payment-fields');
@@ -54,6 +56,11 @@ const posMain = async (auth, user) => {
 
   // Action elements
   const paymentBtns = document.querySelectorAll('.payment-btn');
+  const saveDraftBtn = document.getElementById('save-draft-btn'); // 追加
+  const openDraftsModalBtn = document.getElementById('open-drafts-modal-btn'); // 追加
+  const draftListModal = document.getElementById('draft-list-modal'); // 追加
+  const draftListContainer = document.getElementById('draft-list-container'); // 追加
+  const draftCountBadge = document.getElementById('draft-count-badge'); // 追加
   const completeSaleBtn = document.getElementById('complete-sale-btn');
 
   // --- Functions ---
@@ -74,7 +81,7 @@ const posMain = async (auth, user) => {
     const allMenus = menusSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      categoryId: doc.ref.parent.parent.id, // 親カテゴリのIDを取得
+      categoryId: doc.ref.parent.parent.id,
     }));
 
     menuCategories = categoriesSnapshot.docs.map((catDoc) => {
@@ -112,6 +119,9 @@ const posMain = async (auth, user) => {
         addMenuModal.style.display = 'none';
       });
     });
+
+    // 初期データロード時に下書き数も更新
+    updateDraftCount();
   };
 
   const addMenu = (menu) => {
@@ -164,8 +174,6 @@ const posMain = async (auth, user) => {
 
     const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
     const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
-
-    // 修正: 差引額のみ引く（ポイントは支払い手段として扱うため合計には含める）
     const total = taxExclusiveTotal + taxAmount - deductionAmount;
 
     subtotalEl.textContent = `¥${subtotal.toLocaleString()}`;
@@ -173,7 +181,6 @@ const posMain = async (auth, user) => {
     taxAmountEl.textContent = `¥${taxAmount.toLocaleString()}`;
     totalEl.textContent = `¥${total.toLocaleString()}`;
 
-    // ▼▼▼ 追加: 本日のお支払い金額の表示制御 ▼▼▼
     if (pointDiscount > 0) {
       const todayPaymentValue = total - pointDiscount;
       todayPaymentEl.textContent = `¥${todayPaymentValue.toLocaleString()}`;
@@ -181,9 +188,8 @@ const posMain = async (auth, user) => {
     } else {
       todayPaymentRow.style.display = 'none';
     }
-    // ▲▲▲ 追加ここまで ▲▲▲
 
-    calculateChange(total, pointDiscount); // ポイント額を渡す
+    calculateChange(total, pointDiscount);
     validateForm();
   };
 
@@ -205,21 +211,19 @@ const posMain = async (auth, user) => {
       const paymentDue = total - pointDiscount;
       const received = parseInt(amountReceivedInput.value) || 0;
 
-      // 預り金が請求額以上であるか確認
       if (received < paymentDue) {
         isValid = false;
       }
     }
 
     completeSaleBtn.disabled = !isValid;
+    // 一時保存は「顧客名」か「メニュー」のいずれかがあれば有効にする
+    saveDraftBtn.disabled = !(customerName || selectedMenus.length > 0);
   };
 
   const calculateChange = (currentTotal, currentPoints = 0) => {
     if (paymentMethod !== '現金') return;
-
     const received = parseInt(amountReceivedInput.value) || 0;
-
-    // おつり = (預り金 + ポイント) - 合計
     const change = received + currentPoints - currentTotal;
 
     if (change >= 0) {
@@ -229,6 +233,152 @@ const posMain = async (auth, user) => {
       changeDueEl.textContent = `不足 ¥${Math.abs(change).toLocaleString()}`;
       changeDueEl.style.color = 'var(--danger-color)';
     }
+  };
+
+  // --- Temporary Save (Draft) Logic ---
+  const saveDraft = async () => {
+    const customerName = customerInput.value.trim();
+    if (!customerName && selectedMenus.length === 0) return;
+
+    try {
+      saveDraftBtn.disabled = true;
+      saveDraftBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 保存中';
+
+      const draftData = {
+        customerName,
+        customerId: sourceCustomerId,
+        menus: selectedMenus,
+        discountValue: parseFloat(discountValueInput.value) || 0,
+        discountType: discountTypeSelect.value,
+        lengthFee: parseInt(lengthFeeSelect.value) || 0,
+        pointDiscount: Math.max(0, parseFloat(pointDiscountInput.value) || 0),
+        deductionAmount: parseFloat(deductionAmountInput.value) || 0,
+        paymentMethod: paymentMethod,
+        updatedAt: serverTimestamp(),
+        bookingId: sourceBookingId
+      };
+
+      if (currentDraftId) {
+        await setDoc(doc(db, 'pos_drafts', currentDraftId), draftData, { merge: true });
+      } else {
+        const docRef = await addDoc(collection(db, 'pos_drafts'), {
+          ...draftData,
+          createdAt: serverTimestamp()
+        });
+        currentDraftId = docRef.id;
+      }
+
+      alert('伝票を一時保存しました。');
+      updateDraftCount();
+
+    } catch (e) {
+      console.error('一時保存に失敗:', e);
+      alert('一時保存に失敗しました。');
+    } finally {
+      saveDraftBtn.disabled = false;
+      saveDraftBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> 一時保存';
+    }
+  };
+
+  const updateDraftCount = async () => {
+    try {
+      const snap = await getDocs(collection(db, 'pos_drafts'));
+      const count = snap.size;
+      if (count > 0) {
+        draftCountBadge.textContent = count;
+        draftCountBadge.style.display = 'block';
+      } else {
+        draftCountBadge.style.display = 'none';
+      }
+    } catch (e) {
+      console.warn('下書き数の取得失敗');
+    }
+  };
+
+  const openDraftList = async () => {
+    draftListContainer.innerHTML = '<p class="text-center">読み込み中...</p>';
+    draftListModal.style.display = 'flex';
+
+    try {
+      const q = query(collection(db, 'pos_drafts'), orderBy('updatedAt', 'desc'));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        draftListContainer.innerHTML = '<p class="text-center">保存された伝票はありません。</p>';
+        return;
+      }
+
+      let html = '';
+      snap.forEach((docSnap) => {
+        const d = docSnap.data();
+        const date = d.updatedAt ? d.updatedAt.toDate().toLocaleString('ja-JP') : '不明';
+        const itemsCount = d.menus ? d.menus.length : 0;
+        html += `
+          <div class="draft-item" data-id="${docSnap.id}">
+            <div class="draft-info">
+              <h4>${d.customerName || '(名前なし)'}</h4>
+              <p>${date} | ${itemsCount}項目</p>
+            </div>
+            <div class="draft-actions">
+              <button class="button-secondary small-btn load-draft-btn">開く</button>
+              <button class="button-danger small-btn delete-draft-btn"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+        `;
+      });
+      draftListContainer.innerHTML = html;
+
+      draftListContainer.querySelectorAll('.load-draft-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.target.closest('.draft-item').dataset.id;
+          const draft = snap.docs.find(d => d.id === id).data();
+          applyDraft(id, draft);
+        });
+      });
+
+      draftListContainer.querySelectorAll('.delete-draft-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (confirm('この一時保存データを削除してもよろしいですか？')) {
+            const id = e.target.closest('.draft-item').dataset.id;
+            await deleteDoc(doc(db, 'pos_drafts', id));
+            openDraftList();
+            updateDraftCount();
+            if (currentDraftId === id) currentDraftId = null;
+          }
+        });
+      });
+
+    } catch (e) {
+      draftListContainer.innerHTML = '<p class="error-msg">読み込みに失敗しました。</p>';
+    }
+  };
+
+  const applyDraft = (id, data) => {
+    currentDraftId = id;
+    customerInput.value = data.customerName || '';
+    selectedMenus = data.menus || [];
+    sourceCustomerId = data.customerId || null;
+    sourceBookingId = data.bookingId || null;
+    discountValueInput.value = data.discountValue || 0;
+    discountTypeSelect.value = data.discountType || 'yen';
+    lengthFeeSelect.value = data.lengthFee || 0;
+    pointDiscountInput.value = data.pointDiscount || 0;
+    deductionAmountInput.value = data.deductionAmount || 0;
+    paymentMethod = data.paymentMethod || null;
+
+    if (paymentMethod) {
+      paymentBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.method === paymentMethod));
+      cashPaymentFields.style.display = paymentMethod === '現金' ? 'block' : 'none';
+    } else {
+      paymentBtns.forEach(btn => btn.classList.remove('active'));
+      cashPaymentFields.style.display = 'none';
+    }
+
+    renderSelectedMenus();
+    calculateTotals();
+    draftListModal.style.display = 'none';
+    alert('保存された伝票を読み込みました。');
   };
 
   const completeSale = async () => {
@@ -251,48 +401,17 @@ const posMain = async (auth, user) => {
       discountType === 'yen' ? discountValue : Math.round(subtotal * (discountValue / 100));
     const taxExclusiveTotal = subtotal - discountAmount + lengthFee;
     const taxAmount = Math.floor(taxExclusiveTotal * 0.1);
-
-    // 修正: 差引額のみ引く（ポイントは合計に含む）
     const total = taxExclusiveTotal + taxAmount - deductionAmount;
 
     const now = Timestamp.now();
-
     const saleData = {
-      customerId: customerId,
-      customerName: customerName,
-      menus: selectedMenus,
-      subtotal: subtotal,
-      discountValue: discountValue,
-      discountType: discountType,
-      lengthFee: lengthFee,
-      pointDiscount: pointDiscount,
-      deductionAmount: deductionAmount,
-      total: total,
-      paymentMethod: paymentMethod,
-      createdAt: now,
-      bookingId: sourceBookingId,
+      customerId, customerName, menus: selectedMenus, subtotal,
+      discountValue, discountType, lengthFee, pointDiscount, deductionAmount, total,
+      paymentMethod, createdAt: now, bookingId: sourceBookingId,
       reservationTime: sourceBookingData ? sourceBookingData.startTime : now,
       amountReceived: paymentMethod === '現金' ? parseInt(amountReceivedInput.value) || 0 : null,
-      // おつり = (預り金 + ポイント) - 合計
-      changeDue:
-        paymentMethod === '現金'
-          ? (parseInt(amountReceivedInput.value) || 0) + pointDiscount - total
-          : null,
+      changeDue: paymentMethod === '現金' ? (parseInt(amountReceivedInput.value) || 0) + pointDiscount - total : null,
     };
-
-    if (editingSaleId) {
-      try {
-        const originalSaleDoc = await getDoc(doc(db, 'sales', editingSaleId));
-        if (originalSaleDoc.exists()) {
-          const originalData = originalSaleDoc.data();
-          saleData.createdAt = originalData.createdAt || now;
-          saleData.reservationTime =
-            originalData.reservationTime || (sourceBookingData ? sourceBookingData.startTime : now);
-        }
-      } catch (e) {
-        console.warn('元の会計情報の読み込みに失敗:', e);
-      }
-    }
 
     try {
       completeSaleBtn.disabled = true;
@@ -303,63 +422,33 @@ const posMain = async (auth, user) => {
       } else {
         await addDoc(collection(db, 'sales'), saleData);
         if (sourceBookingId) {
-          const bookingRef = doc(db, 'reservations', sourceBookingId);
-          await setDoc(bookingRef, { status: 'completed' }, { merge: true });
+          await setDoc(doc(db, 'reservations', sourceBookingId), { status: 'completed' }, { merge: true });
+        }
+      }
+
+      // 会計完了後、一時保存データがあれば削除
+      if (currentDraftId) {
+        try {
+          await deleteDoc(doc(db, 'pos_drafts', currentDraftId));
+        } catch (e) {
+          console.warn('下書きの削除に失敗しましたが会計は完了しています');
         }
       }
 
       if (customerId) {
-        const userRef = doc(db, 'users', customerId);
-        await updateDoc(userRef, {
-          lastVisit: saleData.reservationTime,
-        });
-
-        const customerNameEncoded = encodeURIComponent(customerName);
-        if (editingSaleId) {
-          alert('会計情報を更新しました。売上分析ページに戻ります。');
-          window.location.href = './sales.html';
-        } else {
-          window.location.href = `./customers.html?customerId=${customerId}&customerName=${customerNameEncoded}`;
-        }
+        await updateDoc(doc(db, 'users', customerId), { lastVisit: saleData.reservationTime });
+        window.location.href = editingSaleId ? './sales.html' : `./customers.html?customerId=${customerId}&customerName=${encodeURIComponent(customerName)}`;
       } else {
-        if (editingSaleId) {
-          alert('会計情報を更新しました。売上分析ページに戻ります。');
-          window.location.href = './sales.html';
-        } else {
-          alert('会計が完了しました。顧客管理ページに戻ります。');
-          window.location.href = './customers.html';
-        }
+        alert('会計が完了しました。');
+        window.location.href = editingSaleId ? './sales.html' : './customers.html';
       }
     } catch (error) {
-      console.error('会計処理に失敗:', error);
+      console.error('会計処理失敗:', error);
       alert('会計処理に失敗しました。');
       completeSaleBtn.disabled = false;
       completeSaleBtn.innerHTML = '<i class="fa-solid fa-check"></i> 会計完了';
       validateForm();
     }
-  };
-
-  const resetForm = () => {
-    customerInput.value = '';
-    selectedMenus = [];
-    discountValueInput.value = '0';
-    discountTypeSelect.value = 'yen';
-    lengthFeeSelect.value = '0';
-    pointDiscountInput.value = '0';
-    deductionAmountInput.value = '0';
-    paymentMethod = null;
-    if (cashPaymentFields) cashPaymentFields.style.display = 'none';
-    if (amountReceivedInput) amountReceivedInput.value = '';
-    if (changeDueEl) changeDueEl.textContent = '¥0';
-    editingSaleId = null;
-    sourceBookingId = null;
-    sourceBookingData = null;
-    sourceCustomerId = null;
-    sourceCustomerName = '';
-
-    paymentBtns.forEach((btn) => btn.classList.remove('active'));
-    renderSelectedMenus();
-    calculateTotals();
   };
 
   const checkUrlParams = async () => {
@@ -376,49 +465,25 @@ const posMain = async (auth, user) => {
         const saleDoc = await getDoc(doc(db, 'sales', saleId));
         if (saleDoc.exists()) {
           const sale = saleDoc.data();
-
           customerInput.value = sale.customerName;
           selectedMenus = sale.menus || [];
           sourceCustomerId = sale.customerId;
           sourceBookingId = sale.bookingId;
-
           discountValueInput.value = sale.discountValue || 0;
           discountTypeSelect.value = sale.discountType || 'yen';
           lengthFeeSelect.value = sale.lengthFee || 0;
           pointDiscountInput.value = sale.pointDiscount || 0;
           deductionAmountInput.value = sale.deductionAmount || 0;
-
-          if (sale.paymentMethod === '現金') {
-            amountReceivedInput.value = sale.amountReceived || 0;
-            cashPaymentFields.style.display = 'block';
-          } else {
-            cashPaymentFields.style.display = 'none';
-          }
-
           paymentMethod = sale.paymentMethod;
           if (paymentMethod) {
-            paymentBtns.forEach((btn) => {
-              btn.classList.toggle('active', btn.dataset.method === paymentMethod);
-            });
+            paymentBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.method === paymentMethod));
+            cashPaymentFields.style.display = paymentMethod === '現金' ? 'block' : 'none';
           }
-
-          if (sourceBookingId) {
-            const bookingDoc = await getDoc(doc(db, 'reservations', sourceBookingId));
-            if (bookingDoc.exists()) {
-              sourceBookingData = bookingDoc.data();
-            }
-          }
-
+          if (sale.amountReceived) amountReceivedInput.value = sale.amountReceived;
           renderSelectedMenus();
           calculateTotals();
-        } else {
-          showError('該当する会計履歴が見つかりません。');
         }
-      } catch (error) {
-        showError('会計履歴の読み込みに失敗しました。');
-      } finally {
-        showContent();
-      }
+      } finally { showContent(); }
     } else if (sourceBookingId) {
       showLoading('予約情報を読み込み中...');
       try {
@@ -432,11 +497,7 @@ const posMain = async (auth, user) => {
           renderSelectedMenus();
           calculateTotals();
         }
-      } catch (error) {
-        showError('予約情報の読み込みに失敗しました。');
-      } finally {
-        showContent();
-      }
+      } finally { showContent(); }
     } else if (sourceCustomerId && sourceCustomerName) {
       customerInput.value = sourceCustomerName;
       renderSelectedMenus();
@@ -449,29 +510,16 @@ const posMain = async (auth, user) => {
 
   // --- Event Listeners ---
   addMenuModalBtn.addEventListener('click', () => (addMenuModal.style.display = 'flex'));
-  addMenuModal
-    .querySelector('.close-modal-btn')
-    .addEventListener('click', () => (addMenuModal.style.display = 'none'));
+  addMenuModal.querySelector('.close-modal-btn').addEventListener('click', () => (addMenuModal.style.display = 'none'));
 
-  [
-    discountValueInput,
-    discountTypeSelect,
-    lengthFeeSelect,
-    pointDiscountInput,
-    deductionAmountInput,
-  ].forEach((el) => {
-    el.addEventListener('input', () => {
-      // ポイント計算などでポイント引数が変わるかもしれないので、ラッパーで呼ぶ
-      calculateTotals();
-    });
+  openDraftsModalBtn.addEventListener('click', openDraftList);
+  draftListModal.querySelector('.close-modal-btn').addEventListener('click', () => (draftListModal.style.display = 'none'));
+  saveDraftBtn.addEventListener('click', saveDraft);
+
+  [discountValueInput, discountTypeSelect, lengthFeeSelect, pointDiscountInput, deductionAmountInput].forEach(el => {
+    el.addEventListener('input', calculateTotals);
   });
-
-  if (amountReceivedInput) {
-    amountReceivedInput.addEventListener('input', () => {
-      calculateTotals();
-    });
-  }
-
+  if (amountReceivedInput) amountReceivedInput.addEventListener('input', calculateTotals);
   customerInput.addEventListener('input', validateForm);
 
   paymentBtns.forEach((btn) => {
@@ -479,21 +527,13 @@ const posMain = async (auth, user) => {
       paymentBtns.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
       paymentMethod = btn.dataset.method;
-
-      if (paymentMethod === '現金') {
-        cashPaymentFields.style.display = 'block';
-      } else {
-        cashPaymentFields.style.display = 'none';
-      }
-
+      cashPaymentFields.style.display = paymentMethod === '現金' ? 'block' : 'none';
       calculateTotals();
-      validateForm();
     });
   });
 
   completeSaleBtn.addEventListener('click', completeSale);
 
-  // --- Initial Load ---
   showLoading('会計ページを準備中...');
   await loadInitialData();
   await checkUrlParams();

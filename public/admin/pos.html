@@ -15,6 +15,10 @@
         <header>
             <a href="./index.html" class="back-button"><i class="fa-solid fa-chevron-left"></i> Menu</a>
             <h1>POS</h1>
+            <button id="open-drafts-modal-btn" class="header-action-btn" title="保存した伝票">
+                <i class="fa-solid fa-file-invoice"></i><span class="badge" id="draft-count-badge"
+                    style="display: none;">0</span>
+            </button>
         </header>
 
         <!-- ▼▼▼ 追加: クイックナビゲーション ▼▼▼ -->
@@ -160,23 +164,28 @@
                         </div>
                         <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
 
-                        <button id="complete-sale-btn" class="button-primary" disabled>
-                            <i class="fa-solid fa-check"></i> 会計完了
-                        </button>
+                        <div class="pos-action-buttons">
+                            <button id="save-draft-btn" class="button-secondary" style="flex: 1;">
+                                <i class="fa-solid fa-floppy-disk"></i> 一時保存
+                            </button>
+                            <button id="complete-sale-btn" class="button-primary" style="flex: 2;" disabled>
+                                <i class="fa-solid fa-check"></i> 会計完了
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <!-- メニュー追加モーダル -->
-        <div id="add-menu-modal" class="modal">
+        <!-- 保存された伝票モーダル -->
+        <div id="draft-list-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>メニュー/商品を追加</h2>
+                    <h2>保存した伝票の一覧</h2>
                 </div>
                 <div class="modal-body">
-                    <div id="menu-accordion-container">
-                        <!-- メニューがここに表示されます -->
+                    <div id="draft-list-container">
+                        <!-- 保存された伝票がここに表示されます -->
                     </div>
                 </div>
                 <div class="form-actions" style="justify-content: center;">
