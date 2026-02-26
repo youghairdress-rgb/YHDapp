@@ -42,8 +42,10 @@ const posMain = async (auth, user) => {
   const taxExclusiveTotalEl = document.getElementById('tax-exclusive-total');
   const taxAmountEl = document.getElementById('tax-amount');
   const pointDiscountInput = document.getElementById('point-discount');
-  const deductionAmountInput = document.getElementById('deduction-amount'); // 追加
+  const deductionAmountInput = document.getElementById('deduction-amount');
   const totalEl = document.getElementById('total');
+  const todayPaymentRow = document.getElementById('today-payment-row'); // 追加
+  const todayPaymentEl = document.getElementById('today-payment'); // 追加
 
   // Cash Payment Elements
   const cashPaymentFields = document.getElementById('cash-payment-fields');
@@ -170,6 +172,16 @@ const posMain = async (auth, user) => {
     taxExclusiveTotalEl.textContent = `¥${taxExclusiveTotal.toLocaleString()}`;
     taxAmountEl.textContent = `¥${taxAmount.toLocaleString()}`;
     totalEl.textContent = `¥${total.toLocaleString()}`;
+
+    // ▼▼▼ 追加: 本日のお支払い金額の表示制御 ▼▼▼
+    if (pointDiscount > 0) {
+      const todayPaymentValue = total - pointDiscount;
+      todayPaymentEl.textContent = `¥${todayPaymentValue.toLocaleString()}`;
+      todayPaymentRow.style.display = 'flex';
+    } else {
+      todayPaymentRow.style.display = 'none';
+    }
+    // ▲▲▲ 追加ここまで ▲▲▲
 
     calculateChange(total, pointDiscount); // ポイント額を渡す
     validateForm();

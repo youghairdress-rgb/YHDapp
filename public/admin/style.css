@@ -1374,6 +1374,18 @@ main {
     color: var(--primary-color);
 }
 
+.price-row.today-payment-row {
+    font-weight: bold;
+    font-size: 2.2rem;
+    margin-top: 0.5rem;
+    color: #e91e63;
+    /* Rose Pink */
+}
+
+.rose-pink {
+    color: #e91e63 !important;
+}
+
 .discount-input-group {
     display: flex;
     gap: 0.5rem;
