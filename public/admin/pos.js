@@ -16,6 +16,10 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 
+import paypayImg from '../img/PAYPAY.png';
+import aupayImg from '../img/AUpay.png';
+import dbaraiImg from '../img/D払い.png';
+
 const posMain = async (auth, user) => {
   // --- State ---
   let customers = [];
@@ -55,6 +59,10 @@ const posMain = async (auth, user) => {
   const amountReceivedInput = document.getElementById('amount-received');
   const changeDueEl = document.getElementById('change-due');
 
+  // QR Payment Image Elements
+  const qrPaymentImageContainer = document.getElementById('qr-payment-image-container');
+  const qrPaymentImage = document.getElementById('qr-payment-image');
+
   // Action elements
   const paymentBtns = document.querySelectorAll('.payment-btn');
   const saveDraftBtn = document.getElementById('save-draft-btn'); // 追加
@@ -65,6 +73,26 @@ const posMain = async (auth, user) => {
   const completeSaleBtn = document.getElementById('complete-sale-btn');
 
   // --- Functions ---
+  const updateQrImage = (method) => {
+    if (!qrPaymentImageContainer || !qrPaymentImage) return;
+    let imageSrc = '';
+    if (method === 'PayPay') {
+      imageSrc = paypayImg;
+    } else if (method === 'auPAY') {
+      imageSrc = aupayImg;
+    } else if (method === 'd払い') {
+      imageSrc = dbaraiImg;
+    }
+
+    if (imageSrc) {
+      qrPaymentImage.src = imageSrc;
+      qrPaymentImageContainer.style.display = 'block';
+    } else {
+      qrPaymentImageContainer.style.display = 'none';
+      qrPaymentImage.src = '';
+    }
+  };
+
   const loadInitialData = async () => {
     const [customersSnapshot, categoriesSnapshot, menusSnapshot] = await Promise.all([
       getDocs(query(collection(db, 'users'), orderBy('kana'))),
@@ -371,9 +399,11 @@ const posMain = async (auth, user) => {
     if (paymentMethod) {
       paymentBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.method === paymentMethod));
       cashPaymentFields.style.display = paymentMethod === '現金' ? 'block' : 'none';
+      updateQrImage(paymentMethod);
     } else {
       paymentBtns.forEach(btn => btn.classList.remove('active'));
       cashPaymentFields.style.display = 'none';
+      updateQrImage(null);
     }
 
     renderSelectedMenus();
@@ -479,6 +509,7 @@ const posMain = async (auth, user) => {
           if (paymentMethod) {
             paymentBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.method === paymentMethod));
             cashPaymentFields.style.display = paymentMethod === '現金' ? 'block' : 'none';
+            updateQrImage(paymentMethod);
           }
           if (sale.amountReceived) amountReceivedInput.value = sale.amountReceived;
           renderSelectedMenus();
@@ -529,6 +560,7 @@ const posMain = async (auth, user) => {
       btn.classList.add('active');
       paymentMethod = btn.dataset.method;
       cashPaymentFields.style.display = paymentMethod === '現金' ? 'block' : 'none';
+      updateQrImage(paymentMethod);
       calculateTotals();
     });
   });
