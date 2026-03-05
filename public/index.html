@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YHD 予約サイト</title>
-        <link rel="icon" href="./img/YHDlogo2.png" type="image/png">
+    <link rel="icon" href="./img/YHDlogo2.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="user-style.css">
 </head>
+
 <body>
     <div id="app-container">
         <header class="user-header">
@@ -34,6 +36,17 @@
             <div id="step-1" class="step-content active">
                 <h2>メニュー選択</h2>
                 <p class="menu-select-description">ご希望のメニューを<span style="color: #F88379;">【複数選択可能】</span>です</p>
+
+                <!-- ▼▼▼ 追加: 履歴メニュー表示領域 ▼▼▼ -->
+                <div id="history-menu-container" style="display: none; margin-bottom: 20px;">
+                    <h3
+                        style="font-size: 1rem; color: #333; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-history" style="color: #0ABAB5;"></i> 前回のご来店メニュー
+                    </h3>
+                    <div id="history-menu-list"></div>
+                </div>
+                <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
                 <div id="menu-categories-container"></div>
             </div>
 
@@ -56,7 +69,7 @@
                         </table>
                     </div>
                 </div>
-                 <div class="form-group">
+                <div class="form-group">
                     <label for="user-requests">ご要望</label>
                     <textarea id="user-requests" rows="3" placeholder="（例）静かに過ごしたいです"></textarea>
                 </div>
@@ -64,24 +77,28 @@
 
             <!-- Step 3: Confirmation -->
             <div id="step-3" class="step-content">
-                 <h2>ご予約内容の確認</h2>
+                <h2>ご予約内容の確認</h2>
                 <div class="confirmation-summary">
-                     <p><i class="fas fa-calendar-alt icon"></i><strong>日時:</strong> <span id="confirm-datetime"></span></p>
+                    <p><i class="fas fa-calendar-alt icon"></i><strong>日時:</strong> <span id="confirm-datetime"></span>
+                    </p>
                     <p><i class="fas fa-cut icon"></i><strong>選択メニュー:</strong></p>
                     <ul id="confirm-menu-list"></ul>
-                    <p><i class="fas fa-clock icon"></i><strong>所要時間の目安:</strong> <span id="confirm-duration"></span></p>
-                    <p><i class="fas fa-yen-sign icon"></i><strong>合計金額 (概算):</strong> <span id="confirm-price"></span></p>
-                    
+                    <p><i class="fas fa-clock icon"></i><strong>所要時間の目安:</strong> <span id="confirm-duration"></span>
+                    </p>
+                    <p><i class="fas fa-yen-sign icon"></i><strong>合計金額 (概算):</strong> <span id="confirm-price"></span>
+                    </p>
+
                     <div id="confirm-requests-wrapper" style="display: none;">
                         <p><i class="fas fa-comment icon"></i><strong>ご要望:</strong></p>
                         <p id="confirm-requests" style="padding-left: 1.8rem; white-space: pre-wrap;"></p>
                     </div>
-                    
+
                     <!-- ▼▼▼ 修正: お名前の「入力欄」を表示用の「確認欄」に変更 ▼▼▼ -->
                     <div class="form-group">
-                         <label for="customer-name">お名前</label>
-                         <!-- <input type="text" id="customer-name" required placeholder="例：山田花子"> -->
-                         <p id="confirm-name" style="font-size: 1.2rem; font-weight: bold; margin: 0; padding: 0.5rem 0;">読み込み中...</p>
+                        <label for="customer-name">お名前</label>
+                        <!-- <input type="text" id="customer-name" required placeholder="例：山田花子"> -->
+                        <p id="confirm-name"
+                            style="font-size: 1.2rem; font-weight: bold; margin: 0; padding: 0.5rem 0;">読み込み中...</p>
                     </div>
                     <!-- ▲▲▲ 修正ここまで ▲▲▲ -->
                 </div>
@@ -95,7 +112,7 @@
                 <p>詳細はLINEのメッセージをご確認ください。</p>
                 <p class="close-instruction">右上の( ✕ )でトーク画面にお戻りください</p>
             </div>
-            
+
             <div class="summary-footer">
                 <button id="back-btn" class="button-secondary">戻る</button>
                 <!-- ▼▼▼ 修正箇所 ▼▼▼ -->
@@ -120,5 +137,5 @@
     <!-- Vite handles module scripts automatically. Ensure the path is relative to the root public folder -->
     <script type="module" src="./main.js"></script>
 </body>
-</html>
 
+</html>

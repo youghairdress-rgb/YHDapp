@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   onSnapshot,
   collectionGroup,
+  limit,
 } from 'firebase/firestore';
 // ▲▲▲ 修正ここまで ▲▲▲
 
@@ -67,18 +68,30 @@ const main = async () => {
     if (!salonSettings || !salonSettings.businessHours) {
       throw new Error('サロン情報が設定されていません。管理者にご連絡ください。');
     }
-    // ▼▼▼ 修正: メニュー読み込み失敗時のエラーハンドリングを強化 ▼▼▼
+
     let menuCategories;
     try {
       menuCategories = await loadMenus();
     } catch (menuError) {
       console.error(menuError);
-      showError(menuError.message); // loadMenus からのエラーメッセージを表示
-      return; // 処理を中断
+      showError(menuError.message);
+      return;
     }
-    // ▲▲▲ 修正ここまで ▲▲▲
 
     const allMenus = menuCategories.flatMap((cat) => cat.menus);
+
+    // --- 履歴メニューの読み込み ---
+    try {
+      await loadHistoryMenus(profile.userId, allMenus, (selectedIds) => {
+        // 履歴から選択された時の処理
+        state.selectedMenuIds = [...new Set([...state.selectedMenuIds, ...selectedIds])];
+        renderMenus(); // 再描画
+        updateFooterSummary();
+        updateNavigation();
+      });
+    } catch (e) {
+      console.warn('履歴メニューの取得に失敗:', e);
+    }
 
     let state = {
       currentStep: 1,
@@ -589,6 +602,65 @@ const main = async () => {
         showContent();
         nextBtn.disabled = false;
         nextBtn.textContent = '予約を確定する';
+      }
+    };
+
+    const loadHistoryMenus = async (userId, allMenus, onSelect) => {
+      const container = document.getElementById('history-menu-container');
+      const listEl = document.getElementById('history-menu-list');
+      if (!container || !listEl) return;
+
+      try {
+        const q = query(
+          collection(db, 'sales'),
+          where('customerId', '==', userId),
+          orderBy('createdAt', 'desc'),
+          limit(5)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          container.style.display = 'none';
+          return;
+        }
+
+        let html = '';
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const date = data.createdAt.toDate();
+          const dateStr = date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+          const menuNames = data.menus ? data.menus.map(m => m.name).join(' / ') : 'メニュー情報なし';
+          const menuIds = data.menus ? data.menus.map(m => m.id) : [];
+
+          html += `
+        <div class="history-menu-card" style="background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="font-size: 0.8rem; color: #666; margin-bottom: 4px;">${dateStr} のご来店</div>
+          <div style="font-size: 0.95rem; font-weight: bold; margin-bottom: 8px; color: #333;">${menuNames}</div>
+          <button class="button-primary small-btn apply-history-btn" data-ids='${JSON.stringify(menuIds)}' style="width: auto; padding: 6px 12px; font-size: 0.8rem; border-radius: 4px;">
+            このメニューを選択
+          </button>
+        </div>
+      `;
+        });
+
+        listEl.innerHTML = html;
+        container.style.display = 'block';
+
+        // イベントリスナーの追加
+        listEl.querySelectorAll('.apply-history-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const ids = JSON.parse(btn.dataset.ids);
+            // 現在の全てのメニューの中から、存在するものだけをフィルタリング（安全策）
+            const validIds = ids.filter(id => allMenus.some(m => m.id === id));
+            if (validIds.length > 0) {
+              onSelect(validIds);
+            }
+          });
+        });
+
+      } catch (error) {
+        console.error('履歴メニュー取得エラー:', error);
+        container.style.display = 'none';
       }
     };
 

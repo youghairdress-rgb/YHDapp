@@ -50,6 +50,26 @@
                     </div>
                 </section>
 
+                <!-- ▼▼▼ 追加: 最新の予約状況 ▼▼▼ -->
+                <section id="latest-reservation-section" class="mypage-section" style="display: none;">
+                    <div class="card"
+                        style="padding: 20px; background: white; border-radius: 12px; border-left: 5px solid #0ABAB5; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                        <h3
+                            style="margin-top: 0; margin-bottom: 15px; color: #333; font-size: 1.1rem; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                            最新のご予約状況</h3>
+                        <div id="latest-reservation-details" style="margin-bottom: 15px;">
+                            <!-- 予約内容がJSで挿入されます -->
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-change-reservation" class="button-primary"
+                                style="flex: 1; padding: 10px;">変更</button>
+                            <button id="btn-cancel-reservation" class="button-danger"
+                                style="flex: 1; padding: 10px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">キャンセル</button>
+                        </div>
+                    </div>
+                </section>
+                <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
+
                 <!-- タブ切り替え -->
                 <div class="mypage-tabs">
                     <button class="tab-button active" data-tab="history">予約履歴</button>

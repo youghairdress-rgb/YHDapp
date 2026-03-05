@@ -12,6 +12,8 @@ import {
   serverTimestamp,
   addDoc,
   setDoc,
+  deleteDoc,
+  limit,
 } from 'firebase/firestore';
 import {
   ref,
@@ -65,7 +67,11 @@ const main = async () => {
     initTabs();
 
     // データの読み込み
-    await Promise.all([loadReservationHistory(profile.userId), loadGallery(profile.userId)]);
+    await Promise.all([
+      loadLatestReservation(profile.userId),
+      loadReservationHistory(profile.userId),
+      loadGallery(profile.userId),
+    ]);
 
     showContent();
 
@@ -135,6 +141,94 @@ const loadReservationHistory = async (userId) => {
   } catch (error) {
     console.error('履歴取得エラー:', error);
     listEl.innerHTML = '<p class="error-msg">履歴の取得に失敗しました。</p>';
+  }
+};
+
+// --- Latest Reservation Logic ---
+const loadLatestReservation = async (userId) => {
+  const sectionEl = document.getElementById('latest-reservation-section');
+  const detailsEl = document.getElementById('latest-reservation-details');
+  const btnChange = document.getElementById('btn-change-reservation');
+  const btnCancel = document.getElementById('btn-cancel-reservation');
+
+  if (!sectionEl || !detailsEl) return;
+
+  try {
+    const now = Timestamp.now();
+    const q = query(
+      collection(db, 'reservations'),
+      where('customerId', '==', userId),
+      where('startTime', '>', now),
+      orderBy('startTime', 'asc'),
+      limit(1)
+    );
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      sectionEl.style.display = 'none';
+      return;
+    }
+
+    const docSnap = querySnapshot.docs[0];
+    const data = docSnap.data();
+    const reservationId = docSnap.id;
+
+    const start = data.startTime.toDate();
+    const dateStr = start.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'short',
+    });
+    const timeStr = start.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
+    const menus = data.selectedMenus.map((m) => m.name).join(', ');
+
+    detailsEl.innerHTML = `
+      <p style="margin: 0 0 8px 0;"><strong>日時:</strong> ${dateStr} ${timeStr}</p>
+      <p style="margin: 0;"><strong>メニュー:</strong> ${menus}</p>
+    `;
+    sectionEl.style.display = 'block';
+
+    // Event Listeners for Buttons
+    const handleReservationDelete = async (actionText, confirmText, successAlertText, redirectUrl) => {
+      if (confirm(confirmText)) {
+        try {
+          btnChange.disabled = true;
+          btnCancel.disabled = true;
+          await deleteDoc(doc(db, 'reservations', reservationId));
+          if (successAlertText) alert(successAlertText);
+          if (redirectUrl) {
+            window.location.href = redirectUrl;
+          } else {
+            // Cancel -> Just hide the section
+            sectionEl.style.display = 'none';
+          }
+        } catch (err) {
+          console.error(`${actionText}エラー:`, err);
+          alert(`予約の${actionText}に失敗しました。`);
+          btnChange.disabled = false;
+          btnCancel.disabled = false;
+        }
+      }
+    };
+
+    btnChange.onclick = () => handleReservationDelete(
+      '変更',
+      '現在のご予約を削除しても、よろしいですか？\n再度ご予約をお願いいたします',
+      null, // No alert configured for change
+      './index.html'
+    );
+
+    btnCancel.onclick = () => handleReservationDelete(
+      'キャンセル',
+      '現在のご予約を削除してもよろしいですか？',
+      'ご予約はキャンセルされました。\nまたのご予約をお待ちしております',
+      null // No redirect for cancel
+    );
+
+  } catch (error) {
+    console.error('最新予約取得エラー:', error);
+    sectionEl.style.display = 'none';
   }
 };
 
