@@ -1,71 +1,43 @@
 rules_version = '2';
-
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // --- Helper Functions ---
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
     function isAdmin() {
-      // リクエストしているユーザーが管理者権限を持っているか確認
-      return request.auth != null && request.auth.token.admin == true;
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) ||
+        (
+          firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        )
+      );
     }
 
-    // ★★★ 修正: 顧客のマイページ用ギャラリールール ★★★
-    // AI診断アプリ(顧客本人)と管理アプリ(管理者)の両方からアクセスできるようにする
-    match /users/{userId}/gallery/{allPaths=**} {
-      // 読み書き: 顧客本人 または 管理者
-      allow read, write: if request.auth.uid == userId || isAdmin();
+    match /public/{allPaths=**} { allow read: if true; allow write: if isAdmin(); }
+    match /menus/{allPaths=**} { allow read: if true; allow write: if isAdmin(); }
+    match /settings/{allPaths=**} { allow read: if true; allow write: if isAdmin(); }
+    match /admin/{allPaths=**} { allow read, write: if isAdmin(); }
+
+    match /users/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
+    match /customers/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
+    match /diagnosis/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
+    match /hair_images/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
+    match /ai_matching/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
+
+    match /uploads/{fileName} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.size < 10 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
+      allow update, delete: if isAdmin();
     }
-    
-    // Diagnosis temporary uploads (Legacy/Other)
-    match /uploads/{userId}/{allPaths=**} {
-      allow read, write: if request.auth.uid == userId || isAdmin();
-    }
-    
-    // AI Matching App Uploads
-    match /ai-matching-uploads/{allPaths=**} {
-      allow read, write: if true; 
+    match /images/{fileName} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.contentType.matches('image/.*');
+      allow update, delete: if isAdmin();
     }
 
-    // AI Matching App Results
-    match /ai-matching-results/{allPaths=**} {
-      allow read, write: if true;
-    }
-    // ⚠️ 注意: 以下のパスは認証なしでアクセス可能（開発用）
-    // 本番運用時は request.auth != null のチェックを追加してください
-    match /ai-analysis/{allPaths=**} {
-      allow read, write: if true;
-    }
-    match /ai-matching-uploads/{allPaths=**} {
-      allow read, write: if true;
-    }
-    match /ai-matching-results/{allPaths=**} {
-      allow read, write: if true;
-    }
-    match /guest_uploads/{allPaths=**} {
-      allow read, write: if true;
-    }
-    match /hair_app_uploads/{allPaths=**} {
-      allow read, write: if true;
-    }
-    match /pc_generated/{allPaths=**} {
-      allow read, write: if true;
-    }
-    // ★★★ 修正ここまで ▲▲▲★★★
+    match /generated/{allPaths=**} { allow read: if true; allow write: if isAdmin(); }
 
-    // ★★★ 修正: 口コミ用の一時画像保存パス ★★★
-    match /temp_reviews/{allPaths=**} {
-      allow read, write: if request.auth != null;
-    }
-    // ★★★ 修正ここまで ▲▲▲★★★
-
-    // --- (参考) 古いルールパス ---
-    // 他の機能で使われている可能性を考慮し、残しておきます
-    match /galleries/{userId}/{allPaths=**} {
-      allow read: if request.auth.uid == userId || isAdmin();
-      allow write: if isAdmin();
-    }
-    match /diagnoses/{diagnosesId}/{allPaths=**} {
-       allow read, write: if isAdmin() || request.auth.uid == diagnosesId;
-    }
+    match /{allPaths=**} { allow read, write: if false; }
   }
 }
