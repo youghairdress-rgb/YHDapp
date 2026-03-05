@@ -1,43 +1,8 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    function isAuthenticated() { return request.auth != null; }
-    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
-    function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.admin == true ||
-        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) ||
-        (
-          firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
-        )
-      );
+    match /{allPaths=**} {
+      allow read, write: if true;
     }
-
-    match /public/{allPaths=**} { allow read: if true; allow write: if isAdmin(); }
-    match /menus/{allPaths=**} { allow read: if true; allow write: if isAdmin(); }
-    match /settings/{allPaths=**} { allow read: if true; allow write: if isAdmin(); }
-    match /admin/{allPaths=**} { allow read, write: if isAdmin(); }
-
-    match /users/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
-    match /customers/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
-    match /diagnosis/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
-    match /hair_images/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
-    match /ai_matching/{userId}/{allPaths=**} { allow read, write: if isOwner(userId) || isAdmin(); }
-
-    match /uploads/{fileName} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.size < 10 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
-      allow update, delete: if isAdmin();
-    }
-    match /images/{fileName} {
-      allow read: if true;
-      allow create: if isAuthenticated() && request.resource.contentType.matches('image/.*');
-      allow update, delete: if isAdmin();
-    }
-
-    match /generated/{allPaths=**} { allow read: if true; allow write: if isAdmin(); }
-
-    match /{allPaths=**} { allow read, write: if false; }
   }
 }
