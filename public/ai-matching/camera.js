@@ -78,27 +78,71 @@ window.triggerCamera = (type) => {
     }
 };
 
+// 画像をリサイズ・圧縮するユーティリティ関数
+async function compressImage(file, maxWidth = 1280, quality = 0.8) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // アスペクト比を維持してリサイズ
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxWidth) {
+                        width *= maxWidth / height;
+                        height = maxWidth;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // JPEG形式、指定品質で圧縮
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(compressedDataUrl);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 // ファイル選択時のプレビュー表示
-window.handleFileSelect = (event, type) => {
+window.handleFileSelect = async (event, type) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-        alert('画像サイズが大きすぎます（5MB以下にしてください）。');
-        return;
-    }
+    // UI状態: 処理中を表示（必要に応じて）
+    const placeholder = document.getElementById(`placeholder-${type}`);
+    const originalText = placeholder.innerHTML;
+    placeholder.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 圧縮中...';
 
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const result = e.target.result;
-        appState.photos[type] = result;
+    try {
+        // 画像を自動圧縮（1280px以内、品質0.8）
+        const compressedDataUrl = await compressImage(file);
+        appState.photos[type] = compressedDataUrl;
 
-        document.getElementById(`placeholder-${type}`).style.display = 'none';
+        placeholder.style.display = 'none';
+        placeholder.innerHTML = originalText; // 元に戻す
+
         const previewDiv = document.getElementById(`preview-${type}`);
         previewDiv.style.display = 'flex';
-        previewDiv.querySelector('img').src = result;
-    };
-    reader.readAsDataURL(file);
+        previewDiv.querySelector('img').src = compressedDataUrl;
+    } catch (error) {
+        console.error('Image compression failed:', error);
+        alert('画像の処理に失敗しました。別の画像をお試しください。');
+        placeholder.innerHTML = originalText;
+    }
 };
 
 // ヘルパー: 画像アップロード & ギャラリー同期

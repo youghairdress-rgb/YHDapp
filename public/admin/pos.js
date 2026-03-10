@@ -19,6 +19,7 @@ import {
 import paypayImg from '../img/PAYPAY.png';
 import aupayImg from '../img/AUpay.png';
 import dbaraiImg from '../img/D払い.png';
+import merpayImg from '../img/メルペイ.png';
 
 const posMain = async (auth, user) => {
   // --- State ---
@@ -82,6 +83,8 @@ const posMain = async (auth, user) => {
       imageSrc = aupayImg;
     } else if (method === 'd払い') {
       imageSrc = dbaraiImg;
+    } else if (method === 'メルペイ') {
+      imageSrc = merpayImg;
     }
 
     if (imageSrc) {

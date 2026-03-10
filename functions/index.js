@@ -137,6 +137,12 @@ exports.notifyAdminOnReservationDelete = functionsV1.region("asia-northeast1").f
   const booking = snap.data();
   if (!booking || !booking.customerName || !booking.startTime) return null;
 
+  // 管理画面からの削除(deletedBy === 'admin')の場合は通知をスキップ
+  if (booking.deletedBy === 'admin') {
+    console.log(`Reservation for ${booking.customerName} was deleted by admin. Skipping notification.`);
+    return null;
+  }
+
   const { customerName, startTime, selectedMenus } = booking;
   const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
   const adminIdsString = ADMIN_LINE_USER_IDS.value();
@@ -182,12 +188,22 @@ exports.mergeUserData = functionsV1.region("asia-northeast1").https.onCall(async
 
   const oldUserData = oldUserSnap.data();
   const newUserRef = db.doc(`users/${newUserId}`);
+  const newUserSnap = await newUserRef.get();
+  const currentNewUserData = newUserSnap.exists ? newUserSnap.data() : {};
+
+  // 過去のIDリストを管理（配列として保持・追加）
+  let prevIds = currentNewUserData.prevIds || [];
+  if (!prevIds.includes(oldUserId)) {
+    prevIds.push(oldUserId);
+  }
+
   const mergedData = {
     ...oldUserData,
     ...newUserData,
     lineUserId: profile.userId,
     lineDisplayName: profile.displayName,
     isLineUser: true,
+    prevIds: prevIds, // 統合元のIDを記録
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
   batch.set(newUserRef, mergedData, { merge: true });
@@ -405,4 +421,53 @@ exports.getErrorStats = functionsV1.region("asia-northeast1").https.onCall(async
   const stats = await getErrorStats(days);
   return { success: true, stats: stats };
 });
+
+// --- 5. Scheduled Tasks ---
+const {
+  sendScheduledPaymentMessages,
+  sendScheduledBirthdayMessages,
+  sendScheduledCycleAlerts
+} = require("./src/controllers/scheduledMessages");
+
+/**
+ * 毎日 20:00 に実行 (会計後のサンクスメッセージ)
+ */
+exports.scheduledPaymentThanks = functionsV1.region("asia-northeast1").pubsub
+  .schedule("0 20 * * *")
+  .timeZone("Asia/Tokyo")
+  .onRun(async (context) => {
+    const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
+    await sendScheduledPaymentMessages(context, {
+      lineChannelAccessToken: channelAccessToken
+    });
+    return null;
+  });
+
+/**
+ * 毎月 1日 09:00 に実行 (誕生月メッセージ)
+ */
+exports.scheduledBirthday = functionsV1.region("asia-northeast1").pubsub
+  .schedule("0 9 1 * *")
+  .timeZone("Asia/Tokyo")
+  .onRun(async (context) => {
+    const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
+    await sendScheduledBirthdayMessages(context, {
+      lineChannelAccessToken: channelAccessToken
+    });
+    return null;
+  });
+
+/**
+ * 毎日 10:00 に実行 (来店周期リマインド)
+ */
+exports.scheduledCycleAlert = functionsV1.region("asia-northeast1").pubsub
+  .schedule("0 10 * * *")
+  .timeZone("Asia/Tokyo")
+  .onRun(async (context) => {
+    const channelAccessToken = LINE_CHANNEL_ACCESS_TOKEN.value();
+    await sendScheduledCycleAlerts(context, {
+      lineChannelAccessToken: channelAccessToken
+    });
+    return null;
+  });
 

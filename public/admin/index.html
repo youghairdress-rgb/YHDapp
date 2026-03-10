@@ -16,7 +16,6 @@
             <h1>Today</h1>
         </header>
 
-        <!-- ▼▼▼ 修正: クイックナビゲーション (他のページと統一) ▼▼▼ -->
         <nav class="quick-nav-menu card">
             <a href="./booking.html" class="quick-nav-button"><i class="fa-solid fa-calendar-days"></i>Reserve</a>
             <a href="./pos.html" class="quick-nav-button"><i class="fa-solid fa-cash-register"></i>POS</a>
@@ -25,39 +24,28 @@
             <a href="./menu.html" class="quick-nav-button"><i class="fa-solid fa-scissors"></i>MENU</a>
             <a href="./settings.html" class="quick-nav-button"><i class="fa-solid fa-gear"></i>Salon</a>
         </nav>
-        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
-
-
 
         <main id="content-container" style="display: none;">
 
-            <!-- ▼▼▼ 修正: dashboard-grid から dashboard-main に変更し、サイドバーを削除 ▼▼▼ -->
             <div class="dashboard-main">
-                <!-- <div class="dashboard-main"> (ネストされていたものを解除) -->
                 <div class="card">
                     <h2 id="today-date"></h2>
                     <div class="today-schedule-container">
                         <div class="time-labels" id="time-labels">
-                            <!-- JSで10時から20時までのラベルを生成 -->
                         </div>
                         <div id="today-schedule-timeline" class="today-schedule-timeline">
-                            <!-- 本日の予約がここにJSで描画されます -->
                         </div>
                     </div>
                 </div>
                 <div class="card">
                     <h2 class="card-subtitle">連絡事項</h2>
                     <div class="memo-container">
-                        <!-- ▼▼▼ 修正 ▼▼▼ -->
                         <textarea id="today-memo" placeholder="スタッフへの連絡事項や今日気をつけることなどを記入..."
                             inputmode="kana"></textarea>
-                        <!-- ▲▲▲ 修正 ▲▲▲ -->
                         <button id="save-memo-btn" class="button-primary" style="margin-top: 0.5rem;">メモを保存</button>
                     </div>
                 </div>
 
-                <!-- ▼▼▼ 日計表示カード (移動) ▼▼▼ -->
-                <!-- ▼▼▼ 変更: 日計表示トグルボタンと非表示コンテナ ▼▼▼ -->
                 <button id="toggle-daily-stats-btn" class="button-secondary" style="width: 100%; margin-bottom: 1rem;">
                     <i class="fa-solid fa-eye"></i> 本日の売上を表示
                 </button>
@@ -72,14 +60,8 @@
                         <span id="daily-sales-count" class="stat-value">0人</span>
                     </div>
                 </div>
-                <!-- ▲▲▲ 変更ここまで ▲▲▲ -->
-                <!-- ▲▲▲ 移動ここまで ▲▲▲ -->
-                <!-- </div> (ネストされていたものを解除) -->
-                <!-- ▼▼▼ 削除: dashboard-sidebar を削除 ▼▼▼ -->
-                -->
             </div>
 
-            <!-- 1. 予約詳細表示モーダル -->
             <div id="booking-detail-modal" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -100,12 +82,10 @@
                         </div>
                     </div>
                     <div id="normal-booking-actions" class="modal-footer grid-buttons">
-                        <!-- ▼▼▼ 追加: AIアクションボタン (2段構成) ▼▼▼ -->
                         <input type="file" id="photo-upload-input" accept="image/*" capture="environment"
                             style="display: none;">
                         <div class="ai-actions-grid"
                             style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; justify-items: center;">
-                            <!-- 上段 -->
                             <button class="icon-button ai-tool-btn camera-btn" id="detail-camera-btn" title="写真"><i
                                     class="fa-solid fa-camera"></i></button>
                             <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-mobile-upload-link"
@@ -114,8 +94,6 @@
                                 title="髪色アプリ(撮影)"><i class="fa-solid fa-mobile-screen"></i></a>
                             <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-matching-camera-link"
                                 title="マッチングアプリ(camera)"><i class="fa-solid fa-camera-retro"></i></a>
-
-                            <!-- 下段 -->
                             <a href="#" target="_blank" class="icon-button ai-tool-btn"
                                 id="detail-prompt-generator-link" title="プロンプトジェネレーター"><i
                                     class="fa-solid fa-wand-magic"></i></a>
@@ -126,8 +104,6 @@
                             <a href="#" target="_blank" class="icon-button ai-tool-btn" id="detail-matching-result-link"
                                 title="マッチングアプリ(result)"><i class="fa-solid fa-scissors"></i></a>
                         </div>
-                        <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
-
                         <a href="#" id="detail-pos-link" class="button-primary"><i
                                 class="fa-solid fa-cash-register"></i> 会計へ進む</a>
                         <button id="detail-edit-btn" class="button-secondary"><i class="fa-solid fa-pen-to-square"></i>
@@ -147,7 +123,6 @@
                 </div>
             </div>
 
-            <!-- 2. 空き時間クリック時のアクション選択モーダル -->
             <div id="timeslot-action-modal" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -165,7 +140,6 @@
                 </div>
             </div>
 
-            <!-- 3. 予約追加/編集モーダル -->
             <div id="booking-edit-modal" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -175,14 +149,10 @@
                         <div class="modal-body">
                             <div class="form-group">
                                 <label for="customer-input">顧客:</label>
-                                <!-- ▼▼▼ 修正 ▼▼▼ -->
                                 <input type="text" id="customer-input" list="customer-datalist" class="input-field"
                                     placeholder="名前を入力または選択" inputmode="kana" required>
-                                <!-- ▲▲▲ 修正 ▲▲▲ -->
                                 <datalist id="customer-datalist"></datalist>
                             </div>
-
-                            <!-- ★★★ 新規顧客用の入力欄を追加 ★★★ -->
                             <div id="new-customer-fields"
                                 style="display: none; border-left: 3px solid var(--primary-color); padding-left: 1rem; margin-bottom: 1rem;">
                                 <p style="font-size: 0.9rem; color: var(--light-text-color); margin-top: 0;">
@@ -190,16 +160,13 @@
                                 </p>
                                 <div class="form-group">
                                     <label for="new-customer-kana">ふりがな <span class="required">*</span></label>
-                                    <!-- ▼▼▼ 修正 ▼▼▼ -->
                                     <input type="text" id="new-customer-kana" class="input-field" inputmode="kana">
-                                    <!-- ▲▲▲ 修正 ▲▲▲ -->
                                 </div>
                                 <div class="form-group">
                                     <label for="new-customer-phone">電話番号</label>
                                     <input type="tel" id="new-customer-phone" class="input-field">
                                 </div>
                             </div>
-
                             <div class="form-group">
                                 <label>メニュー (複数選択可):</label>
                                 <div id="menu-accordion-container"></div>
@@ -212,13 +179,11 @@
                                 <label for="end-time">終了時間:</label>
                                 <select id="end-time" class="input-field" required></select>
                             </div>
-                            <!-- ★★★ 追加: 管理者メモ入力欄 ★★★ -->
                             <div class="form-group">
                                 <label for="admin-notes">管理者メモ:</label>
                                 <textarea id="admin-notes" class="input-field" placeholder="予約に関するメモを入力..."
                                     rows="3"></textarea>
                             </div>
-                            <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
                         </div>
                         <div class="form-actions">
                             <button type="button" id="delete-booking-btn" class="button-danger"
@@ -230,7 +195,6 @@
                 </div>
             </div>
 
-            <!-- ▼▼▼ 4. 予約不可設定モーダル (新規追加) ▼▼▼ -->
             <div id="unavailable-modal" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -254,24 +218,21 @@
                     </form>
                 </div>
             </div>
-            <!-- ▲▲▲ 新規追加ここまで ▲▲▲ -->
 
-    </div>
-    <!-- /.dashboard-main -->
-    </main>
+        </main>
 
-    <div id="loading-container" style="display: flex;">
-        <div class="spinner"></div>
-        <p id="loading-text">読み込み中...</p>
-    </div>
-    <div id="error-container" style="display: none;">
-        <h2>エラー</h2>
-        <p id="error-message"></p>
-        <button id="retry-button" class="button-primary">再読み込み</button>
-    </div>
+        <div id="loading-container" style="display: flex;">
+            <div class="spinner"></div>
+            <p id="loading-text">読み込み中...</p>
+        </div>
+
+        <div id="error-container" style="display: none;">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+            <button id="retry-button" class="button-primary">再読み込み</button>
+        </div>
     </div>
 
-    <!-- 写真アップロード用隠し入力 -->
     <script type="module" src="./admin.js"></script>
 </body>
 

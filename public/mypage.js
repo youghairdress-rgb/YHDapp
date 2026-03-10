@@ -246,6 +246,26 @@ const loadGallery = async (userId) => {
       `users/${userId}/gallery`
     ];
 
+    // 追加: 過去のID (prevIds) がある場合、それらもスキャン対象に加える
+    try {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (Array.isArray(userData.prevIds)) {
+          userData.prevIds.forEach(prevId => {
+            paths.push(`ai-matching-results/${prevId}`);
+            paths.push(`ai-matching-uploads/${prevId}`);
+            paths.push(`galleries/${prevId}`);
+            paths.push(`guest_uploads/${prevId}`);
+            paths.push(`uploads/${prevId}`);
+            paths.push(`users/${prevId}/gallery`);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch prevIds for mpage sync:', e);
+    }
+
     let allItemsRefs = [];
 
     // 並列で全パスからアイテムリストを取得

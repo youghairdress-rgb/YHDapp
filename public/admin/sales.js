@@ -33,6 +33,7 @@ const salesMain = async (auth, user) => {
 
   // Chart instances
   let monthlySalesChart = null;
+  let dailySalesChart = null;
 
   // --- Functions ---
   const loadSalesData = async () => {
@@ -61,6 +62,7 @@ const salesMain = async (auth, user) => {
       const sales = salesSnapshot.docs.map((doc) => doc.data());
 
       updateMonthlyGoalProgress(sales, monthlyGoal);
+      renderDailySalesChart(sales, year, month); // 日次グラフの描画を追加
 
       const monthlySalesData = await getMonthlySalesForLastSixMonths();
       renderMonthlySalesChart(monthlySalesData); // この中でテーブルも描画
@@ -218,6 +220,81 @@ const salesMain = async (auth, user) => {
             `;
         summaryTableBody.appendChild(tr);
       });
+  };
+
+  const renderDailySalesChart = (sales, year, month) => {
+    const canvas = document.getElementById('daily-sales-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const days = Array.from({ length: lastDay }, (_, i) => i + 1);
+    const dayLabels = days.map((d) => `${d}日`);
+
+    const dailyData = days.map((day) => {
+      const daySales = sales.filter((s) => s.reservationTime?.toDate().getDate() === day);
+      const total = daySales.reduce((sum, s) => sum + (s.total || 0), 0);
+      return { total, count: daySales.length };
+    });
+
+    const salesTotals = dailyData.map((d) => d.total);
+    const customerCounts = dailyData.map((d) => d.count);
+
+    if (dailySalesChart) dailySalesChart.destroy();
+
+    dailySalesChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dayLabels,
+        datasets: [
+          {
+            label: '売上合計',
+            data: salesTotals,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            yAxisID: 'y-sales',
+          },
+          {
+            label: '客数',
+            data: customerCounts,
+            borderColor: 'rgba(255, 159, 64, 1)',
+            backgroundColor: 'rgba(255, 159, 64, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            tension: 0.3,
+            yAxisID: 'y-customers',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { mode: 'index', intersect: false },
+        },
+        scales: {
+          'y-sales': {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            title: { display: true, text: '売上 (円)' },
+            beginAtZero: true,
+          },
+          'y-customers': {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            title: { display: true, text: '客数 (人)' },
+            grid: { drawOnChartArea: false },
+            beginAtZero: true,
+            ticks: { stepSize: 1 },
+          },
+        },
+      },
+    });
   };
 
   const loadSalesHistory = async (dateStr) => {

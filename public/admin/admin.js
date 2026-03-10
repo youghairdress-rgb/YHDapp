@@ -684,6 +684,10 @@ const adminMain = async (auth, user) => {
   const deleteBooking = async () => {
     if (editingBooking && confirm('この予約または予約不可設定を削除しますか？')) {
       try {
+        // 通知抑制フラグを立ててから削除
+        await updateDoc(doc(db, 'reservations', editingBooking.id), {
+          deletedBy: 'admin'
+        });
         await deleteDoc(doc(db, 'reservations', editingBooking.id));
         closeModal(editModal);
         closeModal(detailModal);

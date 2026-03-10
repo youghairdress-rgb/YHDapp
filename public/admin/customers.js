@@ -389,7 +389,28 @@ const customersMain = async (auth, user) => {
       `galleries/${customerId}`,
       `guest_uploads/${customerId}`,
       `uploads/${customerId}`,
+      `users/${customerId}/gallery`, // 追加: users配下もスキャン
     ];
+
+    // 追加: 過去のID (prevIds) がある場合、それらもスキャン対象に加える
+    try {
+      const userDoc = await getDoc(doc(db, 'users', customerId));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (Array.isArray(userData.prevIds)) {
+          userData.prevIds.forEach(prevId => {
+            syncPaths.push(`ai-matching-results/${prevId}`);
+            syncPaths.push(`ai-matching-uploads/${prevId}`);
+            syncPaths.push(`galleries/${prevId}`);
+            syncPaths.push(`guest_uploads/${prevId}`);
+            syncPaths.push(`uploads/${prevId}`);
+            syncPaths.push(`users/${prevId}/gallery`);
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch prevIds for sync:', e);
+    }
 
     try {
       // 既存のギャラリー情報を取得して重複チェック
@@ -546,6 +567,7 @@ const customersMain = async (auth, user) => {
     // トリガー設定の読み込み
     triggerBirthdayToggle.checked = customer.triggerSettings?.birthday_enabled ?? false;
     triggerCycleToggle.checked = customer.triggerSettings?.cycle_alert_enabled ?? false;
+    triggerPaymentAfterToggle.checked = customer.triggerSettings?.payment_after_enabled ?? false;
 
     // テンプレート読み込み
     try {
@@ -621,6 +643,7 @@ const customersMain = async (auth, user) => {
     const settings = {
       birthday_enabled: triggerBirthdayToggle.checked,
       cycle_alert_enabled: triggerCycleToggle.checked,
+      payment_after_enabled: triggerPaymentAfterToggle.checked,
     };
 
     try {
@@ -640,6 +663,7 @@ const customersMain = async (auth, user) => {
   };
   triggerBirthdayToggle.addEventListener('change', updateTriggerSettings);
   triggerCycleToggle.addEventListener('change', updateTriggerSettings);
+  triggerPaymentAfterToggle.addEventListener('change', updateTriggerSettings);
 
   // 送信処理
   sendMsgBtn.addEventListener('click', async () => {
