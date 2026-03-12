@@ -208,6 +208,29 @@ exports.mergeUserData = functionsV1.region("asia-northeast1").https.onCall(async
   };
   batch.set(newUserRef, mergedData, { merge: true });
 
+  // --- サブコレクションの移行 ---
+  const subCollections = ["visitHistory", "gallery", "messageLogs"];
+  for (const subCollName of subCollections) {
+    const subSnap = await oldUserRef.collection(subCollName).get();
+    subSnap.forEach((doc) => {
+      const newSubDocRef = newUserRef.collection(subCollName).doc(doc.id);
+      batch.set(newSubDocRef, doc.data());
+      batch.delete(doc.ref);
+    });
+  }
+
+  // --- 関連コレクションの顧客ID更新 (予約・売上) ---
+  const relatedCollections = ["reservations", "sales"];
+  for (const collName of relatedCollections) {
+    const q = await db.collection(collName).where("customerId", "==", oldUserId).get();
+    q.forEach((doc) => {
+      batch.update(doc.ref, {
+        customerId: newUserId,
+        isLineUser: true // 管理画面でのLINEアイコン表示のため
+      });
+    });
+  }
+
   // Cleanup old data
   batch.delete(oldUserRef);
   await batch.commit();

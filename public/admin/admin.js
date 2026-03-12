@@ -27,6 +27,8 @@ const adminMain = async (auth, user) => {
   // --- State ---
   let salonSettings = {};
   let customers = [];
+  let reservations = []; // 広域スコープへ移動
+  let unsubscribeCustomers = null; // 顧客同期用
   let menuCategories = [];
   let editingBooking = null;
   let unsubscribeReservations = null;
@@ -735,7 +737,7 @@ const adminMain = async (auth, user) => {
     unsubscribeReservations = onSnapshot(
       q,
       (snapshot) => {
-        const reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         renderTimeline(reservations);
       },
       (error) => {
@@ -787,11 +789,21 @@ const adminMain = async (auth, user) => {
 
   // --- Initial Data Load ---
   const loadInitialData = async () => {
-    const customersSnapshot = await getDocs(query(collection(db, 'users'), orderBy('kana')));
-    customers = customersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    customerDatalist.innerHTML = customers
-      .map((c) => `<option value="${c.name}"></option>`)
-      .join('');
+    // 顧客データのリアルタイム同期
+    if (unsubscribeCustomers) unsubscribeCustomers();
+    unsubscribeCustomers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      customers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      customers.sort((a, b) => (a.kana || '').localeCompare(b.kana || '', 'ja'));
+      
+      customerDatalist.innerHTML = customers
+        .map((c) => `<option value="${c.name}"></option>`)
+        .join('');
+      
+      // タイムラインを再描画して最新の顧客情報（LINEアイコン等）を反映
+      if (typeof reservations !== 'undefined' && reservations.length > 0) {
+        renderTimeline(reservations);
+      }
+    });
 
     const categoriesSnapshot = await getDocs(
       query(collection(db, 'service_categories'), orderBy('order'))

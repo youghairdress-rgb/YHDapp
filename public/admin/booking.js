@@ -82,6 +82,7 @@ const bookingMain = async (auth, user) => {
   let customers = [];
   let menuCategories = [];
   let editingBooking = null;
+  let reservations = []; // クロージャスコープに移動
   let unsubscribeReservations = null;
   // ▼▼▼ 修正: 8:00～22:00（14時間） ▼▼▼
   const fixedStartHour = 8;
@@ -836,7 +837,7 @@ const bookingMain = async (auth, user) => {
       orderBy('startTime')
     );
     unsubscribeReservations = onSnapshot(q, (snapshot) => {
-      const reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      reservations = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       renderTimeline(reservations);
     });
   };
@@ -866,11 +867,20 @@ const bookingMain = async (auth, user) => {
   });
 
   const loadInitialDataForModals = async () => {
-    const customersSnapshot = await getDocs(query(collection(db, 'users'), orderBy('kana')));
-    customers = customersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-    customerDatalist.innerHTML = customers
-      .map((c) => `<option value="${c.name}"></option>`)
-      .join('');
+    // 顧客データのリアルタイム同期
+    onSnapshot(collection(db, 'users'), (snapshot) => {
+      customers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      customers.sort((a, b) => (a.kana || '').localeCompare(b.kana || '', 'ja'));
+      
+      customerDatalist.innerHTML = customers
+        .map((c) => `<option value="${c.name}"></option>`)
+        .join('');
+      
+      // タイムラインを再描画して最新の顧客情報（LINEアイコン等）を反映
+      if (typeof reservations !== 'undefined' && reservations) {
+        renderTimeline(reservations);
+      }
+    });
 
     const categoriesSnapshot = await getDocs(
       query(collection(db, 'service_categories'), orderBy('order'))

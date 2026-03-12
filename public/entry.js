@@ -76,43 +76,50 @@ const setupRegistrationForm = (profile) => {
     }
 
     try {
-      // ▼▼▼ 修正: 既存顧客の検索ロジックを強化 ▼▼▼
+      // ▼▼▼ 修正: 既存顧客の検索ロジックを強化（スペース除去などの正規化 ＆ 欠落フィールド対応） ▼▼▼
       let existingUserDoc = null;
 
+      // 検索用文字列のサニタイズ（全角・半角スペースを除去）
+      const sanitize = (str) => str.replace(/[\s\u3000]/g, '');
+      const sName = sanitize(name);
+      const sKana = sanitize(kana);
+      const sPhone = phone ? phone.replace(/[^\d]/g, '') : ''; // 数字のみ抽出
+
       // 1. 電話番号が入力されている場合、電話番号で検索
-      if (phone) {
+      if (sPhone) {
         const phoneQuery = query(
           collection(db, 'users'),
-          where('phone', '==', phone),
-          where('isLineUser', '==', false)
+          where('phone', '==', sPhone)
         );
         const phoneSnapshot = await getDocs(phoneQuery);
-        if (!phoneSnapshot.empty) {
-          existingUserDoc = phoneSnapshot.docs[0];
-        }
+        // LINE連携されていない全てのユーザーを取得して、お名前（かな）が一致するか確認
+        // 電話番号が一致し、かつ入力された「かな」が含まれている、あるいは一致する場合に同一人物とみなす
+        existingUserDoc = phoneSnapshot.docs.find(doc => {
+          const d = doc.data();
+          if (d.isLineUser === true) return false;
+          const targetKana = sanitize(d.kana || '');
+          // 電話番号が一致しているため、名前（かな）は部分一致または空文字でないことを確認
+          return targetKana && (sKana.includes(targetKana) || targetKana.includes(sKana));
+        });
       }
 
-      // 2. 電話番号で見つからない、または電話番号が未入力の場合、名前とカナで検索
+      // 2. 電話番号で見つからない場合、カナのみで検索（より慎重な一致）
       if (!existingUserDoc) {
-        const nameQuery = query(
-          collection(db, 'users'),
-          where('name', '==', name),
-          where('kana', '==', kana),
-          where('isLineUser', '==', false)
-        );
-        const nameSnapshot = await getDocs(nameQuery);
-        if (!nameSnapshot.empty) {
-          existingUserDoc = nameSnapshot.docs[0];
-        }
+        const allUsersSnapshot = await getDocs(collection(db, 'users'));
+        existingUserDoc = allUsersSnapshot.docs.find(doc => {
+          const d = doc.data();
+          if (d.isLineUser === true) return false;
+          return sanitize(d.kana || '') === sKana;
+        });
       }
       // ▲▲▲ 修正ここまで ▲▲▲
 
       if (existingUserDoc) {
-        // ★ 修正: 既存顧客が見つかった場合、Cloud Functionを呼び出して統合
         const oldUserId = existingUserDoc.id;
+        const oldData = existingUserDoc.data();
 
-        // 顧客に統合を確認する（オプション）
-        if (!confirm('既存の顧客情報が見つかりました。LINEアカウントと統合しますか？')) {
+        // 顧客に統合を確認する
+        if (!confirm(`以前のご来店履歴（${oldData.name}様）が見つかりました。LINEと連携してよろしいですか？`)) {
           showContent();
           return;
         }

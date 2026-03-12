@@ -14,7 +14,7 @@
     <div id="app-container">
         <header>
             <a href="./index.html" class="back-button"><i class="fa-solid fa-chevron-left"></i> Menu</a>
-            <h1>Customer</h1>
+            <h1>顧客管理</h1>
         </header>
 
         <!-- ▼▼▼ 追加: クイックナビゲーション ▼▼▼ -->
@@ -134,9 +134,11 @@
                         </div>
 
                     </div>
-                    <div class="form-actions">
-                        <button type="button" id="close-modal-btn" class="button-secondary">閉じる</button>
-                        <button type="submit" class="button-primary">保存</button>
+                    <div class="form-actions" style="justify-content: flex-end;">
+                        <div>
+                            <button type="button" id="close-modal-btn" class="button-secondary">閉じる</button>
+                            <button type="submit" class="button-primary">保存</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -218,7 +220,7 @@
             <p id="error-message"></p>
         </div>
     </div>
-    <script type="module" src="./customers.js"></script>
+    <script type="module" src="./customers.js?v=20260313-cleanup"></script>
 </body>
 
 </html>

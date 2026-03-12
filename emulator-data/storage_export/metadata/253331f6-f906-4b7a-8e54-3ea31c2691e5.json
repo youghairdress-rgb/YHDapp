@@ -1,0 +1,19 @@
+{
+  "name": "guest_uploads/6jG9VZy8fXt7lETjQnzU/item-front-photo",
+  "bucket": "yhd-db.firebasestorage.app",
+  "metageneration": 1,
+  "generation": 1772083157899,
+  "contentType": "image/jpeg",
+  "storageClass": "STANDARD",
+  "contentDisposition": "inline",
+  "downloadTokens": [
+    "05112679-6050-4660-a9f0-0e29fa3f2dfb"
+  ],
+  "etag": "2/prus98LIFsRjuTYnAR5imZok0",
+  "customMetadata": {},
+  "timeCreated": "2026-02-26T05:19:17.899Z",
+  "updated": "2026-02-26T05:19:17.899Z",
+  "size": 687151,
+  "md5Hash": "5xshb9ennKNdaXvzGG1vUQ==",
+  "crc32c": "3961240982"
+}

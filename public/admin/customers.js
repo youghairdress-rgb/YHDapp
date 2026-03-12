@@ -62,6 +62,7 @@ const customersMain = async (auth, user) => {
   const closeMsgModalBtn = document.getElementById('close-msg-modal-btn');
   const triggerBirthdayToggle = document.getElementById('trigger-birthday-toggle');
   const triggerCycleToggle = document.getElementById('trigger-cycle-toggle');
+  const triggerPaymentAfterToggle = document.getElementById('trigger-payment-after-toggle');
   const msgTemplateSelect = document.getElementById('msg-template-select');
   const msgBodyInput = document.getElementById('msg-body');
   const msgHistoryList = document.getElementById('msg-history-list');
@@ -223,6 +224,7 @@ const customersMain = async (auth, user) => {
       alert('顧客情報の保存に失敗しました。');
     }
   };
+
 
   const deleteCustomer = async (customerId, customerName) => {
     if (confirm(`「${customerName}」様の情報を本当に削除しますか？この操作は元に戻せません。`)) {
@@ -835,7 +837,7 @@ const customersMain = async (auth, user) => {
       card.innerHTML = `
                 <div class="customer-card-header">
                     ${lineIcon}
-                    <span class="customer-card-name">${customer.name}</span>
+                    <span class="customer-card-name">${customer.name || '名前なし'}</span>
                     <!-- ▼▼▼ 追加: 来店回数バッジ ▼▼▼ -->
                     ${customer.visitCount ? `<span class="visit-count-badge">${customer.visitCount}回</span>` : ''}
                     <!-- ▲▲▲ 追加ここまで ▲▲▲ -->
@@ -906,11 +908,15 @@ const customersMain = async (auth, user) => {
     if (unsubscribeCustomers) {
       unsubscribeCustomers();
     }
-    const q = query(collection(db, 'users'), orderBy('kana', 'asc'));
+    const q = query(collection(db, 'users'), orderBy('kana')); // orderBy を復活（不完全なデータを除外）
     unsubscribeCustomers = onSnapshot(
       q,
       (snapshot) => {
-        allCustomers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        allCustomers = snapshot.docs
+          .map((doc) => ({ id: doc.id, ...doc.data() }))
+          .filter((doc) => doc.name && doc.name !== 'undefined'); // 名前がない不完全なデータを完全に除外
+        // JS側でソート
+        allCustomers.sort((a, b) => (a.kana || '').localeCompare(b.kana || '', 'ja'));
         const activeInitial = document.querySelector('.initial-nav button.active');
 
         // ▼▼▼ 修正: URLパラメータ処理を onSnapshot 内に移動 ▼▼▼
