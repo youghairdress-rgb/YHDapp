@@ -1,8 +1,97 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+    // --- 認可ヘルパー関数 ---
+    
+    // 管理者判定
+    function isAdmin() {
+      // 1. セキュリティ向上のため、UIDによる直接判定を最優先する
+      // 2. 認可予定のUIDリスト (U343588550e961e6a3181092237df57a5)
+      // 3. 開発環境のモックIDを許可
+      return request.auth != null && (
+        request.auth.uid == 'U343588550e961e6a3181092237df57a5' ||
+        request.auth.uid == 'mock-admin-uid'
+      );
+    }
+    
+    // 一般ユーザー（本人）判定
+    function isUser(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- 1. 管理者権限 (最優先) ---
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // --- 2. 一般ユーザー（顧客）権限 ---
+    
+    // ユーザープロフィール
+    match /users/{userId} {
+      allow read, write: if isUser(userId);
+      
+      // 特例: 外部(匿名)からのアップロード情報の更新を許可
+      allow update: if request.auth != null && 
+        request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['hair_app_latest', 'hair_app_updatedAt', 'lastActiveAt']);
+
+      match /gallery/{docId} {
+        allow read: if isUser(userId);
+        // 特例: 外部(匿名)からのギャラリー写真追加を許可
+        allow create: if request.auth != null;
+        allow update, delete: if isUser(userId);
+      }
+
+      match /{allSubcollections=**} {
+        allow read, write: if isUser(userId);
+      }
+    }
+
+    // 初回登録時の既存顧客検索 (entry.js 対応)
+    // セキュリティを確保しつつ、電話番号やカナでの検索（list）のみを許可
+    match /users/{anyUser} {
+      allow list: if request.auth != null && (
+        request.query.limit <= 100 && (
+          request.query.filters.phone != null || 
+          request.query.filters.kana != null
+        )
+      );
+      // 個別ドキュメントの読み取りは isUser(userId) でカバーされているため、ここでは list のみ。
+      // ただし検索結果を表示するために、検索されたドキュメントの read も必要。
+      allow read: if request.auth != null && (
+        resource.data.phone != null || resource.data.kana != null
+      );
+    }
+
+    // 予約情報
+    match /reservations/{resId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if request.auth != null && (
+        resource == null || resource.data.customerId == request.auth.uid
+      );
+    }
+
+    // 売上情報
+    match /sales/{saleId} {
+      allow read: if request.auth != null && resource.data.customerId == request.auth.uid;
+    }
+
+    // --- 3. 公開データ (マスターデータ) ---
+    match /settings/{docId} {
+      allow read: if true;
+    }
+    match /service_categories/{catId} {
+      allow read: if true;
+      match /menus/{menuId} {
+        allow read: if true;
+      }
+    }
+    
+    // collectionGroup クエリ（予約など）のサポート
+    match /{path=**}/reservations/{resId} {
+      allow read: if request.auth != null && (
+        resource == null || resource.data.customerId == request.auth.uid
+      );
     }
   }
 }

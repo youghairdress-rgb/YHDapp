@@ -93,7 +93,7 @@ exports.sendBookingConfirmation = functionsV1.region("asia-northeast1").firestor
   const jstTime = new Date(time.toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
   const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
   const dayOfWeek = weekdays[jstTime.getDay()];
-  const formattedTime = `${jstTime.getFullYear()}年${String(jstTime.getMonth() + 1).padStart(2, "0")}月${String(jstTime.getDate()).padStart(2, "0")}日(${dayOfWeek}) ${String(jstTime.getHours()).padStart(2, "0")}:${String(jstTime.getHours()).padStart(2, "0")}:${String(jstTime.getMinutes()).padStart(2, "0")}`;
+  const formattedTime = `${jstTime.getFullYear()}年${String(jstTime.getMonth() + 1).padStart(2, "0")}月${String(jstTime.getDate()).padStart(2, "0")}日(${dayOfWeek}) ${String(jstTime.getHours()).padStart(2, "0")}:${String(jstTime.getMinutes()).padStart(2, "0")}`;
   const menuNames = selectedMenus ? selectedMenus.map((m) => m.name).join("＋") : "";
   const requestsText = userRequests || "なし";
 

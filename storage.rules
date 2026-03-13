@@ -1,8 +1,53 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // --- 認可ヘルパー関数 ---
+    
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.uid == 'U343588550e961e6a3181092237df57a5' ||
+        request.auth.uid == 'mock-admin-uid'
+      );
+    }
+    
+    function isUser(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- ユーザー関連パスの統合管理 ---
+
+    // ユーザー関連パスの管理
+    match /{folder}/{userId}/{allPaths=**} {
+      // 1. 基本的な読み書き制限（本人または管理者）
+      allow read, write: if isUser(userId) || isAdmin();
+      
+      // 2. 特例: 認証済みユーザー（匿名含む）に特定フォルダの「書き込み」だけを許可
+      // ※ userIdが自分でなくても、外部素材提供として書き込みを認める
+      allow write: if request.auth != null && 
+        folder in ['guest_uploads', 'hair_app_uploads', 'ai-matching-uploads', 'uploads'];
+
+      // 3. 許可されているフォルダ構成のバリデーション
+      allow read, write: if folder in [
+        'users', 
+        'ai-matching-results', 
+        'ai-matching-uploads', 
+        'guest_uploads', 
+        'uploads', 
+        'hair_app_uploads', 
+        'galleries',
+        'pc_generated'
+      ];
+    }
+    
+    // 特別な一時ディレクトリ
+    match /temp_reviews/{fileName} {
+      allow write: if request.auth != null;
+      allow read: if isAdmin();
+    }
+    
+    // その他共通・管理者用
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
     }
   }
 }

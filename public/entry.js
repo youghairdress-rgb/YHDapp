@@ -1,4 +1,4 @@
-import { db, initializeLiffAndAuth, functions, isLocalhost } from '/admin/firebase-init.js'; // ★ functions, isLocalhost をインポート
+import { db, initializeLiffAndAuth, functions, isLocalhost } from './admin/firebase-init.js';
 import {
   doc,
   getDoc,
@@ -79,10 +79,17 @@ const setupRegistrationForm = (profile) => {
       // ▼▼▼ 修正: 既存顧客の検索ロジックを強化（スペース除去などの正規化 ＆ 欠落フィールド対応） ▼▼▼
       let existingUserDoc = null;
 
-      // 検索用文字列のサニタイズ（全角・半角スペースを除去）
-      const sanitize = (str) => str.replace(/[\s\u3000]/g, '');
-      const sName = sanitize(name);
-      const sKana = sanitize(kana);
+      // 検索用文字列のサニタイズ（スペース除去 ＆ ひらがな・カタカナ統一：DBに合わせて「ひらがな」に統一）
+      const kataToHira = (str) => {
+        return str.replace(/[\u30a1-\u30f6]/g, (match) => {
+          const chr = match.charCodeAt(0) - 0x60;
+          return String.fromCharCode(chr);
+        });
+      };
+
+      const sanitize = (str) => kataToHira(str.replace(/[\s\u3000]/g, ''));
+      const sName = sanitize(name); // 名前も一応正規化
+      const sKana = sanitize(kana); // かなを「ひらがな」に統一
       const sPhone = phone ? phone.replace(/[^\d]/g, '') : ''; // 数字のみ抽出
 
       // 1. 電話番号が入力されている場合、電話番号で検索
@@ -97,7 +104,7 @@ const setupRegistrationForm = (profile) => {
         existingUserDoc = phoneSnapshot.docs.find(doc => {
           const d = doc.data();
           if (d.isLineUser === true) return false;
-          const targetKana = sanitize(d.kana || '');
+          const targetKana = sanitize(d.kana || ''); // DB側のかなも「ひらがな」に正規化して比較
           // 電話番号が一致しているため、名前（かな）は部分一致または空文字でないことを確認
           return targetKana && (sKana.includes(targetKana) || targetKana.includes(sKana));
         });
@@ -109,7 +116,7 @@ const setupRegistrationForm = (profile) => {
         existingUserDoc = allUsersSnapshot.docs.find(doc => {
           const d = doc.data();
           if (d.isLineUser === true) return false;
-          return sanitize(d.kana || '') === sKana;
+          return sanitize(d.kana || '') === sKana; // 両方を「ひらがな」に変換して完全一致チェック
         });
       }
       // ▲▲▲ 修正ここまで ▲▲▲
