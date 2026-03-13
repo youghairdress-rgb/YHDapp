@@ -66,9 +66,9 @@ service cloud.firestore {
     // 予約情報
     match /reservations/{resId} {
       allow create: if request.auth != null;
-      allow read, update, delete: if request.auth != null && (
-        resource == null || resource.data.customerId == request.auth.uid
-      );
+      // 読み取り特例: 空き枠確認のため、認証済みユーザーに読み取りを許可
+      allow read: if request.auth != null;
+      allow update, delete: if isAdmin() || (isUser(resource.data.customerId));
     }
 
     // 売上情報
@@ -87,11 +87,14 @@ service cloud.firestore {
       }
     }
     
-    // collectionGroup クエリ（予約など）のサポート
+    // collectionGroup クエリ（予約、メニューなど）のサポート
     match /{path=**}/reservations/{resId} {
       allow read: if request.auth != null && (
         resource == null || resource.data.customerId == request.auth.uid
       );
+    }
+    match /{path=**}/menus/{menuId} {
+      allow read: if true;
     }
   }
 }
