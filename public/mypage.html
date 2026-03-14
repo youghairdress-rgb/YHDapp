@@ -139,10 +139,13 @@
                 <!-- Stamp Selector -->
                 <div id="stamp-options" class="stamp-selector">
                     <div class="stamp-option selected" onclick="selectStamp('🙂')">🙂</div>
+                    <div class="stamp-option" onclick="selectStamp('😍')">😍</div>
+                    <div class="stamp-option" onclick="selectStamp('🤩')">🤩</div>
+                    <div class="stamp-option" onclick="selectStamp('✨')">✨</div>
                     <div class="stamp-option" onclick="selectStamp('💖')">💖</div>
                     <div class="stamp-option" onclick="selectStamp('⭐')">⭐</div>
-                    <div class="stamp-option" onclick="selectImageStamp('./img/YHDlogo2.png')">
-                        <img src="./img/YHDlogo2.png" style="width:24px; height:24px; object-fit:contain;">
+                    <div class="stamp-option" onclick="selectImageStamp('./diagnosis/images/YHDlogo2.gif')">
+                        <img src="./diagnosis/images/YHDlogo2.gif" style="width:24px; height:24px; object-fit:contain;">
                     </div>
                     <div class="stamp-option" onclick="selectImageStamp('./diagnosis/images/stamp.png')">
                         <img src="./diagnosis/images/stamp.png" style="width:24px; height:24px; object-fit:contain;">
@@ -178,10 +181,10 @@
             <div class="review-guide">
                 <div class="review-step" id="step-save-image" style="text-align:center; background:#e0f7fa;">
                     <strong style="color:#0ABAB5; font-size:1.1rem;">STEP 1: 画像を保存</strong>
-                    <p style="font-size:0.9rem; margin:10px 0;">下の画像を<strong>長押し</strong>して「写真に保存」してください。</p>
+                    <p style="font-size:0.9rem; margin:10px 0;">画像は自動的にダウンロードされました。<br>保存されていない場合は下の画像を<strong>長押し</strong>して保存してください。</p>
                     <img id="review-generated-image" src=""
                         style="max-width:100%; border-radius:8px; border:2px solid #ccc; display:block; margin:0 auto;">
-                    <p style="font-size:0.8rem; color:#666; margin-top:5px;">※確実に保存できるURLを発行済みです。</p>
+                    <p id="review-url-status" style="font-size:0.8rem; color:#666; margin-top:5px;">※お使いの端末に保存されています。</p>
                 </div>
                 <div class="review-step">
                     <div class="step-num">2</div>

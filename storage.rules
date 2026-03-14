@@ -21,8 +21,11 @@ service firebase.storage {
       // 1. 基本的な読み書き制限（本人または管理者）
       allow read, write: if isUser(userId) || isAdmin();
       
-      // 2. 特例: 認証済みユーザー（匿名含む）に特定フォルダの「書き込み」だけを許可
-      // ※ userIdが自分でなくても、外部素材提供として書き込みを認める
+      // 2. 特例: 認証済みユーザー（匿名含む）に特定のフォルダの「読み取り」と「書き込み」を許可
+      // ※ userIdが自分でなくても、外部素材提供や以前の顧客情報の確認として必要
+      allow read: if request.auth != null && 
+        folder in ['galleries', 'ai-matching-results', 'users', 'hair_app_uploads', 'uploads'];
+      
       allow write: if request.auth != null && 
         folder in ['guest_uploads', 'hair_app_uploads', 'ai-matching-uploads', 'uploads'];
 

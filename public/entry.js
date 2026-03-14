@@ -112,11 +112,15 @@ const setupRegistrationForm = (profile) => {
 
       // 2. 電話番号で見つからない場合、カナのみで検索（より慎重な一致）
       if (!existingUserDoc) {
-        const allUsersSnapshot = await getDocs(collection(db, 'users'));
-        existingUserDoc = allUsersSnapshot.docs.find(doc => {
+        const kanaQuery = query(
+          collection(db, 'users'),
+          where('kana', '==', sKana),
+          limit(10) // セキュリティルールの制限に合わせる
+        );
+        const kanaSnapshot = await getDocs(kanaQuery);
+        existingUserDoc = kanaSnapshot.docs.find(doc => {
           const d = doc.data();
-          if (d.isLineUser === true) return false;
-          return sanitize(d.kana || '') === sKana; // 両方を「ひらがな」に変換して完全一致チェック
+          return d.isLineUser !== true;
         });
       }
       // ▲▲▲ 修正ここまで ▲▲▲

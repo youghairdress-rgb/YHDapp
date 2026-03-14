@@ -56,10 +56,11 @@ service cloud.firestore {
           request.query.filters.kana != null
         )
       );
-      // 個別ドキュメントの読み取りは isUser(userId) でカバーされているため、ここでは list のみ。
-      // ただし検索結果を表示するために、検索されたドキュメントの read も必要。
+      // 検索されたドキュメントの読み取りを許可
       allow read: if request.auth != null && (
-        resource.data.phone != null || resource.data.kana != null
+        resource == null || // 新規作成チェック用
+        resource.data.phone != null || 
+        resource.data.kana != null
       );
     }
 

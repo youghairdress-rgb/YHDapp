@@ -65,6 +65,14 @@ function selectStamp(stamp) {
   isImageStamp = false;
   currentStamp = stamp;
   selectTool('stamp');
+
+  // UI選択状態の更新
+  document.querySelectorAll('.stamp-option').forEach((opt) => {
+    opt.classList.remove('selected');
+    if (opt.textContent === stamp) {
+      opt.classList.add('selected');
+    }
+  });
 }
 
 function selectImageStamp(src) {
@@ -72,6 +80,15 @@ function selectImageStamp(src) {
   currentTool = 'stamp';
   currentStampImageSrc = src;
   selectTool('stamp');
+
+  // UI選択状態の更新 (独自スタンプ用)
+  document.querySelectorAll('.stamp-option').forEach((opt) => {
+    opt.classList.remove('selected');
+    const img = opt.querySelector('img');
+    if (img && img.getAttribute('src') === src) {
+      opt.classList.add('selected');
+    }
+  });
 }
 
 function handleCustomStamp(input) {
@@ -179,10 +196,14 @@ export const openEditorModal = (imageSrc) => {
   selectedStampId = null;
 
   originalImage = new Image();
+  // CORS対策: Storageの画像を表示・加工できるように設定
   originalImage.crossOrigin = 'anonymous';
-  originalImage.src = imageSrc;
+  // キャッシュによるCORSエラーを避けるためタイムスタンプを付与
+  const bust = imageSrc.includes('?') ? '&' : '?';
+  originalImage.src = imageSrc + bust + 't=' + Date.now();
+  
   originalImage.onload = () => {
-    const MAX_SIDE = 1000;
+    const MAX_SIDE = 1200; // 少し解像度を上げる
     let w = originalImage.width;
     let h = originalImage.height;
     if (w > MAX_SIDE || h > MAX_SIDE) {
@@ -194,7 +215,11 @@ export const openEditorModal = (imageSrc) => {
     canvas.height = h;
 
     ctx.drawImage(originalImage, 0, 0, w, h);
-    baseLayerImage.src = canvas.toDataURL();
+    baseLayerImage.src = canvas.toDataURL('image/jpeg', 0.9);
+  };
+  originalImage.onerror = () => {
+    console.error('画像の読み込みに失敗しました:', imageSrc);
+    alert('画像の読み込みに失敗しました。通信環境を確認してください。');
   };
 };
 
@@ -248,9 +273,16 @@ function addStamp(x, y) {
 
   if (isImageStamp && currentStampImageSrc) {
     const img = new Image();
+    img.crossOrigin = 'anonymous'; // CORS対策を追加
     img.src = currentStampImageSrc;
+    
     img.onload = () => {
+      console.log('Stamp image loaded successfully:', currentStampImageSrc);
       render();
+    };
+    img.onerror = () => {
+      console.error('Stamp image load failed:', currentStampImageSrc);
+      alert('スタンプ画像の読み込みに失敗しました。パスを確認してください: ' + currentStampImageSrc);
     };
 
     stamps.push({
@@ -397,49 +429,35 @@ window.saveEditedImage = async () => {
   const saveBtn = document.querySelector('.editor-actions .btn-save');
   const originalBtnText = saveBtn ? saveBtn.textContent : '保存して次へ';
   if (saveBtn) {
-    saveBtn.textContent = '保存中...';
+    saveBtn.textContent = '処理中...';
     saveBtn.disabled = true;
   }
 
   try {
-    const blob = await new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (b) => {
-          if (b) resolve(b);
-          else reject(new Error('Canvas to Blob conversion failed'));
-        },
-        'image/jpeg',
-        0.9
-      );
-    });
+    // 1. CanvasをDataURL (Base64) に変換
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
-    if (!blob) throw new Error('画像生成エラー: Blob is null');
+    // 2. ブラウザのダウンロード機能を使用して端末に保存
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `YHD_beauty_photo_${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    if (!storage) throw new Error('Firebase Storageが初期化されていません。');
-
-    const filename = `temp_reviews/${Date.now()}.jpg`;
-    const storageRef = ref(storage, filename);
-
-    await uploadBytes(storageRef, blob);
-    const downloadURL = await getDownloadURL(storageRef);
-
+    // 3. プレビュー画像を表示
     const previewImg = document.getElementById('review-generated-image');
-    if (previewImg) previewImg.src = downloadURL;
+    if (previewImg) previewImg.src = dataUrl;
 
-    document.getElementById('download-image-btn')?.addEventListener('click', () => {
-      window.open(downloadURL, '_blank');
-    });
+    // 4. モダルを切り替え
+    console.log('Image saved locally and guide opened.');
 
-    closeEditor();
-    openReviewGuide();
+    const detailP = document.getElementById('review-url-status');
+    if (detailP) detailP.textContent = '※端末のブラウザ機能でダウンロードされました。';
 
-    if (saveBtn) {
-      saveBtn.textContent = '完了';
-      saveBtn.disabled = false;
-    }
   } catch (e) {
     console.error('Save Error:', e);
-    alert('画像の保存に失敗しました。\n' + (e.message || '通信エラー等の可能性があります'));
+    alert('画像の保存に失敗しました。ブラウザの設定等を確認してください。');
 
     if (saveBtn) {
       saveBtn.textContent = originalBtnText;
